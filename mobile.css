@@ -785,18 +785,137 @@ kbd{background:#EEE6DC;border:1px solid var(--line);border-bottom-width:2px;bord
   .property-admin-card{border-radius:var(--radius-md)}
 }
 
-/* --- v4.2.3: nút Lưu cho từng phòng + dấu hiệu "chưa lưu" --- */
-.btn-save-row{
-  display:inline-flex;align-items:center;gap:5px;justify-content:center;
-  background:var(--surface-elevated);border-color:var(--gold);color:var(--primary);font-weight:700
+/* ============================================================
+   v4.2.4 — TRANG KHÁCH: ẩn ô tìm/lọc sau nút kính lúp,
+   danh sách phòng chia 2 cột cho gọn
+   ============================================================ */
+
+/* --- Nút kính lúp trong đầu mục danh sách --- */
+.head-tail{display:flex;align-items:center;gap:12px}
+.search-toggle-btn{
+  display:none;align-items:center;gap:7px;
+  border:1px solid var(--border-strong);background:var(--surface-elevated);color:var(--primary);
+  border-radius:999px;padding:9px 14px;font:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;min-height:44px;transition:background .16s,border-color .16s,color .16s;
 }
-.btn-save-row:hover{background:var(--gold-pale)}
-.btn-save-row .lc{color:var(--gold-hover)}
-/* Khi có thay đổi chưa lưu: hàng sáng lên và nút Lưu chuyển sang vàng đặc cho dễ thấy */
-tr.row-dirty{background:var(--gold-pale)!important;box-shadow:inset 3px 0 0 var(--gold)}
-tr.row-dirty .btn-save-row{background:var(--gold);color:var(--text);border-color:var(--gold-hover)}
-tr.row-dirty .btn-save-row .lc{color:var(--text)}
+.search-toggle-btn .lc{color:var(--gold-hover);flex:none}
+.search-toggle-btn:hover{background:var(--gold-pale);border-color:var(--gold-soft)}
+.search-toggle-btn:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.search-toggle-btn.on{background:var(--primary);color:var(--text-on-dark);border-color:var(--primary)}
+.search-toggle-btn.on .lc{color:var(--gold-soft)}
+
 @media(max-width:860px){
-  /* trên điện thoại nút Lưu chiếm trọn một dòng, đứng đầu cụm thao tác cho dễ bấm */
-  .property-admin-body .data-table td:nth-child(7) .table-actions .btn-save-row{grid-column:1/-1;min-height:44px}
+  /* Nút kính lúp chỉ xuất hiện trên điện thoại/tablet nhỏ */
+  .search-toggle-btn{display:inline-flex}
+  #properties .section-head{flex-direction:row;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  #properties .section-head h2{font-size:22px}
+
+  /* Toàn bộ vùng tìm & lọc ẩn mặc định, chỉ hiện khi bấm kính lúp */
+  .filter-zone{display:none}
+  .filter-zone.open{
+    display:block;margin-bottom:16px;padding:12px;
+    border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-elevated);
+    box-shadow:var(--shadow-sm);
+  }
+  .filter-zone.open .filter-bar:not(#extraFilters){
+    padding:0;border:0;background:transparent;box-shadow:none;margin-bottom:10px
+  }
+  .filter-zone.hidden{display:none}
+
+  /* Card "Tìm phòng nhanh" ở đầu trang trùng chức năng với bộ lọc bên dưới → bỏ trên điện thoại */
+  .hero-panel{display:none}
+  .hero{padding-bottom:26px}
 }
+
+/* ============================================================
+   DANH SÁCH PHÒNG 2 CỘT — thẻ phòng xếp dọc cho vừa cột hẹp
+   ============================================================ */
+.room-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.room-list>.room-row{
+  display:flex!important;flex-direction:column;align-items:stretch;gap:8px;
+  padding:10px;min-width:0;
+}
+.room-list>.room-row>*{width:100%;min-width:0}
+.room-thumb-link{width:100%}
+.room-list .room-thumb,.room-list .room-thumb-placeholder{
+  width:100%;height:auto;aspect-ratio:4/3;border-radius:10px;object-fit:cover;display:block
+}
+.room-list .room-name{flex:none}
+.room-list .room-name strong{font-size:13.5px;line-height:1.3;white-space:normal}
+.room-list .room-name small{font-size:11.5px}
+.room-list .amenities{gap:4px}
+.room-list .amenity{font-size:10.5px;padding:3px 6px}
+.room-list .room-price{text-align:left;flex:none}
+.room-list .room-price strong{font-size:14px}
+.room-list .room-tail{
+  flex:none;display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:auto
+}
+.room-list .room-tail .status-dot,.room-list .room-tail .pill{align-self:flex-start}
+.room-list .room-tail .btn-small{width:100%;text-align:center;min-height:42px}
+
+/* Màn rất hẹp: quay về 1 cột cho khỏi bóp chữ */
+@media(max-width:359px){
+  .room-list{grid-template-columns:1fr}
+}
+/* Màn rộng: tận dụng chỗ, 3 cột trong trang chi tiết căn */
+@media(min-width:1100px){
+  .detail-page .room-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+/* ============================================================
+   v4.2.5 — DANH SÁCH PHÒNG TRONG QUẢN TRỊ: LIST GỌN, SỬA QUA POPUP
+   Bỏ hẳn ô nhập trong danh sách (nguyên nhân mất số khi đang gõ mà
+   có đợt đồng bộ về vẽ lại bảng). Mọi thao tác sửa mở popup riêng.
+   ============================================================ */
+.room-admin-list{display:flex;flex-direction:column;gap:8px}
+.ra-item{
+  border:1px solid var(--border);border-radius:var(--radius-md);
+  background:var(--surface-elevated);overflow:hidden;transition:border-color .16s,box-shadow .16s;
+}
+.ra-item:hover{border-color:var(--gold-soft);box-shadow:var(--shadow-sm)}
+.ra-main{
+  display:grid;grid-template-columns:44px minmax(0,1fr) auto auto 20px;
+  align-items:center;gap:10px;width:100%;
+  padding:10px 12px;border:0;background:transparent;font:inherit;text-align:left;cursor:pointer;
+}
+.ra-main:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.ra-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;display:block;background:var(--surface-muted)}
+.ra-thumb-empty{display:grid;place-items:center;color:var(--gold);background:var(--surface-muted)}
+.ra-info{display:block;min-width:0}
+.ra-info strong{display:block;font-size:15px;color:var(--text);line-height:1.3}
+.ra-info small{display:block;font-size:12px;color:var(--text-secondary);margin-top:2px}
+.ra-money{display:block;text-align:right;white-space:nowrap}
+.ra-money strong{display:block;font-size:14px;color:var(--primary)}
+.ra-money small{display:block;font-size:11.5px;color:var(--text-muted)}
+.ra-status{display:block;white-space:nowrap}
+.ra-go{color:var(--text-muted);display:grid;place-items:center}
+.ra-extra{
+  display:flex;gap:8px;padding:0 12px 10px;
+}
+.ra-extra .icon-btn{flex:1 1 auto;text-align:center}
+.ra-archived{opacity:.7}
+.ra-archived .ra-info strong{text-decoration:line-through}
+
+@media(max-width:860px){
+  /* Xếp lại cho vừa màn hình dọc — KHÔNG trượt ngang, mọi thứ nằm cố định trong khung */
+  .ra-main{
+    grid-template-columns:44px minmax(0,1fr) auto;
+    grid-template-areas:"thumb info go" "money money money" "status status status";
+    gap:6px 10px;padding:10px;
+  }
+  .ra-main>.ra-thumb,.ra-main>.ra-thumb-empty{grid-area:thumb}
+  .ra-info{grid-area:info}
+  .ra-go{grid-area:go}
+  .ra-money{grid-area:money;text-align:left;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .ra-money small{margin:0}
+  .ra-status{grid-area:status}
+  .ra-extra{padding:0 10px 10px}
+  .ra-extra .icon-btn{min-height:44px}
+  /* Không cho bảng nào trong khu quản trị phòng trượt ngang */
+  .property-admin-body .table-wrap{overflow:visible}
+}
+
+/* --- v4.2.6: nhãn giảm giá --- */
+.disc-value{color:var(--sage-hover)}
+.disc-tag{display:inline-block;font-size:11px;font-weight:600;color:var(--sage-hover);background:var(--sage-soft);border-radius:999px;padding:2px 7px;margin-left:4px}
+.bill-discount span,.bill-discount strong{color:var(--sage-hover)}

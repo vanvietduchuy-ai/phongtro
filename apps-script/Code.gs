@@ -61,7 +61,8 @@ var SCHEMA = {
       ['water', 'n'], ['other', 'n'], ['depositAmount', 'n'], ['total', 'n'],
       ['amountPaid', 'n'], ['status', 's'], ['depositApplied', 'b'], ['createdAt', 's'],
       ['payments', 'json'], ['leaseId', 's'],
-      ['code', 's'], ['serviceLines', 'json'], ['adjustAmount', 'n'], ['adjustNote', 's'], ['issuedAt', 's']
+      ['code', 's'], ['serviceLines', 'json'], ['adjustAmount', 'n'], ['adjustNote', 's'], ['issuedAt', 's'],
+      ['discountAmount', 'n'], ['discountNote', 's']
     ]
   },
   leases: {
@@ -73,7 +74,9 @@ var SCHEMA = {
       ['status', 's'], ['signedAt', 's'], ['moveInAt', 's'], ['moveOutAt', 's'],
       ['terminationReason', 's'], ['note', 's'], ['createdAt', 's'],
       ['depositDeduct', 'n'], ['depositRefund', 'n'], ['settlementNote', 's'],
-      ['roomHistory', 'json'], ['renewals', 'json']
+      ['roomHistory', 'json'], ['renewals', 'json'],
+      ['monthlyDiscount', 'n'], ['monthlyDiscountNote', 's'],
+      ['depositDiscount', 'n'], ['depositDiscountNote', 's']
     ]
   },
   leaseOccupants: {

@@ -75,3 +75,41 @@ Thẻ KPI cũng được canh chiều cao tối thiểu để các thẻ thẳng
 
 ### Sửa lỗi
 - **Nút "Lọc theo loại phòng, diện tích, tiện nghi…" (thêm ở v4.2.1) bấm không có tác dụng** — tên hàm chưa được đăng ký trong danh sách hàm được phép gọi của bộ điều phối sự kiện, nên cú bấm bị bỏ qua. Kiểm thử trước đó gọi thẳng hàm nên không phát hiện ra. Đã đăng ký tên hàm và bổ sung kiểm thử **bấm thật vào nút** cho cả nút này lẫn nút Lưu mới.
+
+## v4.2.4 — Trang khách: giấu ô tìm/lọc sau nút kính lúp, danh sách phòng 2 cột
+- **Toàn bộ vùng tìm & lọc gom vào một khối, mặc định ĐÓNG trên điện thoại.** Đầu danh sách có nút kính lúp "Tìm & lọc"; bấm mới mở ra (tự đưa con trỏ vào ô tìm kiếm), bấm lần nữa đóng lại. Khách vào trang là thấy phòng ngay, không phải cuộn qua một màn hình toàn ô lọc.
+- **Bỏ card "Tìm phòng nhanh" ở đầu trang trên điện thoại** — trùng chức năng với bộ lọc bên dưới. Desktop giữ nguyên như cũ.
+- **Danh sách phòng chia 2 cột**: thẻ phòng xếp dọc (ảnh 4:3 phía trên, tên phòng, giá, tiện nghi, trạng thái, nút "Đặt lịch xem" rộng hết thẻ cao ≥42px). Màn dưới 360px tự quay về 1 cột cho khỏi bóp chữ; trang chi tiết căn trên màn rộng dùng 3 cột.
+- Vào trang chi tiết phòng/căn thì ẩn cả vùng lọc lẫn nút kính lúp, quay ra danh sách thì hiện lại.
+- Không bỏ trường lọc nào, không đổi logic lọc.
+
+## v4.2.5 — Danh sách phòng dạng list, sửa qua popup; sửa lỗi MẤT GIÁ khi đồng bộ
+### Lỗi nghiêm trọng đã tái hiện được và sửa
+**Nhập giá xong thấy như bị mất.** Nguyên nhân: ô nhập giá/cọc nằm ngay trong danh sách; khi người dùng đang gõ mà **chưa rời ô** (sự kiện change chưa bắn) thì một đợt đồng bộ về sẽ vẽ lại cả bảng — con số đang gõ bị xóa sạch. Đã dựng phép thử tái hiện đúng hiện tượng này trước khi sửa.
+Cách sửa triệt để: **bỏ hẳn ô nhập trong danh sách**, mọi việc sửa chuyển sang popup. Popup nằm ngoài vùng bị vẽ lại nên đồng bộ về không đụng tới số đang gõ — có phép thử chứng minh: mở popup, gõ giá, cho đồng bộ mang thay đổi từ máy khác về, số vẫn nguyên.
+
+### Thay đổi giao diện
+- **Danh sách phòng dạng list gọn**: mỗi phòng một dòng — ảnh nhỏ, tên phòng, loại · diện tích · số người, giá và cọc, trạng thái. Bấm vào phòng là **popup sửa nhảy lên**. Hai nút phụ (Tài sản, Lưu trữ/Xóa) nằm gọn bên dưới.
+- **Số tiền có dấu ngăn cách 3 chữ số**: gõ 3800000 tự hiện 3.800.000, mở lại popup vẫn hiện dạng đã ngăn cách; khi lưu vẫn quy về số nguyên đúng.
+- **Cố định trên màn hình điện thoại**: các ô xếp theo hàng cố định (ảnh+tên / giá+cọc / trạng thái), bỏ trượt ngang trong khu danh sách phòng.
+- Gỡ nút "Lưu" trong danh sách (thêm ở v4.2.3) cùng toàn bộ code và CSS liên quan — đã được thay bằng nút Lưu sẵn có trong popup.
+
+## v4.2.6 — Ô số 0 tự xóa · Giảm giá 3 mức · Nhiều người ở (+ sửa 10 nút hỏng)
+
+### Lỗi nghiêm trọng phát hiện trong lúc làm
+**10 nút trong bảng chi tiết hợp đồng bấm vào chỉ đóng modal, không mở gì**: Nhận phòng, Ký HĐ, Sửa nháp, **Thêm người ở**, Thêm dịch vụ, Gia hạn, Chuyển phòng, Trả phòng/Thanh lý, Sổ cọc. Nguyên nhân: đợt chuyển handler sang data-* ở v4.1 chỉ giữ lại lệnh ĐẦU TIÊN của các handler nhiều lệnh (`closeModal(...); openX(...)`), vế sau bị cắt thành chuỗi rác trong data-a1. Đã thay bằng hàm điều phối `leaseAction` và kiểm bằng cách BẤM THẬT vào nút. Đây cũng chính là thứ chặn tính năng "thêm người ở" mà anh hỏi.
+
+### Ô nhập số
+- Ô tiền/số đang là 0: **bấm vào là tự xóa**, khỏi phải xóa tay. Rời ô mà bỏ trống thì trả lại 0 để không lưu rỗng.
+- Các ô tiền trong form hợp đồng cũng chuyển sang dạng có dấu ngăn cách 3 chữ số như form phòng.
+
+### Giảm giá — 3 mức
+- **Giảm theo tháng** (gắn hợp đồng): tự trừ vào mọi hóa đơn phát hành từ hợp đồng đó, kèm lý do.
+- **Giảm theo đơn** (từng hóa đơn): trường riêng, cộng dồn với giảm theo tháng.
+- **Giảm tiền cọc**: giảm số cọc phải đóng của hợp đồng; mọi nơi hiển thị/đối chiếu cọc đều dùng số sau giảm.
+- Tổng hóa đơn không bao giờ âm dù giảm quá tay. Dòng "Giảm giá" hiện ở cổng cư dân, bản in hóa đơn và có cột riêng trong CSV xuất.
+
+### Nhiều người ở một phòng
+Cơ chế đã có sẵn từ giai đoạn 2 và nay dùng được thật sau khi sửa nút hỏng: một hợp đồng có **một người đứng tên** (`primaryTenantId`, chịu trách nhiệm thanh toán — hóa đơn luôn ghi tên người này) và **nhiều người ở cùng** chỉ để theo dõi (vai trò `member`, có ngày vào/rời). Có thể chuyển vai trò đại diện hoặc đánh dấu người rời đi mà không ảnh hưởng hóa đơn cũ.
+
+Sheet cần chạy lại `setup` để thêm cột mới (idempotent, không mất dữ liệu): HopDong thêm monthlyDiscount/monthlyDiscountNote/depositDiscount/depositDiscountNote; HoaDon thêm discountAmount/discountNote.

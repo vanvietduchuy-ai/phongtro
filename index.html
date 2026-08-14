@@ -77,8 +77,12 @@
       <div class="container">
         <div class="section-head">
           <div><div class="eyebrow dark">DANH SÁCH PHÒNG</div><h2>Chọn căn trọ phù hợp</h2></div>
-          <div class="view-count" id="resultCount"></div>
+          <div class="head-tail">
+            <div class="view-count" id="resultCount"></div>
+            <button type="button" class="search-toggle-btn" id="toggleRoomSearch" data-ic="search" data-evt="click" data-call="toggleRoomSearch" aria-expanded="false" aria-controls="filterZone" aria-label="Mở ô tìm và lọc phòng"><span>Tìm &amp; lọc</span></button>
+          </div>
         </div>
+        <div id="filterZone" class="filter-zone">
         <div class="filter-bar">
           <input type="search" id="searchInput" placeholder="Tìm tên căn, địa chỉ, mã phòng..." />
           <select id="areaFilter"></select>
@@ -111,6 +115,7 @@
           </select>
           <label class="movein-label">Ngày vào ở <input type="date" id="moveInFilter" aria-label="Ngày muốn vào ở" /></label>
           <div id="amenityChips" class="amenity-chip-row" aria-label="Lọc theo tiện nghi"></div>
+        </div>
         </div>
         <div id="propertyGrid" class="property-grid"></div>
       </div>
@@ -285,7 +290,7 @@
         <input type="hidden" id="roomId" />
         <div class="form-section">THÔNG TIN CHÍNH</div>
         <label>Căn trọ *<select id="roomProperty" required></select></label><label>Mã/Tên phòng *<input id="roomName" required placeholder="P101" /></label>
-        <label>Giá thuê/tháng *<input id="roomPrice" type="number" required min="0" /></label><label>Tiền cọc<input id="roomDeposit" type="number" min="0" /></label>
+        <label>Giá thuê/tháng *<input id="roomPrice" type="text" inputmode="numeric" autocomplete="off" required data-money-input placeholder="vd: 3.800.000" /></label><label>Tiền cọc<input id="roomDeposit" type="text" inputmode="numeric" autocomplete="off" data-money-input placeholder="vd: 1.000.000" /></label>
         <label>Diện tích (m²)<input id="roomArea" type="number" min="0" /></label><label>Sức chứa<input id="roomCapacity" type="number" min="1" value="2" /></label>
         <label>Loại phòng<select id="roomType"><option>Phòng trọ</option><option>Studio</option><option>Phòng gác lửng</option><option>Căn hộ mini</option></select></label>
         <label>Trạng thái<select id="roomStatus"><option value="available">Đang trống</option><option value="reserved">Đã giữ chỗ</option><option value="occupied">Đã thuê</option><option value="maintenance">Bảo trì</option></select></label>
@@ -603,9 +608,14 @@
         <label>Ngày bắt đầu<input type="date" id="leaseStart" required></label>
         <label>Ngày kết thúc (bỏ trống nếu không thời hạn)<input type="date" id="leaseEnd"></label>
         <label>Ngày thu tiền hàng tháng<input type="number" id="leaseBillingDay" min="1" max="28" value="5"></label>
-        <label>Giá thuê chốt trên hợp đồng (đ/tháng)<input type="number" id="leaseRent" min="0" required></label>
-        <label>Tiền cọc yêu cầu (đ)<input type="number" id="leaseDepositRequired" min="0" value="0"></label>
-        <label>Cọc đã nhận / giữ chỗ (đ)<input type="number" id="leaseDepositPaid" min="0" value="0"></label>
+        <label>Giá thuê chốt trên hợp đồng (đ/tháng)<input type="text" inputmode="numeric" data-money-input id="leaseRent" required></label>
+        <label>Tiền cọc yêu cầu (đ)<input type="text" inputmode="numeric" data-money-input id="leaseDepositRequired" value="0"></label>
+        <label>Cọc đã nhận / giữ chỗ (đ)<input type="text" inputmode="numeric" data-money-input id="leaseDepositPaid" value="0"></label>
+        <div class="form-section">GIẢM GIÁ (tùy chọn — để 0 nếu không áp dụng)</div>
+        <label>Giảm mỗi tháng (đ)<input type="text" inputmode="numeric" data-money-input id="leaseMonthlyDiscount" value="0" placeholder="vd: 200.000"></label>
+        <label>Lý do giảm hàng tháng<input type="text" id="leaseMonthlyDiscountNote" placeholder="vd: Ưu đãi sinh viên"></label>
+        <label>Giảm tiền cọc (đ)<input type="text" inputmode="numeric" data-money-input id="leaseDepositDiscount" value="0" placeholder="vd: 500.000"></label>
+        <label>Lý do giảm cọc<input type="text" id="leaseDepositDiscountNote" placeholder="vd: Khách quen giới thiệu"></label>
         <label class="span-2">Ghi chú<textarea id="leaseNote" rows="2" placeholder="Điều khoản riêng, thỏa thuận thêm…"></textarea></label>
         <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="leaseModal">Hủy</button><button type="submit" class="btn btn-primary" id="leaseSubmit">Lưu hợp đồng</button></div>
       </form>
