@@ -511,6 +511,13 @@ function renderExtraFilterOptions(){
   const box=document.getElementById('amenityChips');
   if(box)box.innerHTML=top.map(a=>`<button type="button" class="amen-chip ${publicFilters.amenities.includes(a)?'on':''}" data-evt="click" data-call="toggleAmenityFilter" data-a1="${esc(a)}" aria-pressed="${publicFilters.amenities.includes(a)}">${esc(a)}</button>`).join('');
 }
+window.toggleAdvancedFilters=function(){
+  const box=document.getElementById('extraFilters'),btn=document.getElementById('toggleAdvancedFilters');
+  if(!box||!btn)return;
+  const open=box.classList.toggle('open');
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  btn.textContent=open?'Ẩn bớt bộ lọc':'Lọc theo loại phòng, diện tích, tiện nghi…';
+}
 window.toggleAmenityFilter=function(a){
   const i=publicFilters.amenities.indexOf(a);
   if(i>=0)publicFilters.amenities.splice(i,1);else publicFilters.amenities.push(a);

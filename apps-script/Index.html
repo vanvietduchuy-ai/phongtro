@@ -707,6 +707,44 @@ kbd{background:#EEE6DC;border:1px solid var(--line);border-bottom-width:2px;bord
 
 @media(prefers-reduced-motion:reduce){.property-card{transition:none}}
 
+/* ============================================================
+   TRANG KHÁCH MOBILE — bộ lọc gọn lại, thấy phòng nhanh hơn
+   Bộ lọc nâng cao thu gọn mặc định trên điện thoại; bộ lọc
+   chính xếp lưới 2 cột thay vì xếp chồng từng hàng đầy màn hình.
+   ============================================================ */
+.filter-toggle-btn{display:none}
+@media(max-width:860px){
+  .filter-toggle-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;margin:0 0 14px;font-size:13px;padding:12px 14px;text-align:center;
+  }
+  .filter-toggle-btn:after{content:'▾';font-size:11px;transition:transform .2s}
+  .filter-toggle-btn[aria-expanded="true"]:after{transform:rotate(180deg)}
+  #extraFilters{
+    display:grid!important;grid-template-columns:1fr;gap:10px;
+    max-height:0;overflow:hidden;opacity:0;
+    padding:0 12px;margin:0;border-width:0;
+    transition:max-height .28s ease,opacity .2s ease,padding .2s ease,margin .2s ease;
+  }
+  #extraFilters.open{
+    max-height:900px;opacity:1;padding:12px;margin-bottom:22px;
+    border:1px solid var(--border);background:var(--surface-elevated);border-radius:14px;
+  }
+  #extraFilters>select,#extraFilters>.movein-label,#extraFilters>#amenityChips{flex:1 1 100%;order:0;width:100%}
+  /* thanh lọc chính: tìm kiếm 1 hàng riêng, 2 ô chọn mỗi hàng, gọn hơn nhiều so với xếp dọc từng ô */
+  .filter-bar:not(#extraFilters){
+    display:grid!important;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;
+  }
+  .filter-bar:not(#extraFilters) input[type="search"]{grid-column:1/-1}
+  .filter-bar:not(#extraFilters) #resetFilters{grid-column:1/-1;min-height:40px;padding:9px}
+  /* Giảm khoảng trống phía trên để thấy danh sách phòng nhanh hơn */
+  #properties.section{padding-top:22px}
+  #properties .section-head{margin-bottom:14px}
+}
+@media(max-width:420px){
+  .filter-bar:not(#extraFilters){grid-template-columns:1fr}
+}
+
 </style>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -794,6 +832,7 @@ kbd{background:#EEE6DC;border:1px solid var(--line);border-bottom-width:2px;bord
           </select>
           <button class="btn btn-ghost" id="resetFilters">Đặt lại</button>
         </div>
+        <button type="button" class="btn btn-gold-outline filter-toggle-btn" id="toggleAdvancedFilters" data-evt="click" data-call="toggleAdvancedFilters" aria-expanded="false" aria-controls="extraFilters">Lọc theo loại phòng, diện tích, tiện nghi…</button>
         <div class="filter-bar" id="extraFilters">
           <select id="typeFilter" aria-label="Loại phòng"></select>
           <select id="minAreaFilter" aria-label="Diện tích tối thiểu">
@@ -2431,6 +2470,13 @@ function renderExtraFilterOptions(){
   const top=Object.entries(amenCount).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
   const box=document.getElementById('amenityChips');
   if(box)box.innerHTML=top.map(a=>`<button type="button" class="amen-chip ${publicFilters.amenities.includes(a)?'on':''}" data-evt="click" data-call="toggleAmenityFilter" data-a1="${esc(a)}" aria-pressed="${publicFilters.amenities.includes(a)}">${esc(a)}</button>`).join('');
+}
+window.toggleAdvancedFilters=function(){
+  const box=document.getElementById('extraFilters'),btn=document.getElementById('toggleAdvancedFilters');
+  if(!box||!btn)return;
+  const open=box.classList.toggle('open');
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  btn.textContent=open?'Ẩn bớt bộ lọc':'Lọc theo loại phòng, diện tích, tiện nghi…';
 }
 window.toggleAmenityFilter=function(a){
   const i=publicFilters.amenities.indexOf(a);

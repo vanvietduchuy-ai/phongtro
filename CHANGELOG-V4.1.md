@@ -48,3 +48,11 @@
 - Cổng cư dân: số tiền cần thanh toán nổi bật espresso, tiền cọc tô gold, tab active có chấm gold.
 - **Kiểm tra tương phản WCAG AA bằng phép tính thực** (không đoán): phát hiện 2 màu trong bảng gốc (vàng cảnh báo, đỏ đất) không đạt AA khi làm chữ trên nền nhạt tương ứng (3.8:1 và 4.47:1) — đã tinh chỉnh thành `#7A5C33` (5.35:1) và `#96473E` (5.4:1), áp dụng nhất quán ở mọi nơi dùng hai màu này.
 - Không đổi logic, ID, field, cấu trúc dữ liệu, Apps Script hay chế độ offline. Đã chạy lại 604 kiểm thử hồi quy + 33 kiểm thử theme mới + 11 kiểm tra responsive — toàn bộ đạt.
+
+## v4.2.1 — Sửa trải nghiệm bộ lọc trang khách trên điện thoại
+Phản hồi thực tế trên máy: bộ lọc (loại phòng, diện tích, số người, ngày vào ở, tiện nghi) xếp chồng từng ô full-width chiếm gần hết màn hình, phải cuộn rất nhiều mới thấy được phòng nào.
+
+- Bộ lọc nâng cao (loại phòng/diện tích/số người/ngày vào ở/tiện nghi) **thu gọn mặc định trên điện thoại**, có nút "Lọc theo loại phòng, diện tích, tiện nghi…" để mở khi cần — không mất trường lọc nào, chỉ ẩn/hiện bằng chiều cao (max-height + opacity), giữ nguyên toàn bộ ID và logic lọc.
+- Thanh lọc chính (khu vực/trạng thái/giá) chuyển từ xếp dọc từng ô sang **lưới 2 cột** trên điện thoại — gọn hơn khoảng một nửa chiều cao trước đó; ô tìm kiếm và nút "Đặt lại" vẫn full-width để dễ bấm.
+- Giảm khoảng trống phía trên khu vực danh sách phòng để phòng hiện ra sớm hơn khi cuộn.
+- Không đổi hành vi desktop: bộ lọc nâng cao vẫn luôn hiện sẵn như cũ, nút thu gọn chỉ xuất hiện ở khổ điện thoại/tablet nhỏ (≤860px).
