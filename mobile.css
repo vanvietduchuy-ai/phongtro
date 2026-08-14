@@ -784,3 +784,19 @@ kbd{background:#EEE6DC;border:1px solid var(--line);border-bottom-width:2px;bord
   .property-admin-title{align-items:center}
   .property-admin-card{border-radius:var(--radius-md)}
 }
+
+/* --- v4.2.3: nút Lưu cho từng phòng + dấu hiệu "chưa lưu" --- */
+.btn-save-row{
+  display:inline-flex;align-items:center;gap:5px;justify-content:center;
+  background:var(--surface-elevated);border-color:var(--gold);color:var(--primary);font-weight:700
+}
+.btn-save-row:hover{background:var(--gold-pale)}
+.btn-save-row .lc{color:var(--gold-hover)}
+/* Khi có thay đổi chưa lưu: hàng sáng lên và nút Lưu chuyển sang vàng đặc cho dễ thấy */
+tr.row-dirty{background:var(--gold-pale)!important;box-shadow:inset 3px 0 0 var(--gold)}
+tr.row-dirty .btn-save-row{background:var(--gold);color:var(--text);border-color:var(--gold-hover)}
+tr.row-dirty .btn-save-row .lc{color:var(--text)}
+@media(max-width:860px){
+  /* trên điện thoại nút Lưu chiếm trọn một dòng, đứng đầu cụm thao tác cho dễ bấm */
+  .property-admin-body .data-table td:nth-child(7) .table-actions .btn-save-row{grid-column:1/-1;min-height:44px}
+}

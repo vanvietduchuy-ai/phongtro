@@ -66,3 +66,12 @@ Bốn lỗi thấy trên máy thật, đã kiểm chứng và sửa:
 4. **Danh sách phòng quá dài, lộn xộn** — ở chế độ điện thoại mỗi phòng bung thành 7 hàng nhãn/giá trị (ẢNH, PHÒNG, DIỆN TÍCH, GIÁ, CỌC, TRẠNG THÁI, thao tác), 32 phòng phải cuộn rất nhiều. Nay mỗi phòng gọn còn ~3 dòng: dòng 1 ảnh nhỏ + **tên phòng nổi bật** + loại + diện tích; dòng 2 giá và cọc chia đôi; dòng 3 trạng thái; nút thao tác gom xuống dưới chia đều 2 cột. Bỏ nhãn thừa "ẢNH"/"PHÒNG". Giữ nguyên toàn bộ chức năng sửa nhanh giá/cọc/trạng thái tại chỗ.
 
 Thẻ KPI cũng được canh chiều cao tối thiểu để các thẻ thẳng hàng nhau khi chữ phụ dài ngắn khác nhau. Không đổi logic, ID hay cấu trúc dữ liệu.
+
+## v4.2.3 — Nút Lưu cho từng phòng + vá lỗi nút thu gọn bộ lọc
+- **Thêm nút "Lưu" trên mỗi hàng phòng** trong Căn trọ & phòng. Bấm Lưu sẽ đọc giá / cọc / trạng thái đang hiển thị trên đúng hàng đó, ghi một lượt, rồi **đẩy lên máy chủ ngay** thay vì chờ 900ms gom nhóm — kèm thông báo xác nhận rõ ("Đã lưu và đồng bộ phòng P101"). Ngoại tuyến thì báo đã lưu trên máy và sẽ tự đồng bộ sau.
+- **Dấu hiệu "chưa lưu"**: vừa gõ vào ô giá/cọc là hàng sáng lên nền vàng nhạt kèm vạch vàng bên trái, nút Lưu chuyển sang vàng đặc — nhìn là biết còn thay đổi chưa cất.
+- Đổi trạng thái qua nút Lưu vẫn đi qua đúng kiểm tra nghiệp vụ cũ (không cho đặt "Đã thuê" khi phòng chưa có người thuê hoạt động) — không lách được bằng đường mới.
+- Cơ chế lưu tự động cũ giữ nguyên, nút Lưu chỉ bổ sung thêm, không thay thế.
+
+### Sửa lỗi
+- **Nút "Lọc theo loại phòng, diện tích, tiện nghi…" (thêm ở v4.2.1) bấm không có tác dụng** — tên hàm chưa được đăng ký trong danh sách hàm được phép gọi của bộ điều phối sự kiện, nên cú bấm bị bỏ qua. Kiểm thử trước đó gọi thẳng hàm nên không phát hiện ra. Đã đăng ký tên hàm và bổ sung kiểm thử **bấm thật vào nút** cho cả nút này lẫn nút Lưu mới.
