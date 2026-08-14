@@ -241,6 +241,7 @@
         <label class="consent-row span-2"><input type="checkbox" id="bookingConsent" required />
           <span>Tôi đồng ý cho quản lý lưu họ tên và số điện thoại để liên hệ xếp lịch xem phòng. Thông tin không dùng vào mục đích khác và được xóa khi tôi yêu cầu.</span></label>
         <button class="btn btn-primary span-2" type="submit" id="bookingSubmit">Gửi yêu cầu đặt lịch</button>
+        <div id="bookingFallback" class="span-2 hidden"></div>
       </form>
     </div>
   </div>
@@ -580,7 +581,7 @@
       <input type="hidden" id="remInvoiceId">
       <label>Mẫu tin<select id="remKind" onchange="remKindChanged()"><option value="before">Nhắc trước hạn</option><option value="due">Đến hạn hôm nay</option><option value="overdue">Quá hạn</option></select></label>
       <label style="display:block;margin-top:8px">Nội dung<textarea id="remText" rows="7" style="width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:11px"></textarea></label>
-      <div class="form-actions"><button type="button" class="btn btn-light" data-close-modal="reminderModal">Đóng</button><button type="button" class="btn btn-primary" onclick="sendReminder()">Sao chép & ghi lịch sử</button><button type="button" class="btn btn-light" onclick="sendReminderZalo()">Gửi Zalo OA</button></div>
+      <div class="form-actions"><button type="button" class="btn btn-light" data-close-modal="reminderModal">Đóng</button><button type="button" class="btn btn-primary" onclick="sendReminder()">Sao chép & ghi lịch sử</button><button type="button" class="btn btn-gold" onclick="sendReminderZaloApp()">Gửi qua Zalo</button><button type="button" class="btn btn-light" onclick="sendReminderZalo()">Gửi bằng Zalo OA</button></div>
       <div id="remHistory" style="margin-top:10px"></div>
     </div>
   </div>

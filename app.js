@@ -729,6 +729,7 @@ window.openBooking=function(roomId){const r=getRoom(roomId);if(!r)return;
   const date=document.getElementById('appointmentDate');date.min=today();date.value=nextDayISO(1);
   refreshBookingSlots();
   const ck=document.getElementById('bookingConsent');if(ck)ck.checked=false;
+  document.getElementById('bookingFallback')?.classList.add('hidden');
   openModal('bookingModal')}
 
 // ---------- Navigation / login ----------
@@ -902,7 +903,7 @@ window.openResidentInvoice=function(invId){
     <h4 class="lease-section-title">Lịch sử thanh toán</h4>
     ${txs.length?txs.map(pp=>`<div class="pay-tx ${pp.kind==='reversal'?'pay-rev':''} ${pp.reversedAt?'pay-reversed':''}"><div><strong>${pp.kind==='reversal'?'↩ Điều chỉnh':'💳 Đã thu'} ${money(Math.abs(pp.amount))}</strong> · ${esc(pp.paidAt)}${pp.reversedAt?' <span class="badge badge-unpaid">Đã hủy</span>':''}</div></div>`).join(''):'<div class="rs-empty">Chưa có lần thanh toán nào.</div>'}
     ${qr?`<div class="rs-qr"><img src="${qr}" alt="VietQR thanh toán" loading="lazy"><div><strong>Quét để chuyển đúng số tiền</strong><br>${esc(st.bankAccountName||'')}<br>${esc(st.bankCode||'')} · ${esc(st.bankAccount||'')}<br>Nội dung: <strong>${esc(i.code||('HD '+i.month))}</strong></div></div>`:''}
-    <div class="table-actions" style="margin-top:12px"><button class="btn btn-primary" data-evt="click" data-call="openInvoicePdf" data-a1="${i.id}">📄 Tải / In PDF</button><button class="btn btn-light" data-evt="click" data-call="copyInvoiceText" data-a1="${i.id}">Sao chép chi tiết</button></div>`;
+    <div class="table-actions" style="margin-top:12px"><button class="btn btn-primary" data-evt="click" data-call="openInvoicePdf" data-a1="${i.id}">📄 Tải / In PDF</button><button class="btn btn-light" data-evt="click" data-call="copyBookingMsg", "copyInvoiceText", "zaloSendNotice", "zaloToTenant", "runConnectionCheck" data-a1="${i.id}">Sao chép chi tiết</button></div>`;
   openModal('rsInvoiceModal');
   hydrateImages(document.getElementById('rsInvoiceBody'));
 }
@@ -1185,13 +1186,31 @@ function renderDashboard(){
       return items.join('')||emptyState('check','Hôm nay gọn gàng','Không có việc gấp. Có thể xem lại CRM khách hoặc chốt điện nước tháng.',`<button class="btn btn-light" onclick="switchAdminView('utilities')">Mở chốt điện nước</button>`)})()}
   </div>`;
 }
+/* v4.2.7 — Danh sách quản trị: hiện CĂN TRỌ trước (thông tin cơ bản),
+ * bấm vào căn mới bung danh sách phòng của căn đó. Trạng thái mở được nhớ. */
+let propOpen={};
+try{propOpen=JSON.parse(localStorage.getItem('huyrooms_prop_open')||'{}')}catch(e){propOpen={}}
+window.togglePropertyRooms=function(id){
+  propOpen[id]=!propOpen[id];
+  try{localStorage.setItem('huyrooms_prop_open',JSON.stringify(propOpen))}catch(e){}
+  renderPropertyAdmin();
+}
 function renderPropertyAdmin(){
   const root=document.getElementById('view-properties');
   root.innerHTML=`<div class="panel-head"><div><h3>Danh sách căn trọ</h3><p>Bấm vào phòng để mở bảng sửa — thông tin chỉ lưu khi bấm nút Lưu trong bảng đó</p></div>${can('create','rooms')?`<button class="btn btn-primary" onclick="openPropertyForm()">+ Thêm căn</button>`:''}</div>`
   +(data.properties.length?data.properties.map(p=>{
     const rooms=data.rooms.filter(r=>r.propertyId===p.id),img=primaryPropertyImage(p);
-    return `<div class="property-admin-card">
-      <div class="property-admin-head">
+    const open=!!propOpen[p.id];
+    const avail=rooms.filter(r=>r.status==='available'&&!r.archived).length;
+    const occ=rooms.filter(r=>r.status==='occupied'&&!r.archived).length;
+    return `<div class="property-admin-card${open?' pa-open':''}">
+      <button type="button" class="pa-toggle" data-evt="click" data-call="togglePropertyRooms" data-a1="${p.id}" aria-expanded="${open}" aria-label="${open?'Thu gọn':'Xem'} danh sách phòng của ${esc(p.name)}">
+        <span class="pa-sum">
+          <span class="pa-sum-main"><strong class="truncate-1">${esc(p.name)}</strong><small class="truncate-1">${esc(p.area||'')}${p.area?' · ':''}${rooms.length} phòng${avail?` · ${avail} trống`:''}${occ?` · ${occ} đang thuê`:''}</small></span>
+          <span class="pa-chevron" aria-hidden="true">${icon(open?'x':'chart',16)}</span>
+        </span>
+      </button>
+      <div class="property-admin-head pa-detail">
         <div class="property-admin-title">${img?`<img class="admin-property-thumb" data-image-id="${img}">`:`<div class="admin-property-thumb room-thumb-placeholder">${icon('home',18)}</div>`}
           <div><h3>${esc(p.name)}${p.archived?' <span class="badge badge-unpaid">Đã lưu trữ</span>':''}</h3><p>${esc(p.address)} · ${rooms.length} phòng</p></div>
         </div>
@@ -1200,7 +1219,7 @@ function renderPropertyAdmin(){
           :`<button class="icon-btn" data-evt="click" data-call="openRoomForm" data-a1="null" data-a2="${p.id}">+ Phòng</button><button class="icon-btn" data-evt="click" data-call="openPropertyForm" data-a1="${p.id}">Sửa & ảnh</button><button class="icon-btn danger" data-evt="click" data-call="deleteProperty" data-a1="${p.id}">Lưu trữ / Xóa</button>`}
         </div>
       </div>
-      <div class="property-admin-body">
+      <div class="property-admin-body pa-detail">
         <div class="room-admin-list">${rooms.length?rooms.map(r=>{
           const ri=primaryRoomImage(r);
           return `<div class="ra-item${r.archived?' ra-archived':''}">
@@ -1279,7 +1298,7 @@ function renderTenants(){const root=document.getElementById('view-tenants');
       <option value="inactive" ${st.filter==='inactive'?'selected':''}>Đã trả phòng</option>
     </select>
   </div>
-  <div class="table-wrap"><table class="data-table"><thead><tr><th>Người thuê</th><th>Điện thoại</th><th>Phòng</th><th>Cọc phải đóng</th><th>Đã nhận</th><th>Còn thiếu</th><th>Tài khoản</th><th></th></tr></thead><tbody>${slice.length?slice.map(t=>{const r=getRoom(t.roomId),p=getProperty(r?.propertyId);return `<tr><td><strong>${esc(t.name)}</strong><br><span style="color:var(--muted)">${t.active?'Đang thuê':'Đã trả phòng'+(t.moveOutDate?' '+esc(t.moveOutDate):'')}</span></td><td>${esc(t.phone)}</td><td>${esc(p?.name||'')} · ${esc(r?.name||'-')}</td><td>${money(t.depositRequired)}</td><td>${money(t.depositPaid)}</td><td>${money(Math.max(0,t.depositRequired-t.depositPaid))}</td><td>${tenantHasPin(t)?'<span class="badge badge-paid">Đã có PIN</span>':'<span class="badge badge-unpaid">Chưa có PIN</span>'}</td><td><div class="table-actions"><button class="icon-btn" data-act="tenantEdit" data-id="${esc(t.id)}">Sửa</button><button class="icon-btn" data-act="tenantPin" data-id="${esc(t.id)}">Đặt lại PIN</button><button class="icon-btn danger" data-act="tenantDelete" data-id="${esc(t.id)}">${data.invoices.some(i=>i.tenantId===t.id)?'Lưu trữ':'Xóa'}</button></div></td></tr>`}).join(''):`<tr><td colspan="8">${data.tenants.length?emptyState('search','Không khớp bộ lọc','Thử từ khóa khác hoặc chuyển bộ lọc về Tất cả.',''):emptyState('users','Chưa có người thuê','Tạo hợp đồng từ CRM khách xem phòng, hoặc thêm trực tiếp tại đây.',`<button class="btn btn-primary" onclick="openTenantForm()">${icon('plus',15)} Thêm người thuê</button>`)}</td></tr>`}</tbody></table></div>${nav}</div>`}
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>Người thuê</th><th>Điện thoại</th><th>Phòng</th><th>Cọc phải đóng</th><th>Đã nhận</th><th>Còn thiếu</th><th>Tài khoản</th><th></th></tr></thead><tbody>${slice.length?slice.map(t=>{const r=getRoom(t.roomId),p=getProperty(r?.propertyId);return `<tr><td><strong>${esc(t.name)}</strong><br><span style="color:var(--muted)">${t.active?'Đang thuê':'Đã trả phòng'+(t.moveOutDate?' '+esc(t.moveOutDate):'')}</span></td><td>${esc(t.phone)}</td><td>${esc(p?.name||'')} · ${esc(r?.name||'-')}</td><td>${money(t.depositRequired)}</td><td>${money(t.depositPaid)}</td><td>${money(Math.max(0,t.depositRequired-t.depositPaid))}</td><td>${tenantHasPin(t)?'<span class="badge badge-paid">Đã có PIN</span>':'<span class="badge badge-unpaid">Chưa có PIN</span>'}</td><td><div class="table-actions">${t.phone?`<button class="icon-btn btn-zalo" data-evt="click" data-call="zaloToTenant" data-a1="${esc(t.id)}">${icon('message',13)} Zalo</button>`:''}<button class="icon-btn" data-act="tenantEdit" data-id="${esc(t.id)}">Sửa</button><button class="icon-btn" data-act="tenantPin" data-id="${esc(t.id)}">Đặt lại PIN</button><button class="icon-btn danger" data-act="tenantDelete" data-id="${esc(t.id)}">${data.invoices.some(i=>i.tenantId===t.id)?'Lưu trữ':'Xóa'}</button></div></td></tr>`}).join(''):`<tr><td colspan="8">${data.tenants.length?emptyState('search','Không khớp bộ lọc','Thử từ khóa khác hoặc chuyển bộ lọc về Tất cả.',''):emptyState('users','Chưa có người thuê','Tạo hợp đồng từ CRM khách xem phòng, hoặc thêm trực tiếp tại đây.',`<button class="btn btn-primary" onclick="openTenantForm()">${icon('plus',15)} Thêm người thuê</button>`)}</td></tr>`}</tbody></table></div>${nav}</div>`}
 function showPinModal(t,pin){
   const r=getRoom(t.roomId);
   document.getElementById('pinDisplay').textContent=pin;
@@ -1912,9 +1931,97 @@ window.ticketAction=function(id,action){
   if(action==='cancel'){const note=prompt('Lý do hủy:','');if(note===null)return;pushTicketStatus(k,'cancelled',note.trim())}
   saveData();renderTicketsAdmin();
 }
+/* ==================================================================
+   v4.2.9 — GỬI ZALO KIỂU "MỞ THẲNG ỨNG DỤNG"
+   Không cần token OA, không cần zaloUserId — chỉ cần SỐ ĐIỆN THOẠI.
+   Bấm gửi → chép sẵn nội dung → mở Zalo đúng người nhận → chỉ việc dán & bấm Gửi.
+   ================================================================== */
+/** Đưa SĐT Việt Nam về dạng Zalo hiểu được (84xxxxxxxxx). */
+function zaloPhoneOf(phone){
+  let p=String(phone||'').replace(/\D/g,'');
+  if(!p)return '';
+  if(p.startsWith('84'))return p;
+  if(p.startsWith('0'))return '84'+p.slice(1);
+  if(p.length===9)return '84'+p;
+  return p;
+}
+/** Link mở thẳng cửa sổ chat Zalo với đúng người nhận. */
+function zaloChatLink(phone){
+  const p=zaloPhoneOf(phone);
+  return p?('https://zalo.me/'+p):'';
+}
+/** Chép nội dung vào bộ nhớ tạm rồi mở Zalo tới đúng người nhận.
+ * Trả về true nếu đã mở được. */
+async function openZaloTo(phone,message,who){
+  const link=zaloChatLink(phone);
+  if(!link){showToast('Người nhận chưa có số điện thoại nên chưa mở được Zalo.');return false}
+  let copied=false;
+  try{ await navigator.clipboard.writeText(message); copied=true; }catch(e){ copied=false; }
+  // Mở trong tab/ứng dụng mới — trên điện thoại sẽ bật thẳng app Zalo
+  const win=window.open(link,'_blank','noopener');
+  if(!win){
+    showToast('Trình duyệt chặn mở Zalo. Anh/chị bấm lại nút Gửi Zalo lần nữa giúp em.');
+    return false;
+  }
+  showToast(copied
+    ? `Đã mở Zalo${who?' tới '+who:''} và chép sẵn nội dung — chỉ cần dán rồi bấm Gửi.`
+    : `Đã mở Zalo${who?' tới '+who:''}. Nội dung nằm ở ô bên dưới, anh/chị sao chép giúp em.`);
+  return true;
+}
+/** Gửi Zalo cho một người thuê theo mã. */
+window.zaloToTenant=async function(tenantId,message){
+  const t=getTenant(tenantId);
+  if(!t){showToast('Không tìm thấy người thuê.');return}
+  if(!message){
+    const brand=(data.settings.brandName||'Huy Rooms').trim();
+    const r=getRoom(t.roomId);
+    message=`Chào ${t.name}, ${brand}${r?` (phòng ${r.name})`:''} xin liên hệ ạ.`;
+  }
+  const ok2=await openZaloTo(t.phone,message,t.name);
+  if(ok2){
+    data.reminders.push({id:uid('rem'),invoiceId:'',tenantId,kind:'zalo_link',
+      channel:'zalo_link (mở app, người dùng tự bấm gửi)',message:String(message).slice(0,500),
+      sentAt:new Date().toISOString(),sentBy:'admin',createdAt:new Date().toISOString()});
+    saveData();
+  }
+}
+/** Gửi Zalo theo nội dung của một thông báo đã tạo. */
+window.zaloSendNotice=function(noticeId){
+  const n=data.notifications.find(x=>x.id===noticeId);
+  if(!n)return;
+  const brand=(data.settings.brandName||'Huy Rooms').trim();
+  zaloToTenant(n.tenantId,`[${brand}] ${n.title}\n${n.body}`);
+}
 function notifyTenant(tenantId,kind,title,body,refId){
-  data.notifications.push({id:uid('nt'),tenantId:tenantId||'',kind,title:String(title).slice(0,120),
-    body:String(body).slice(0,500),refId:refId||'',createdBy:'admin',createdAt:new Date().toISOString(),readAt:''});
+  const note={id:uid('nt'),tenantId:tenantId||'',kind,title:String(title).slice(0,120),
+    body:String(body).slice(0,500),refId:refId||'',createdBy:'admin',createdAt:new Date().toISOString(),readAt:''};
+  data.notifications.push(note);
+  pushZaloNotice(note);          // v4.2.7: mọi thông báo đều thử gửi kèm qua Zalo
+  return note;
+}
+/** v4.2.7 — Gửi kèm qua Zalo cho MỌI loại thông báo (hóa đơn, điện nước, sự cố, thông báo chung).
+ * Chỉ gửi khi: đang online, người thuê đã có zaloUserId, và cài đặt bật gửi Zalo.
+ * Không chặn luồng chính — lỗi gửi chỉ ghi nhận, không làm hỏng việc lưu thông báo. */
+const ZALO_KIND_TAG={invoice_new:'HÓA ĐƠN MỚI',due_soon:'SẮP ĐẾN HẠN',overdue:'QUÁ HẠN',
+  lease_expiring:'HỢP ĐỒNG SẮP HẾT',maintenance:'SỰ CỐ',utility:'ĐIỆN NƯỚC',general:'THÔNG BÁO'};
+function zaloAutoEnabled(){return data.settings.zaloAutoNotify!==false}
+async function pushZaloNotice(note){
+  try{
+    if(data.settings.zaloMode==='oa'?!zaloAutoEnabled():true)return;   // chế độ mở app: không tự gọi OA
+    if(!note||!note.tenantId)return;
+    if(!(window.Sync&&Sync.isOn()&&Sync.isAdmin()))return;
+    const t=getTenant(note.tenantId);
+    if(!t||!t.zaloUserId)return;   // chưa liên kết Zalo thì bỏ qua, thông báo trong app vẫn có
+    const brand=(data.settings.brandName||'Huy Rooms').trim();
+    const tag=ZALO_KIND_TAG[note.kind]||ZALO_KIND_TAG.general;
+    const msg=`[${brand}] ${tag}\n${note.title}\n${note.body}`;
+    const res=await Sync.sendZalo(note.tenantId,msg);
+    note.zaloSentAt=new Date().toISOString();
+    note.zaloMock=!!(res&&res.mock);
+    saveData();
+  }catch(e){
+    if(note)note.zaloError=String(e&&e.message||e).slice(0,120);
+  }
 }
 function renderTicketsAdmin(){
   const root=document.getElementById('view-tickets');if(!root)return;
@@ -1951,18 +2058,40 @@ function renderTicketsAdmin(){
       <label class="span-2">Nội dung<textarea id="ntBody" rows="3" maxlength="500" style="width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:11px"></textarea></label>
       <div class="form-actions span-2"><button class="btn btn-primary" onclick="sendAdminNotice()">Gửi thông báo</button></div>
     </div>
-    ${data.notifications.filter(n=>['general','maintenance'].includes(n.kind)).slice(-5).reverse().map(n=>`<div class="rem-log">${noticeIcon(n.kind)} ${esc(n.title)} · ${n.tenantId?esc(getTenant(n.tenantId)?.name||''):'tất cả'} · ${esc(String(n.createdAt).slice(0,16).replace('T',' '))} <button class="icon-btn danger" data-evt="click" data-call="deleteNotice" data-a1="${n.id}">Xóa</button></div>`).join('')}
+    ${data.notifications.filter(n=>['general','maintenance'].includes(n.kind)).slice(-5).reverse().map(n=>`<div class="rem-log">${noticeIcon(n.kind)} ${esc(n.title)} · ${n.tenantId?esc(getTenant(n.tenantId)?.name||''):'tất cả'} · ${esc(String(n.createdAt).slice(0,16).replace('T',' '))} ${n.tenantId&&getTenant(n.tenantId)?.phone?`<button class="icon-btn btn-zalo" data-evt="click" data-call="zaloSendNotice" data-a1="${n.id}">${icon('message',13)} Gửi Zalo</button>`:''}<button class="icon-btn danger" data-evt="click" data-call="deleteNotice" data-a1="${n.id}">Xóa</button></div>`).join('')}
   </div>`;
 }
 window.sendAdminNotice=function(){
   const title=document.getElementById('ntTitle').value.trim();
   const body=document.getElementById('ntBody').value.trim();
   if(!title){showToast('Nhập tiêu đề thông báo.');return}
-  notifyTenant(document.getElementById('ntTarget').value,document.getElementById('ntKind').value,title,body,'');
-  saveData();renderTicketsAdmin();showToast('Đã gửi thông báo — cư dân sẽ thấy khi mở cổng cư dân.');
+  const target=document.getElementById('ntTarget').value;
+  const note=notifyTenant(target,document.getElementById('ntKind').value,title,body,'');
+  saveData();renderTicketsAdmin();
+  const t=target?getTenant(target):null;
+  if(t&&t.phone){
+    const brand=(data.settings.brandName||'Huy Rooms').trim();
+    zaloToTenant(target,`[${brand}] ${title}\n${body}`);   // mở Zalo ngay tới đúng người
+  }else{
+    showToast('Đã lưu thông báo — cư dân sẽ thấy khi mở cổng cư dân.');
+  }
 }
 window.deleteNotice=function(id){
   data.notifications=data.notifications.filter(n=>n.id!==id);saveData();renderTicketsAdmin();
+}
+/** Nhắc nợ qua Zalo kiểu mở app: chép nội dung + mở đúng cửa sổ chat người thuê. */
+window.sendReminderZaloApp=async function(){
+  const inv=getInvoice(document.getElementById('remInvoiceId').value);if(!inv)return;
+  const kind=document.getElementById('remKind').value;
+  const msg=document.getElementById('remText').value;
+  const t=getTenant(inv.tenantId);
+  if(!t||!t.phone){showToast('Người thuê chưa có số điện thoại nên chưa mở được Zalo.');return}
+  const ok2=await openZaloTo(t.phone,msg,t.name);
+  if(!ok2)return;
+  data.reminders.push({id:uid('rem'),invoiceId:inv.id,tenantId:inv.tenantId,kind,
+    channel:'zalo_link (mở app, người dùng tự bấm gửi)',message:msg,
+    sentAt:new Date().toISOString(),sentBy:'admin',createdAt:new Date().toISOString()});
+  saveData();renderInvoices();
 }
 /* Gửi qua Zalo OA (adapter máy chủ) — không bao giờ giả vờ đã gửi khi chưa cấu hình */
 window.sendReminderZalo=async function(){
@@ -2132,7 +2261,11 @@ window.finalizeMeterMonth=function(){
   if(bad.length){showToast('Còn phòng có SỐ ÂM: '+bad.map(x=>x.r.name).join(', ')+'. Sửa trước khi chốt.');return}
   if(!confirm(`Chốt kỳ ${meterBoard.month}: khóa ${done.length} phòng${missing.length?`, BỎ QUA ${missing.length} phòng chưa nhập (${missing.map(r=>r.name).join(', ')})`:''}?`))return;
   const now=new Date().toISOString();
-  done.forEach(({rec})=>{rec.status='final';rec.lockedAt=now;auditLocal('update','utilityReadings',rec.id,{status:'draft'},{status:'final'})});
+  done.forEach(({rec})=>{rec.status='final';rec.lockedAt=now;auditLocal('update','utilityReadings',rec.id,{status:'draft'},{status:'final'});
+    const tn=activeTenantForRoom(rec.roomId);
+    if(tn)notifyTenant(tn.id,'utility','Chốt điện nước tháng '+rec.month,
+      `Điện ${rec.electricStart}→${rec.electricEnd} (${rec.electricUnits||0} kWh) = ${money(rec.electricAmount)}; Nước = ${money(rec.waterAmount)}.`,rec.id);
+  });
   saveData();renderUtilities();
   showToast(`Đã chốt ${done.length} phòng kỳ ${meterBoard.month}.`);
 }
@@ -3234,6 +3367,13 @@ function renderSettings(){
     <div style="display:flex;gap:8px"><input id="setWorkStart" type="time" value="${esc(data.settings.workStart||'08:00')}" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit"><input id="setWorkEnd" type="time" value="${esc(data.settings.workEnd||'20:00')}" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit"></div>
     <label style="display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px">Số Zalo nhận tin khách (bỏ trống = dùng hotline)</label>
     <input id="setZaloPhone" value="${esc(data.settings.zaloPhone||'')}" placeholder="09xxxxxxxx" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit">
+    <label style="display:block;font-size:12.5px;color:var(--muted);margin:12px 0 4px">Cách gửi Zalo</label>
+    <select id="setZaloMode" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit">
+      <option value="link" ${data.settings.zaloMode!=='oa'?'selected':''}>Mở ứng dụng Zalo (khuyên dùng — chỉ cần số điện thoại)</option>
+      <option value="oa" ${data.settings.zaloMode==='oa'?'selected':''}>Gửi tự động qua Zalo OA (cần token OA và mã Zalo từng người)</option>
+    </select>
+    <p class="muted-text" style="margin-top:6px"><strong>Mở ứng dụng Zalo:</strong> bấm Gửi là nội dung được chép sẵn và Zalo mở đúng cửa sổ chat người nhận — chỉ việc dán rồi bấm Gửi. Không cần cấu hình gì thêm.<br><strong>Zalo OA:</strong> gửi tự động không cần thao tác, nhưng phải có ZALO_OA_TOKEN và mã Zalo (zaloUserId) của từng người.</p>
+    <label class="check-line" style="margin-top:10px"><input type="checkbox" id="setZaloAuto" ${data.settings.zaloAutoNotify!==false?'checked':''}> Tự gửi qua Zalo OA cho mọi thông báo (chỉ áp dụng khi chọn chế độ Zalo OA)</label>
     <label style="display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px">Ngân hàng (mã VietQR, ví dụ: VCB, TCB, MB, ACB, BIDV…)</label>
     <input id="setBankCode" value="${esc(data.settings.bankCode||'')}" placeholder="VCB" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit">
     <label style="display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px">Số tài khoản nhận tiền</label>
@@ -3251,6 +3391,10 @@ function renderSettings(){
   </div></div>
   <div class="settings-card"><h3>Xuất danh sách phòng CSV</h3><p>Mở bằng Excel để kiểm tra giá, tình trạng phòng và đơn giá điện nước.</p><button class="btn btn-light" onclick="exportRoomsCSV()">Xuất CSV</button></div>
   ${DEMO_MODE?`<div class="settings-card"><h3>Khôi phục dữ liệu mẫu (chế độ demo)</h3><p>Xóa dữ liệu trên máy này và nạp lại bản demo. Nếu đang kết nối Sheets, thao tác này cũng ghi đè dữ liệu chung — cân nhắc trước khi dùng.</p><button class="btn btn-danger" onclick="resetDemo()">Khôi phục bản demo</button></div>`:''}
+  <div class="settings-card" style="grid-column:1/-1"><h3>${icon('shield',17)} Kiểm tra kết nối</h3>
+  <p>Bấm để biết chính xác đang hỏng ở khâu nào: đường dẫn, quyền truy cập deployment, hay bản Apps Script đã cũ.</p>
+  <button class="btn btn-light" data-evt="click" data-call="runConnectionCheck">Kiểm tra ngay</button>
+  <div id="connCheckResult" class="conn-check hidden"></div></div>
   ${currentRole()==='owner'?staffCardHtml():''}
   ${['owner','manager'].includes(currentRole())?auditCardHtml():''}
   <div class="settings-card"><h3>Thoát quyền quản lý</h3><p>Máy này sẽ chỉ còn quyền xem phòng như khách.</p><button class="btn btn-danger" onclick="forgetAdminKey()">Thoát quyền quản lý</button></div>
@@ -3342,6 +3486,8 @@ window.saveManagerSettings=function(){
   data.settings.workStart=document.getElementById('setWorkStart').value||'08:00';
   data.settings.workEnd=document.getElementById('setWorkEnd').value||'20:00';
   data.settings.zaloPhone=document.getElementById('setZaloPhone').value.replace(/\D/g,'');
+  data.settings.zaloAutoNotify=!!document.getElementById('setZaloAuto')?.checked;
+  data.settings.zaloMode=document.getElementById('setZaloMode')?.value||'link';
   data.settings.bankCode=document.getElementById('setBankCode').value.trim().toUpperCase();
   data.settings.bankAccount=document.getElementById('setBankAccount').value.replace(/\D/g,'');
   data.settings.bankAccountName=document.getElementById('setBankName').value.trim().toUpperCase();
@@ -3443,6 +3589,65 @@ window.resetDemo=function(){
 
 // ---------- Form handlers ----------
 document.querySelectorAll('[data-close-modal]').forEach(el=>el.addEventListener('click',()=>closeModal(el.dataset.closeModal)));
+/** v4.2.8 — Khi gửi lịch hẹn thất bại: hiện ngay số điện thoại / Zalo kèm nội dung soạn sẵn,
+ * để khách không bị "cụt đường" và chủ nhà không mất lead vì lỗi kỹ thuật. */
+function showBookingFallback(payload,err){
+  const box=document.getElementById('bookingFallback');
+  if(!box)return;
+  const r=getRoom(payload.roomId),p=getProperty(r?.propertyId);
+  const ph=hotline(),zl=zaloLink();
+  const msg=`Chào anh/chị, em muốn xem ${p?.name||''} ${r?.name||''} ngày ${payload.date} lúc ${payload.time}. Em tên ${payload.customerName}, SĐT ${payload.customerPhone}.`;
+  box.innerHTML=`<div class="bk-fallback">
+    <strong>Chưa gửi được lên hệ thống</strong>
+    <p>Anh/chị liên hệ trực tiếp giúp em, thông tin đã soạn sẵn:</p>
+    <div class="cta-row">
+      ${ph?`<a class="btn btn-gold" href="tel:${esc(ph)}">${icon('phone',16)} Gọi ${esc(ph)}</a>`:''}
+      ${zl?`<a class="btn btn-light" href="${zl}" target="_blank" rel="noopener">${icon('message',16)} Nhắn Zalo</a>`:''}
+      <button type="button" class="btn btn-light" data-evt="click" data-call="copyBookingMsg" data-a1="${esc(msg)}">Sao chép nội dung</button>
+    </div>
+    <small class="bk-err">Chi tiết kỹ thuật: ${esc(String(err&&err.message||err).slice(0,160))}</small>
+  </div>`;
+  box.classList.remove('hidden');
+}
+/** v4.2.8 — Kiểm tra kết nối: chỉ ra CHÍNH XÁC đang hỏng ở khâu nào. */
+window.runConnectionCheck=async function(){
+  const box=document.getElementById('connCheckResult');
+  if(box){box.classList.remove('hidden');box.innerHTML='<p class="muted-text">Đang kiểm tra…</p>'}
+  const lines=[];
+  const add=(okFlag,label,hint)=>lines.push(`<div class="cc-row ${okFlag?'cc-ok':'cc-bad'}"><strong>${okFlag?'✓':'✗'} ${esc(label)}</strong>${hint?`<small>${esc(hint)}</small>`:''}</div>`);
+  if(!Sync.cfg.apiUrl){
+    add(false,'Chưa khai báo đường dẫn máy chủ','Vào Cài đặt → Kết nối, dán đường dẫn /api/sheets hoặc URL Apps Script.');
+  }else{
+    add(true,'Đã khai báo đường dẫn: '+Sync.cfg.apiUrl,'');
+    try{
+      const res=await Sync.request({action:'ping'});
+      add(true,'Máy chủ phản hồi bình thường','Vai trò: '+(res.role||'?')+(res.staff?(' · '+res.staff.role):''));
+      // thử đúng action mà khách dùng để đặt lịch
+      try{
+        await Sync.request({action:'book',roomId:'__kiemtra__',customerName:'Kiểm tra',customerPhone:'0900000000',date:today(),time:'09:00',consent:1});
+        add(true,'Chức năng đặt lịch nhận yêu cầu','');
+      }catch(e2){
+        const m=String(e2.message||e2);
+        if(/không nhận ra yêu cầu|unknownAction/i.test(m))
+          add(false,'Bản Apps Script đang chạy là bản CŨ',m);
+        else if(/Phòng này không còn|không hợp lệ/i.test(m))
+          add(true,'Chức năng đặt lịch hoạt động','(Máy chủ từ chối phòng kiểm tra là đúng — đường truyền tốt.)');
+        else add(false,'Đặt lịch bị từ chối',m);
+      }
+    }catch(e){
+      const m=String(e.message||e);
+      if(/Who has access|đòi đăng nhập/i.test(m))add(false,'Deployment chưa mở quyền truy cập',m);
+      else if(/uỷ quyền|authorization/i.test(m))add(false,'Apps Script chưa được cấp quyền',m);
+      else if(/không nhận ra yêu cầu/i.test(m))add(false,'Bản Apps Script đang chạy là bản CŨ',m);
+      else add(false,'Không gọi được máy chủ',m);
+    }
+  }
+  if(box)box.innerHTML=lines.join('');
+}
+window.copyBookingMsg=function(msg){
+  navigator.clipboard?.writeText(msg).then(()=>showToast('Đã sao chép nội dung, anh/chị dán vào Zalo giúp em.'),
+    ()=>showToast('Không sao chép được, anh/chị gọi trực tiếp giúp em nhé.'));
+}
 document.getElementById('bookingForm').addEventListener('submit',async e=>{e.preventDefault();
   const btn=document.getElementById('bookingSubmit');
   const payload={
@@ -3468,8 +3673,9 @@ document.getElementById('bookingForm').addEventListener('submit',async e=>{e.pre
       e.target.reset();closeModal('bookingModal');
       showToast('Đã gửi yêu cầu. Quản lý sẽ liên hệ xác nhận.');
     }catch(err){
-      // Giữ nguyên form để khách sửa lại, không đóng khi chưa gửi thành công
-      showToast('Chưa gửi được lịch hẹn: '+(err.message||err));
+      // v4.2.8 — KHÔNG để mất khách: giữ form, nêu rõ lỗi và mở ngay lối liên hệ trực tiếp
+      showToast('Chưa gửi được lịch hẹn lên hệ thống. Anh/chị gọi hoặc nhắn Zalo giúp em nhé.');
+      showBookingFallback(payload,err);
     }finally{setBtnBusy(btn,false)}
     return;
   }
@@ -3771,7 +3977,7 @@ document.getElementById('adminApp')?.addEventListener('change',e=>{
    KHÔNG còn dữ liệu nội suy trong chuỗi JavaScript inline.
    Tên hàm nằm trong WHITELIST cố định; data-aN chỉ là THAM SỐ chuỗi.
    ================================================================== */
-const CALL_WHITELIST=new Set(["archiveService", "attachMeterPhoto", "bulkAdjust", "cancelLease", "closeModal", "copyInvoiceText", "deleteAsset", "deleteNotice", "deleteProperty", "deleteReading", "deleteRoom", "doReverse", "editAsset", "endLeaseService", "leaseAction", "makePrimary", "meterInput", "openBooking", "openCheckin", "openEndLease", "openGallery", "openInvoiceForm", "openInvoicePdf", "openLeaseDetail", "openLeaseForm", "openMeterPhotos", "openPropertyForm", "openReceiptPdf", "openReminder", "openRenewForm", "openResidentInvoice", "openResidentMeterPhotos", "openRoomAssets", "openRoomForm", "openServiceForm", "openStaffForm", "openTicketDetail", "openTransferForm", "openUtilityForm", "palRun", "quickRoomMoney", "quickRoomStatus", "recordPayment", "removeOccupant", "resetStaffPass", "restoreAutoBackup", "restoreProperty", "restoreRoom", "rsRemoveFile", "setResidentTab", "signLease", "signLeaseThenDetail", "ticketAction", "toggleAdvancedFilters", "toggleRoomSearch", "toggleAmenityFilter", "toggleStaff", "uiSet", "unlockReading"]);
+const CALL_WHITELIST=new Set(["archiveService", "attachMeterPhoto", "bulkAdjust", "cancelLease", "closeModal", "copyBookingMsg", "copyInvoiceText", "zaloSendNotice", "zaloToTenant", "runConnectionCheck", "deleteAsset", "deleteNotice", "deleteProperty", "deleteReading", "deleteRoom", "doReverse", "editAsset", "endLeaseService", "leaseAction", "makePrimary", "meterInput", "openBooking", "openCheckin", "openEndLease", "openGallery", "openInvoiceForm", "openInvoicePdf", "openLeaseDetail", "openLeaseForm", "openMeterPhotos", "openPropertyForm", "openReceiptPdf", "openReminder", "openRenewForm", "openResidentInvoice", "openResidentMeterPhotos", "openRoomAssets", "openRoomForm", "openServiceForm", "openStaffForm", "openTicketDetail", "openTransferForm", "openUtilityForm", "palRun", "quickRoomMoney", "quickRoomStatus", "recordPayment", "removeOccupant", "resetStaffPass", "restoreAutoBackup", "restoreProperty", "restoreRoom", "rsRemoveFile", "setResidentTab", "signLease", "signLeaseThenDetail", "ticketAction", "togglePropertyRooms", "toggleAdvancedFilters", "toggleRoomSearch", "toggleAmenityFilter", "toggleStaff", "uiSet", "unlockReading"]);
 function dispatchDataCall(el,evtType){
   const fn=el.dataset.call;
   if(!fn||!CALL_WHITELIST.has(fn))return;

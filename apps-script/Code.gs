@@ -552,7 +552,11 @@ var ACTIONS = ['login', 'ping', 'sync', 'resident', 'upload', 'deleteImage',
   'sendZalo', 'setStaffPass', 'unlockReading', 'getPrivateImage', 'residentLogout', 'residentImage'];
 
 function route(req) {
-  if (!req || ACTIONS.indexOf(req.action) < 0) return fail('Không hiểu yêu cầu');
+  if (!req || ACTIONS.indexOf(req.action) < 0) {
+    return { ok: false, code: 'unknownAction',
+      error: 'Bản Apps Script đang chạy không nhận ra yêu cầu "' + String((req && req.action) || '(trống)').slice(0, 40) +
+             '". Nhiều khả năng bản deploy đã cũ: vào Deploy → Manage deployments → Edit → New version → Deploy.' };
+  }
   if (req.action === 'login') return handleLogin(req);
   if (req.action === 'book') return handleBook(req);          // khách được phép
   if (req.action === 'resident') return handleResident(req);  // cư dân được phép

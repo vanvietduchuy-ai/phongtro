@@ -113,3 +113,49 @@ Cách sửa triệt để: **bỏ hẳn ô nhập trong danh sách**, mọi vi�
 Cơ chế đã có sẵn từ giai đoạn 2 và nay dùng được thật sau khi sửa nút hỏng: một hợp đồng có **một người đứng tên** (`primaryTenantId`, chịu trách nhiệm thanh toán — hóa đơn luôn ghi tên người này) và **nhiều người ở cùng** chỉ để theo dõi (vai trò `member`, có ngày vào/rời). Có thể chuyển vai trò đại diện hoặc đánh dấu người rời đi mà không ảnh hưởng hóa đơn cũ.
 
 Sheet cần chạy lại `setup` để thêm cột mới (idempotent, không mất dữ liệu): HopDong thêm monthlyDiscount/monthlyDiscountNote/depositDiscount/depositDiscountNote; HoaDon thêm discountAmount/discountNote.
+
+## v4.2.7 — Bố cục căn trọ → phòng, thanh trạng thái lên đầu, thông báo giữa màn hình, Zalo cho mọi thông báo
+
+### Sửa lỗi
+- **Popup chạy khỏi màn hình** (nhãn bị cắt bên trái): thẻ popup có `overflow:auto` nên chỉ cần một phần tử con rộng hơn khung là cả thẻ trượt ngang được. Đã khóa trục ngang cho popup và ép mọi phần tử con nằm gọn trong khung; bảng dài bên trong vẫn cuộn riêng được.
+- **Thanh trạng thái đồng bộ bị kéo dãn**: các quy tắc cũ neo thanh ở góc dưới vẫn còn, cộng với neo trên mới sẽ làm thanh cao hết màn hình. Đã dọn hẳn quy tắc cũ.
+
+### Bố cục
+- **Danh sách quản trị hiện CĂN TRỌ trước**: mỗi căn là một thẻ nền espresso nổi bật, chữ trắng + vàng champagne, chỉ hiện thông tin cơ bản (khu vực, số phòng, số trống, số đang thuê). **Bấm vào căn mới bung danh sách phòng của căn đó**; trạng thái mở/thu được nhớ lại.
+- **Thanh trạng thái đồng bộ đưa lên đầu màn hình** (dải ngang trên cùng) thay vì nổi ở góc dưới che nội dung; các thanh khác và nội dung đã chừa chỗ tương ứng.
+- **Thông báo / tips hiện giữa màn hình**, chữ to dễ đọc, nền espresso nổi bật.
+- **Trang khách**: "x phòng phù hợp" thành huy hiệu nền vàng nhạt nổi bật, cùng nút Tìm & lọc canh giữa.
+- **"Thuê phòng trong 3 bước" chia 3 cột**, thu gọn chữ để vừa màn hình điện thoại.
+
+### Zalo
+- **Mọi thông báo đều gửi kèm qua Zalo**: hóa đơn mới, sắp đến hạn, quá hạn, hợp đồng sắp hết, **điện nước**, sự cố, thông báo chung — mỗi tin có nhãn loại rõ ràng kèm tên nhà trọ.
+- **Chốt kỳ điện nước nay tự báo cư dân** (chỉ số đầu–cuối, số kWh, thành tiền) — trước đây chỉ có hóa đơn mới báo.
+- Công tắc bật/tắt trong Cài đặt. Người thuê chưa có mã Zalo vẫn nhận thông báo trong ứng dụng, không báo lỗi. Việc gửi chạy nền, không chặn thao tác.
+
+## v4.2.8 — Lỗi "không gửi được lịch hẹn": chẩn đoán rõ + không mất khách
+
+**Chẩn đoán:** hai thông báo gặp phải đều đến từ BẢN APPS SCRIPT ĐANG DEPLOY, không phải từ mã nguồn:
+- *"Không hiểu yêu cầu"* — bản deploy cũ hơn client, chưa biết yêu cầu mà trang gửi lên.
+- *"Apps Script không trả về dữ liệu"* — deployment trả về HTML (thường do "Who has access" chưa đặt Anyone, hoặc chưa cấp quyền).
+
+**Việc đã sửa trong mã nguồn:**
+- **Không mất khách khi gửi lỗi**: form giữ nguyên thông tin đã nhập và hiện ngay khung dự phòng — nút Gọi hotline, nút nhắn Zalo, nút sao chép nội dung đã soạn sẵn (tên, SĐT, phòng, ngày giờ). Trước đây chỉ có một dòng báo lỗi rồi cụt đường.
+- **Cầu nối Vercel chẩn đoán đúng nguyên nhân** thay vì một câu chung: phân biệt trang đăng nhập Google, chưa cấp quyền, lỗi chạy script, mã lỗi HTTP; kèm trích đoạn nội dung thật nhận được.
+- **Máy chủ nêu đích danh yêu cầu không nhận ra** kèm hướng dẫn Deploy → Manage deployments → New version, để nhận ra ngay là bản deploy cũ.
+- **Nút "Kiểm tra kết nối" trong Cài đặt**: chạy thử ping và thử đúng chức năng đặt lịch mà khách dùng, rồi chỉ ra khâu hỏng (đường dẫn / quyền truy cập / bản deploy cũ).
+
+**Cách khắc phục trên máy anh:** mở Apps Script → dán Code.gs + Index.html mới → Run `setup` → **Deploy → Manage deployments → Edit (bút chì) → Version: New version → Deploy** → kiểm tra "Who has access" = **Anyone**. Sau đó vào Cài đặt → Kiểm tra kết nối để xác nhận.
+
+## v4.2.9 — Gửi Zalo kiểu "mở thẳng ứng dụng" (không cần token OA)
+
+Cách gửi mới, **mặc định dùng**: bấm Gửi → nội dung được **chép sẵn vào bộ nhớ tạm** → **Zalo mở đúng cửa sổ chat người nhận** → chỉ việc dán và bấm Gửi. Chỉ cần **số điện thoại**, không cần ZALO_OA_TOKEN, không cần mã Zalo (zaloUserId) của từng người.
+
+- Số điện thoại tự đổi sang dạng Zalo hiểu (0935041247 → 84935041247), bỏ khoảng trắng, chấp nhận số đã có sẵn 84.
+- **Nút Gửi Zalo** xuất hiện ở: bảng người thuê (chỉ người có SĐT), từng thông báo đã tạo, và bảng nhắc hóa đơn.
+- **Tạo thông báo cho một người → Zalo mở ngay** tới đúng người đó, nội dung có sẵn tên nhà trọ + tiêu đề + nội dung.
+- Mọi lần gửi đều **ghi vào lịch sử nhắc** (kênh `zalo_link`), phân biệt rõ với gửi tự động qua OA.
+- Người chưa có số điện thoại: báo rõ, không mở bừa.
+- **Cài đặt → Cách gửi Zalo**: chọn "Mở ứng dụng Zalo" (khuyên dùng) hoặc "Gửi tự động qua Zalo OA". Ở chế độ mở app, hệ thống **không tự gọi OA** nữa nên không còn báo lỗi thiếu token; chuyển sang chế độ OA thì cơ chế tự gửi của v4.2.7 hoạt động như cũ.
+
+### Sửa trong lúc làm
+Bộ kiểm thử bắt được việc tên người thuê bị nhét thẳng vào thuộc tính `data-*` — thuộc tính không escape dấu `<` khi tuần tự hóa nên chuỗi thô lộ ra trong HTML. Đã chuyển sang chỉ truyền mã người thuê, lời chào dựng bên trong hàm.
