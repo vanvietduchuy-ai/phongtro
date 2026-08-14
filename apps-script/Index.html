@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#F6F1EA" />
+  <title>Huy Rooms — Tìm phòng & Quản lý nhà trọ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root{--bg:#fbf9f6;--paper:#fffdfa;--paper2:#f6f1ea;--beige:#e8ddcf;--beige2:#d8c7b5;--ink:#2f2b27;--muted:#7d756d;--line:#e8e0d8;--accent:#6d5d4f;--accent2:#8c7562;--green:#65776a;--danger:#a45145;--warn:#a77b39;--shadow:0 18px 55px rgba(74,59,46,.10);--radius:22px}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:'Be Vietnam Pro',system-ui,-apple-system,sans-serif}.hidden{display:none!important}.container{width:min(1180px,calc(100% - 36px));margin:auto}.topbar,.resident-topbar{position:sticky;top:0;z-index:40;background:rgba(251,249,246,.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(232,224,216,.85)}.nav-wrap{height:78px;display:flex;align-items:center;gap:28px}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink)}.brand-mark{width:38px;height:38px;border-radius:13px;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:Georgia,serif;font-size:19px}.brand strong,.brand small{display:block}.brand strong{font-size:15px}.brand small{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.05em}.nav-links{display:flex;gap:24px;margin-left:auto}.nav-links a{text-decoration:none;color:#665f58;font-size:12px;font-weight:600}.nav-actions{display:flex;gap:8px}.btn{border:0;border-radius:12px;padding:11px 15px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:.18s;white-space:nowrap}.btn:hover{transform:translateY(-1px)}.btn-primary{background:var(--accent);color:#fff}.btn-dark{background:var(--ink);color:white}.btn-light{background:#fff;border:1px solid var(--line);color:var(--ink)}.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}.btn-danger{background:#fff3f1;color:var(--danger);border:1px solid #efd6d2}.full{width:100%}.hero{padding:76px 0 58px;background:radial-gradient(circle at 85% 15%,#eee4d9 0,transparent 34%),linear-gradient(180deg,#fbf9f6,#f7f1ea)}.hero-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:58px;align-items:center}.eyebrow{font-size:10px;letter-spacing:.16em;font-weight:700;color:#8a7766}.eyebrow.dark{color:var(--accent)}.hero h1{font-size:60px;line-height:1.06;letter-spacing:-.052em;margin:14px 0 20px;font-weight:600}.hero h1 span{color:#8e7b69;font-family:Georgia,serif;font-style:italic;font-weight:400}.hero-copy>p{font-size:15px;line-height:1.8;color:var(--muted);max-width:690px}.hero-actions{display:flex;gap:10px;margin:28px 0}.hero-stats{display:flex;gap:38px;margin-top:32px}.stat-mini strong{display:block;font-size:24px}.stat-mini span{font-size:10px;color:var(--muted)}.hero-card{background:rgba(255,253,250,.9);border:1px solid var(--line);border-radius:30px;padding:28px;box-shadow:var(--shadow)}.soft-chip{display:inline-flex;padding:6px 9px;border-radius:999px;background:#f1ebe4;color:#766353;font-size:9px;font-weight:700}.hero-card h3{font-size:22px;margin:14px 0 22px}.quick-filter{display:grid;gap:14px}label{font-size:10px;font-weight:700;color:#6f675f;display:grid;gap:7px}input,select,textarea{width:100%;border:1px solid var(--line);background:#fffdfb;border-radius:11px;padding:11px 12px;color:var(--ink);font:inherit;font-size:12px;outline:none;transition:.15s}input:focus,select:focus,textarea:focus{border-color:#baa793;box-shadow:0 0 0 3px rgba(184,164,144,.12)}.section{padding:74px 0}.section.muted{background:#f4efe9}.section-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:26px}.section-head.centered{display:block;text-align:center}.section-head h2{font-size:34px;letter-spacing:-.035em;margin:5px 0;font-weight:600}.view-count{font-size:11px;color:var(--muted)}.filter-bar{display:grid;grid-template-columns:1.5fr repeat(3,1fr) auto;gap:10px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:24px;box-shadow:0 8px 26px rgba(79,62,48,.035)}.filter-bar input,.filter-bar select{margin:0}.property-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}.property-card{background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;transition:.18s}.property-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}.property-cover{height:220px;position:relative;background:linear-gradient(135deg,#d8cabd,#bca895);overflow:hidden}.property-cover img{width:100%;height:100%;object-fit:cover;display:block}.property-cover-fallback{position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.25),transparent 28%),linear-gradient(135deg,#d8cabd,#a89480)}.property-cover-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 38%,rgba(38,31,25,.68));display:flex;align-items:flex-end;padding:20px;color:#fff}.property-cover-overlay h3{font-size:22px;margin:7px 0 4px}.property-cover-overlay p{font-size:11px;margin:0;opacity:.86}.pill{font-size:9px;padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.86);color:#65574b;font-weight:700}.property-body{padding:18px}.property-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-bottom:14px}.room-list{display:grid;gap:10px}.room-row{display:grid;grid-template-columns:58px 1fr auto auto;gap:12px;align-items:center;padding:11px;background:#fbf9f6;border:1px solid #eee7df;border-radius:14px}.room-thumb{width:58px;height:58px;border-radius:11px;background:#e8ded3;object-fit:cover}.room-thumb-placeholder{display:grid;place-items:center;font-size:18px;color:#897b6e}.room-name strong{font-size:12px;display:block}.room-name small{font-size:9px;color:var(--muted);display:block;margin-top:3px}.room-price{text-align:right}.room-price strong{font-size:12px;display:block}.room-price small{font-size:8px;color:var(--muted)}.status-dot{font-size:8px;font-weight:700;padding:5px 7px;border-radius:999px;white-space:nowrap}.status-available{background:#edf4ee;color:#55705d}.status-reserved{background:#fbf1dd;color:#956d2e}.status-occupied{background:#eeeae6;color:#756b63}.status-maintenance{background:#faeae7;color:#9c5147}.room-actions{display:grid;gap:6px;justify-items:end}.btn-mini{border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:8px;font-weight:700;padding:7px 9px;cursor:pointer}.btn-mini[disabled]{opacity:.4;cursor:not-allowed}.amenities{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.amenity{font-size:8px;background:#eee8e1;color:#70645a;padding:4px 6px;border-radius:6px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.step{background:#fffdfa;border:1px solid var(--line);border-radius:20px;padding:25px}.step span{font-size:10px;color:#a58c75;font-weight:700}.step h3{font-size:16px;margin:10px 0 8px}.step p{font-size:12px;line-height:1.7;color:var(--muted)}.contact-card{background:#e8ddd1;border-radius:28px;padding:38px 42px;display:flex;align-items:center;justify-content:space-between;gap:26px}.contact-card h2{font-size:32px;margin:5px 0}.contact-card p{font-size:12px;color:#6d6259}.contact-actions{display:flex;gap:8px}
+/* admin */.admin-shell{min-height:100vh;display:grid;grid-template-columns:248px 1fr;background:#f7f4f0}.sidebar{position:sticky;top:0;height:100vh;background:#2e2a26;color:#fff;padding:20px 14px;display:flex;flex-direction:column}.sidebar-brand{display:flex;gap:11px;align-items:center;padding:5px 8px 23px}.sidebar-brand .brand-mark{background:#eee4d8;color:#3a332d}.sidebar-brand strong,.sidebar-brand small{display:block}.sidebar-brand strong{font-size:13px}.sidebar-brand small{font-size:9px;color:#bcb1a7;margin-top:2px}.side-nav{display:grid;gap:5px}.side-link{border:0;background:transparent;color:#c5bbb2;padding:11px 12px;border-radius:10px;text-align:left;font:inherit;font-size:11px;font-weight:600;cursor:pointer;display:flex;gap:10px}.side-link.active,.side-link:hover{background:#433c36;color:white}.sidebar-bottom{margin-top:auto}.admin-main{min-width:0}.admin-topbar{height:82px;background:rgba(255,253,250,.95);border-bottom:1px solid var(--line);padding:0 26px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:sticky;top:0;z-index:20}.admin-topbar small{font-size:8px;letter-spacing:.13em;color:var(--muted);font-weight:700}.admin-topbar h2{font-size:21px;margin:4px 0 0}.admin-actions{display:flex;gap:8px}.admin-content{padding:24px}.admin-view{display:none}.admin-view.active{display:block}.dashboard-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:16px}.metric{background:#fff;border:1px solid var(--line);border-radius:17px;padding:17px}.metric small{font-size:9px;color:var(--muted)}.metric strong{display:block;font-size:24px;margin-top:7px}.metric .trend{font-size:8px;color:#8d7a68;margin-top:7px}.admin-grid-2{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.panel+.panel{margin-top:14px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.panel-head h3{font-size:14px;margin:0}.panel-head p{font-size:9px;color:var(--muted);margin:3px 0 0}.table-wrap{overflow:auto}.data-table{border-collapse:collapse;width:100%;font-size:10px}.data-table th{text-align:left;font-size:8px;color:var(--muted);letter-spacing:.04em;padding:9px 7px;border-bottom:1px solid var(--line)}.data-table td{padding:10px 7px;border-bottom:1px solid #f1ece7;vertical-align:middle}.data-table tr:last-child td{border-bottom:0}.data-table input.inline-input{padding:7px 8px;min-width:100px}.table-actions{display:flex;gap:5px;flex-wrap:wrap}.icon-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;font:inherit;font-size:9px;cursor:pointer}.icon-btn.danger{color:var(--danger);background:#fff8f6}.property-admin-card{background:#fff;border:1px solid var(--line);border-radius:18px;margin-bottom:13px;overflow:hidden}.property-admin-head{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}.property-admin-title{display:flex;gap:10px;align-items:center}.admin-property-thumb{width:48px;height:48px;border-radius:11px;background:#e9ded2;object-fit:cover}.property-admin-head h3{font-size:13px;margin:0}.property-admin-head p{font-size:9px;color:var(--muted);margin:4px 0 0}.property-admin-actions{display:flex;gap:6px}.property-admin-body{padding:8px 16px 16px}.select-small{padding:7px 8px;border-radius:8px;font-size:9px}.thumb-mini{width:38px;height:38px;border-radius:8px;object-fit:cover;background:#eee5db}.empty{padding:34px;text-align:center;color:var(--muted);border:1px dashed #d9cec3;border-radius:14px;font-size:11px}.appointment-card{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}.appt-date{width:52px;height:52px;border-radius:12px;background:#f2ece6;display:grid;place-items:center;text-align:center}.appt-date strong{font-size:16px}.appt-date small{font-size:8px;color:var(--muted)}.appt-info strong{font-size:11px;display:block}.appt-info span,.appt-info small{font-size:9px;color:var(--muted);display:block;margin-top:2px}.appt-actions{display:flex;gap:5px;flex-wrap:wrap}.settings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.settings-card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:18px}.settings-card h3{font-size:14px;margin-top:0}.settings-card p{font-size:10px;color:var(--muted);line-height:1.7}.code-note,.smart-note{background:#f6f1eb;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:9px;line-height:1.6;color:#73675d}.smart-note{color:#66594f}.badge{display:inline-flex;align-items:center;padding:5px 7px;border-radius:999px;font-size:8px;font-weight:700}.badge-paid{background:#edf4ee;color:#52705a}.badge-unpaid{background:#fbefe7;color:#9a6046}.badge-partial{background:#faf3df;color:#927338}.badge-overdue{background:#f9e7e4;color:#a3483f}.money-positive{font-weight:700}.reminder-box{border:1px solid #ebdfd2;background:#fffaf4;border-radius:14px;padding:13px;margin-bottom:9px}.reminder-box strong{display:block;font-size:11px}.reminder-box span{font-size:9px;color:var(--muted)}
+/* resident */.resident-shell{min-height:100vh;background:#f8f4ef}.resident-content{padding:34px 0 70px}.resident-welcome{background:linear-gradient(135deg,#e8ddd1,#f4eee7);border:1px solid #e2d5c8;border-radius:26px;padding:28px;margin-bottom:18px}.resident-welcome h1{font-size:28px;margin:5px 0}.resident-welcome p{font-size:11px;color:#75695f}.resident-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.resident-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.resident-card h3{font-size:13px;margin:0 0 10px}.big-number{font-size:25px;font-weight:600}.kv{display:flex;justify-content:space-between;gap:15px;border-top:1px solid #f0eae4;padding:9px 0;font-size:10px}.kv:first-of-type{border-top:0}.kv span{color:var(--muted)}.bill-breakdown{margin-top:12px}.bill-row{display:flex;justify-content:space-between;font-size:10px;padding:7px 0;border-bottom:1px solid #f0eae4}.bill-row.total{font-size:12px;font-weight:700;border-top:1px solid var(--line);border-bottom:0;margin-top:4px}.resident-history{grid-column:1/-1}.progress-line{height:7px;background:#eee7e0;border-radius:999px;overflow:hidden;margin-top:8px}.progress-line i{display:block;height:100%;background:#8f7b69;border-radius:inherit}
+/* modal */.modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:18px}.modal-backdrop{position:absolute;inset:0;background:rgba(48,41,35,.45);backdrop-filter:blur(5px)}.modal-card{position:relative;width:min(680px,100%);max-height:91vh;overflow:auto;background:#fffdfa;border:1px solid #eadfd5;border-radius:23px;padding:25px;box-shadow:var(--shadow)}.modal-card.small{width:min(420px,100%)}.modal-card.wide{width:min(790px,100%)}.modal-close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#7f756d;font-size:26px;cursor:pointer}.modal-card h3{font-size:19px;margin:0 0 16px}.modal-icon{font-size:25px;margin-bottom:10px}.muted-text{font-size:10px;color:var(--muted);line-height:1.6}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.span-2{grid-column:span 2}.stack-form{display:grid;gap:12px}.booking-summary{background:#f5efe8;border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:15px}.booking-summary h4{font-size:13px;margin:0 0 5px}.booking-summary p{font-size:9px;color:var(--muted);margin:0}.form-section-title{font-size:10px;font-weight:700;color:#8b7562;border-bottom:1px solid var(--line);padding:5px 0}.calc-card{background:#f7f2ec;border:1px solid var(--line);border-radius:12px;padding:11px;display:flex;flex-direction:column;justify-content:center}.calc-card small{font-size:8px;color:var(--muted)}.calc-card strong{font-size:17px;margin:3px 0}.calc-card span{font-size:8px;color:var(--muted)}.invoice-total-preview{background:#efe7de;border-radius:13px;padding:13px;display:flex;justify-content:space-between;align-items:center}.invoice-total-preview span{font-size:10px;color:#70645a}.invoice-total-preview strong{font-size:19px}.upload-zone{position:relative;border:1px dashed #cabaaa;background:#faf6f1;border-radius:13px;padding:14px;display:flex;align-items:center;gap:12px}.upload-zone input{border:0;background:transparent;padding:0}.upload-zone span{font-size:8px;color:var(--muted);font-weight:400}.image-preview-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:9px}.image-preview{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#eee5dc}.image-preview img{width:100%;height:100%;object-fit:cover}.image-preview button{position:absolute;top:4px;right:4px;width:22px;height:22px;border:0;border-radius:999px;background:rgba(40,34,29,.75);color:#fff;cursor:pointer;font-size:11px}.toast{position:fixed;right:18px;bottom:18px;z-index:200;max-width:360px;background:#342f2b;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:var(--shadow);font-size:10px;opacity:0;transform:translateY(16px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
+@media(max-width:1050px){.hero-grid{grid-template-columns:1fr}.property-grid{grid-template-columns:1fr}.dashboard-grid{grid-template-columns:repeat(3,1fr)}.admin-grid-2{grid-template-columns:1fr}.filter-bar{grid-template-columns:1fr 1fr}.admin-shell{grid-template-columns:72px 1fr}.sidebar-brand div,.side-link span{display:none}.sidebar-brand{justify-content:center}.side-link{justify-content:center;font-size:17px}.sidebar-bottom .btn{font-size:0}.sidebar-bottom .btn:after{content:'←';font-size:16px}.resident-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.container{width:min(100% - 24px,1180px)}.nav-links{display:none}.nav-wrap{height:68px}.nav-actions{margin-left:auto}.nav-actions .btn-light{display:none}.hero{padding:48px 0 38px}.hero h1{font-size:41px}.hero-stats{gap:20px;flex-wrap:wrap}.section{padding:52px 0}.section-head{align-items:flex-start}.section-head h2{font-size:27px}.filter-bar{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.contact-card{display:block;padding:27px}.contact-actions{display:grid;margin-top:18px}.room-row{grid-template-columns:50px 1fr auto}.room-thumb{width:50px;height:50px}.room-actions{grid-column:2/-1;grid-template-columns:auto auto;justify-content:start}.room-price{grid-column:3;grid-row:1;text-align:right}.admin-topbar{height:auto;min-height:76px;padding:12px}.admin-topbar small{display:none}.admin-actions .btn-light{display:none}.admin-content{padding:12px}.dashboard-grid{grid-template-columns:1fr 1fr}.settings-grid,.resident-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.span-2{grid-column:span 1}.image-preview-grid{grid-template-columns:repeat(3,1fr)}.property-admin-head{align-items:flex-start;flex-direction:column}.appointment-card{grid-template-columns:auto 1fr}.appt-actions{grid-column:1/-1}.resident-history{grid-column:1}.property-cover{height:190px}}
+.gallery-head{margin-bottom:14px}.gallery-head h3{margin-bottom:5px}.gallery-head p{font-size:10px;color:var(--muted);margin:0}.gallery-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}.gallery-grid img{width:100%;height:180px;object-fit:cover;border-radius:12px;background:#eee6dd}.gallery-grid img:first-child{grid-row:span 2;height:368px}.gallery-grid .gallery-empty{grid-column:1/-1;padding:60px;text-align:center;background:#f6f0e9;border-radius:15px;color:var(--muted);font-size:11px}.gallery-info{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.gallery-info span{font-size:9px;background:#f3ede6;padding:6px 8px;border-radius:8px}@media(max-width:720px){.gallery-grid{grid-template-columns:1fr 1fr}.gallery-grid img,.gallery-grid img:first-child{height:150px;grid-row:auto}.gallery-grid img:first-child{grid-column:1/-1;height:220px}}
+
+</style>
+  <style>
+/* ============================================================
+   mobile.css — lớp giao diện cho điện thoại + trạng thái đồng bộ
+   Nạp SAU styles.css. Không sửa file gốc.
+   ============================================================ */
+
+/* ---------- Thanh trạng thái đồng bộ (mọi kích thước) ---------- */
+.sync-pill{
+  position:fixed;right:14px;bottom:14px;z-index:120;
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--line);background:#fffdfa;color:var(--ink);
+  border-radius:999px;padding:9px 14px;font:inherit;font-size:12px;font-weight:600;
+  box-shadow:0 10px 30px rgba(74,59,46,.16);cursor:pointer;
+}
+.sync-pill:disabled{opacity:.6}
+.sync-dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:0 0 auto}
+.sync-pill.ok .sync-dot{background:var(--green)}
+.sync-pill.busy .sync-dot{background:var(--warn);animation:syncPulse 1s infinite}
+.sync-pill.err .sync-dot{background:var(--danger)}
+.sync-pill.off .sync-dot{background:var(--beige2)}
+@keyframes syncPulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.sync-pill.busy .sync-dot{animation:none}}
+
+/* ---------- Thẻ kết nối trong Cài đặt ---------- */
+.conn-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+.conn-card h3{margin:0 0 6px}
+.conn-card label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 4px}
+.conn-card input{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:15px;background:#fffdfa}
+.conn-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.conn-state{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.6}
+.conn-state b{color:var(--ink)}
+
+/* ---------- Nút mở menu & tabbar chỉ hiện trên điện thoại ---------- */
+.mobile-tabbar,.mobile-fab,.mobile-only{display:none}
+
+@media(max-width:860px){
+  /* Chữ và vùng bấm to hơn cho ngón tay */
+  .btn{font-size:14px;padding:13px 16px;border-radius:14px}
+  .icon-btn{font-size:13px;padding:10px 12px;border-radius:10px}
+  .select-small,.inline-input{font-size:16px;padding:10px}
+  input,select,textarea{font-size:16px} /* chặn iOS tự phóng to khi gõ */
+  .mobile-only{display:block}
+
+  /* ----- Khung quản lý ----- */
+  .admin-shell{display:block;min-height:100vh}
+  .sidebar{display:none}
+  .admin-main{display:block}
+  .admin-topbar{
+    height:auto;min-height:60px;padding:10px 14px;gap:10px;
+    align-items:center;position:sticky;top:0;z-index:40;
+    background:rgba(255,253,250,.97);backdrop-filter:blur(12px)
+  }
+  .admin-topbar h2{font-size:19px;margin:0}
+  .admin-actions{display:none}
+  .admin-content{padding:12px 12px calc(96px + env(safe-area-inset-bottom))}
+
+  /* ----- Thanh tab dưới cùng ----- */
+  .mobile-tabbar{
+    display:grid;grid-template-columns:repeat(5,1fr);
+    position:fixed;left:0;right:0;bottom:0;z-index:90;
+    background:rgba(255,253,250,.98);backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom))
+  }
+  .mobile-tabbar button{
+    position:relative;border:0;background:none;font:inherit;color:var(--muted);
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:8px 2px;font-size:10.5px;font-weight:600;border-radius:12px;cursor:pointer
+  }
+  .mobile-tabbar button i{font-style:normal;font-size:18px;line-height:1}
+  .mobile-tabbar button.active{color:var(--ink);background:var(--paper2)}
+  .mobile-tabbar button .tab-badge{
+    position:absolute;top:2px;left:50%;transform:translateX(4px);
+    background:var(--danger);color:#fff;border-radius:999px;
+    font-size:9px;line-height:1.5;padding:0 5px
+  }
+
+  /* ----- Nút thêm nhanh ----- */
+  .mobile-fab{
+    display:grid;place-items:center;position:fixed;
+    right:16px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:95;
+    width:56px;height:56px;border-radius:50%;border:0;
+    background:var(--ink);color:#fff;font-size:26px;line-height:1;
+    box-shadow:0 14px 34px rgba(47,43,39,.32);cursor:pointer
+  }
+  .sync-pill{right:16px;bottom:calc(16px + env(safe-area-inset-bottom));padding:8px 12px;font-size:11.5px}
+  body:has(#adminApp:not(.hidden)) .sync-pill{bottom:calc(78px + env(safe-area-inset-bottom));right:82px}
+
+  /* Menu thêm nhanh */
+  .fab-sheet{
+    position:fixed;inset:0;z-index:96;display:none;
+    background:rgba(47,43,39,.35);backdrop-filter:blur(2px)
+  }
+  .fab-sheet.show{display:block}
+  .fab-sheet-inner{
+    position:absolute;left:12px;right:12px;
+    bottom:calc(142px + env(safe-area-inset-bottom));
+    background:#fffdfa;border:1px solid var(--line);border-radius:20px;overflow:hidden
+  }
+  .fab-sheet-inner button{
+    display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);
+    background:none;font:inherit;font-size:16px;padding:16px 18px;cursor:pointer
+  }
+  .fab-sheet-inner button:last-child{border-bottom:0}
+
+  /* ----- Bảng biến thành thẻ ----- */
+  .data-table{font-size:14px;border-collapse:separate}
+  .table-wrap{overflow:visible}
+  .data-table thead{display:none}
+  .data-table,.data-table tbody,.data-table tr,.data-table td{display:block;width:100%}
+  .data-table tr{
+    background:#fffdfa;border:1px solid var(--line);border-radius:16px;
+    padding:6px 12px;margin-bottom:10px
+  }
+  .data-table td{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:9px 0;border:0;border-bottom:1px dashed var(--line);text-align:right
+  }
+  .data-table td:last-child{border-bottom:0}
+  .data-table td:before{
+    content:attr(data-label);flex:0 0 40%;text-align:left;
+    color:var(--muted);font-size:11.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase
+  }
+  .data-table td:empty{display:none}
+  .data-table td[data-label=""]{display:block;text-align:left}
+  .data-table td[data-label=""]:before{display:none}
+  .data-table td .table-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+  .data-table td .table-actions .icon-btn{width:100%;text-align:center}
+  .data-table td .inline-input,.data-table td .select-small{max-width:58%;min-width:0}
+  .data-table td img.thumb-mini{width:64px;height:64px;border-radius:12px;object-fit:cover}
+  .data-table td .empty{width:100%;text-align:left}
+
+  /* ----- Panel & danh sách ----- */
+  .panel{padding:14px;border-radius:16px}
+  .panel-head{flex-direction:column;align-items:stretch;gap:10px}
+  .panel-head .btn{width:100%}
+  .dashboard-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .metric{padding:14px}
+  .metric strong{font-size:22px}
+  .property-admin-card{border-radius:16px}
+  .property-admin-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%}
+  .property-admin-actions .icon-btn{width:100%;text-align:center}
+
+  /* ----- Modal thành sheet kéo từ dưới lên ----- */
+  .modal{padding:0;place-items:end center}
+  .modal-card{
+    width:100%;max-height:92vh;border-radius:22px 22px 0 0;
+    padding:22px 16px calc(22px + env(safe-area-inset-bottom));
+    animation:sheetUp .22s ease-out
+  }
+  .modal-card:before{
+    content:'';display:block;width:44px;height:4px;border-radius:99px;
+    background:var(--beige2);margin:-8px auto 14px
+  }
+  .modal-close{top:12px;right:12px;width:38px;height:38px;font-size:20px}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid .btn[type=submit],.form-grid button[type=submit]{
+    position:sticky;bottom:0;width:100%;padding:15px;font-size:15px
+  }
+  @keyframes sheetUp{from{transform:translateY(26px);opacity:.6}to{transform:none;opacity:1}}
+  @media(prefers-reduced-motion:reduce){.modal-card{animation:none}}
+
+  /* ----- Trang khách ----- */
+  .nav-actions{display:flex;gap:8px}
+  .nav-actions .btn-light{display:inline-block}
+  .nav-actions .btn{padding:10px 12px;font-size:12.5px}
+  .hero h1{font-size:33px;line-height:1.15}
+  .hero-actions{display:grid;gap:10px}
+  .hero-actions .btn{width:100%;text-align:center}
+  .filter-bar{position:sticky;top:60px;z-index:20;background:var(--bg);padding:10px 0}
+  .filter-bar input,.filter-bar select{padding:13px}
+  .room-row{grid-template-columns:64px 1fr;row-gap:8px;padding:12px}
+  .room-thumb{width:64px;height:64px}
+  .room-price{grid-column:2;grid-row:2;text-align:left}
+  .room-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center}
+  .room-actions .btn-mini{padding:11px;font-size:13px;width:100%}
+  .amenity{font-size:11px}
+
+  /* ----- Cổng cư dân ----- */
+  .resident-content{padding:14px 0 40px}
+  .resident-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:420px){
+  .dashboard-grid{grid-template-columns:1fr}
+  .property-admin-actions{grid-template-columns:1fr 1fr}
+  .data-table td:before{flex-basis:44%}
+}
+
+</style>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Huy Rooms" />
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <header class="topbar" id="publicTopbar">
+    <div class="container nav-wrap">
+      <a class="brand" href="#">
+        <span class="brand-mark">H</span>
+        <span><strong>Huy Rooms</strong><small>Find a calm place to live</small></span>
+      </a>
+      <nav class="nav-links">
+        <a href="#properties">Phòng trống</a>
+        <a href="#how">Cách thuê</a>
+        <a href="#contact">Liên hệ</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn btn-light" id="residentBtn">Cư dân</button>
+        <button class="btn btn-dark" id="adminBtn">Quản lý</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="publicApp">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">PHÒNG TRỌ • CĂN HỘ • QUẢN LÝ THÔNG MINH</div>
+          <h1>Một nơi ở vừa vặn,<br><span>được quản lý tử tế.</span></h1>
+          <p>Xem ảnh thật, giá thuê, trạng thái phòng và đặt lịch xem phòng. Cư dân có tài khoản riêng để theo dõi tiền phòng, điện, nước và tiền cọc.</p>
+          <div class="hero-actions">
+            <a href="#properties" class="btn btn-primary">Xem phòng đang trống</a>
+            <button class="btn btn-light" id="heroResidentBtn">Đăng nhập cư dân</button>
+          </div>
+          <div class="hero-stats" id="heroStats"></div>
+        </div>
+        <div class="hero-panel">
+          <div class="hero-card">
+            <div class="soft-chip">Tìm phòng nhanh</div>
+            <h3>Chọn khu vực và ngân sách</h3>
+            <div class="quick-filter">
+              <label>Khu vực<select id="heroAreaFilter"></select></label>
+              <label>Ngân sách tối đa
+                <select id="heroPriceFilter">
+                  <option value="999999999">Tất cả mức giá</option>
+                  <option value="2000000">≤ 2 triệu</option>
+                  <option value="3000000">≤ 3 triệu</option>
+                  <option value="4000000">≤ 4 triệu</option>
+                  <option value="5000000">≤ 5 triệu</option>
+                  <option value="7000000">≤ 7 triệu</option>
+                </select>
+              </label>
+              <button class="btn btn-primary full" id="heroSearchBtn">Tìm phòng phù hợp</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="properties">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="eyebrow dark">DANH SÁCH PHÒNG</div><h2>Chọn căn trọ phù hợp</h2></div>
+          <div class="view-count" id="resultCount"></div>
+        </div>
+        <div class="filter-bar">
+          <input type="search" id="searchInput" placeholder="Tìm tên căn, địa chỉ, mã phòng..." />
+          <select id="areaFilter"></select>
+          <select id="statusFilter">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="available">Đang trống</option>
+            <option value="reserved">Đã giữ chỗ</option>
+            <option value="occupied">Đã thuê</option>
+          </select>
+          <select id="priceFilter">
+            <option value="999999999">Mọi mức giá</option>
+            <option value="2000000">≤ 2 triệu/tháng</option>
+            <option value="3000000">≤ 3 triệu/tháng</option>
+            <option value="4000000">≤ 4 triệu/tháng</option>
+            <option value="5000000">≤ 5 triệu/tháng</option>
+            <option value="7000000">≤ 7 triệu/tháng</option>
+          </select>
+          <button class="btn btn-ghost" id="resetFilters">Đặt lại</button>
+        </div>
+        <div id="propertyGrid" class="property-grid"></div>
+      </div>
+    </section>
+
+    <section class="section muted" id="how">
+      <div class="container">
+        <div class="section-head centered"><div><div class="eyebrow dark">ĐƠN GIẢN & MINH BẠCH</div><h2>Thuê phòng trong 3 bước</h2></div></div>
+        <div class="steps">
+          <div class="step"><span>01</span><h3>Xem phòng thật</h3><p>Xem ảnh, giá, diện tích, tiện nghi và tình trạng phòng được cập nhật bởi quản lý.</p></div>
+          <div class="step"><span>02</span><h3>Đặt lịch xem</h3><p>Chọn thời gian phù hợp và để lại số điện thoại để quản lý xác nhận.</p></div>
+          <div class="step"><span>03</span><h3>Ở & theo dõi chi phí</h3><p>Khi trở thành cư dân, đăng nhập để xem tiền phòng, điện, nước, cọc và lịch sử thanh toán.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="contact">
+      <div class="container contact-card">
+        <div><div class="eyebrow dark">CẦN HỖ TRỢ?</div><h2>Chưa biết chọn phòng nào?</h2><p>Liên hệ trực tiếp để được gợi ý phòng phù hợp ngân sách và nhu cầu.</p></div>
+        <div class="contact-actions"><a class="btn btn-dark" href="tel:0846413314">Gọi 0846 413 314</a><a class="btn btn-light" href="#properties">Xem phòng</a></div>
+      </div>
+    </section>
+  </main>
+
+  <section id="residentApp" class="resident-shell hidden">
+    <header class="resident-topbar">
+      <div class="container nav-wrap">
+        <div class="brand"><span class="brand-mark">H</span><span><strong>Huy Rooms</strong><small>Cổng thông tin cư dân</small></span></div>
+        <button class="btn btn-light" id="residentLogout">Đăng xuất</button>
+      </div>
+    </header>
+    <div class="container resident-content" id="residentContent"></div>
+  </section>
+
+  <section id="adminApp" class="admin-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span class="brand-mark">H</span><div><strong>Huy Rooms</strong><small>Quản lý nhà trọ</small></div></div>
+      <nav class="side-nav">
+        <button class="side-link active" data-view="dashboard">◫ <span>Tổng quan</span></button>
+        <button class="side-link" data-view="properties">⌂ <span>Căn trọ & phòng</span></button>
+        <button class="side-link" data-view="tenants">♙ <span>Người thuê</span></button>
+        <button class="side-link" data-view="utilities">⌁ <span>Điện & nước</span></button>
+        <button class="side-link" data-view="invoices">₫ <span>Hóa đơn</span></button>
+        <button class="side-link" data-view="appointments">◷ <span>Lịch hẹn</span></button>
+        <button class="side-link" data-view="settings">⚙ <span>Cài đặt</span></button>
+      </nav>
+      <div class="sidebar-bottom"><button class="btn btn-light full" id="backPublic">← Trang khách</button></div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button class="btn btn-light mobile-only" id="mobileBackPublic" style="padding:10px 12px">←</button>
+        <div><small>HỆ THỐNG QUẢN LÝ NHÀ TRỌ</small><h2 id="adminTitle">Tổng quan</h2></div>
+        <div class="admin-actions">
+          <button class="btn btn-light" id="quickAddTenant">+ Người thuê</button>
+          <button class="btn btn-light" id="quickAddRoom">+ Phòng</button>
+          <button class="btn btn-primary" id="quickAddProperty">+ Căn trọ</button>
+        </div>
+      </header>
+      <div class="admin-content">
+        <div id="view-dashboard" class="admin-view active"></div>
+        <div id="view-properties" class="admin-view"></div>
+        <div id="view-tenants" class="admin-view"></div>
+        <div id="view-utilities" class="admin-view"></div>
+        <div id="view-invoices" class="admin-view"></div>
+        <div id="view-appointments" class="admin-view"></div>
+        <div id="view-settings" class="admin-view"></div>
+      </div>
+    </div>
+
+    <button class="mobile-fab" id="mobileFab" aria-label="Thêm nhanh">+</button>
+    <div class="fab-sheet" id="fabSheet">
+      <div class="fab-sheet-inner">
+        <button data-fab="property">Thêm căn trọ</button>
+        <button data-fab="room">Thêm phòng</button>
+        <button data-fab="tenant">Thêm người thuê</button>
+        <button data-fab="utility">Ghi chỉ số điện nước</button>
+        <button data-fab="invoice">Lập hóa đơn</button>
+        <button data-fab="close">Đóng</button>
+      </div>
+    </div>
+
+    <nav class="mobile-tabbar" id="mobileTabbar">
+      <button data-view="dashboard" class="active"><i>◫</i>Tổng quan</button>
+      <button data-view="properties"><i>⌂</i>Phòng</button>
+      <button data-view="utilities"><i>⌁</i>Điện nước</button>
+      <button data-view="invoices"><i>₫</i>Hóa đơn</button>
+      <button data-view="appointments"><i>◷</i>Lịch hẹn</button>
+    </nav>
+  </section>
+
+  <!-- Booking -->
+  <div class="modal hidden" id="bookingModal">
+    <div class="modal-backdrop" data-close-modal="bookingModal"></div>
+    <div class="modal-card"><button class="modal-close" data-close-modal="bookingModal">×</button>
+      <div id="bookingRoomSummary" class="booking-summary"></div>
+      <form id="bookingForm" class="form-grid">
+        <input type="hidden" id="bookingRoomId" />
+        <label>Họ và tên *<input required id="customerName" /></label>
+        <label>Số điện thoại *<input required id="customerPhone" type="tel" /></label>
+        <label>Ngày xem phòng *<input required id="appointmentDate" type="date" /></label>
+        <label>Giờ dự kiến *<input required id="appointmentTime" type="time" /></label>
+        <label class="span-2">Ghi chú<textarea id="customerNote" rows="3" placeholder="Ví dụ: ở 2 người, cần ban công..."></textarea></label>
+        <button class="btn btn-primary span-2" type="submit">Gửi yêu cầu đặt lịch</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Logins -->
+  <div class="modal hidden" id="loginModal">
+    <div class="modal-backdrop" data-close-modal="loginModal"></div>
+    <div class="modal-card small"><button class="modal-close" data-close-modal="loginModal">×</button>
+      <div class="modal-icon">✦</div><h3>Đăng nhập quản lý</h3><p class="muted-text" id="adminLoginHint">Chưa kết nối Google Sheets — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.</p>
+      <form id="loginForm" class="stack-form"><label id="adminPasswordLabel">Mật khẩu<input id="adminPassword" type="password" required placeholder="Nhập mật khẩu" /></label><button class="btn btn-primary full" type="submit">Đăng nhập</button></form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="residentLoginModal">
+    <div class="modal-backdrop" data-close-modal="residentLoginModal"></div>
+    <div class="modal-card small"><button class="modal-close" data-close-modal="residentLoginModal">×</button>
+      <div class="modal-icon">⌂</div><h3>Đăng nhập cư dân</h3><p class="muted-text">Tài khoản do quản lý tạo. Đăng nhập bằng số điện thoại và mã PIN.</p>
+      <form id="residentLoginForm" class="stack-form"><label>Số điện thoại<input id="residentPhone" type="tel" required placeholder="Ví dụ: 0905..." /></label><label>Mã PIN<input id="residentPin" type="password" required maxlength="8" placeholder="Nhập mã PIN" /></label><button class="btn btn-primary full" type="submit">Xem thông tin phòng</button></form>
+    </div>
+  </div>
+
+  <!-- Property -->
+  <div class="modal hidden" id="propertyModal">
+    <div class="modal-backdrop" data-close-modal="propertyModal"></div>
+    <div class="modal-card"><button class="modal-close" data-close-modal="propertyModal">×</button><h3 id="propertyModalTitle">Thêm căn trọ</h3>
+      <form id="propertyForm" class="form-grid">
+        <input type="hidden" id="propertyId" />
+        <label>Tên căn trọ *<input required id="propertyName" /></label>
+        <label>Khu vực *<input required id="propertyArea" placeholder="Ví dụ: Nam Đông Hà" /></label>
+        <label class="span-2">Địa chỉ *<input required id="propertyAddress" /></label>
+        <label>Mô tả ngắn<input id="propertyDescription" /></label><label>Số điện thoại<input id="propertyPhone" /></label>
+        <label class="span-2">Ảnh căn trọ
+          <div class="upload-zone"><input id="propertyImages" type="file" accept="image/*" multiple><span>Chọn hoặc kéo thả ảnh. Ảnh được tự nén trước khi lưu.</span></div>
+          <div id="propertyImagePreview" class="image-preview-grid"></div>
+        </label>
+        <button class="btn btn-primary span-2" type="submit">Lưu căn trọ</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Room -->
+  <div class="modal hidden" id="roomModal">
+    <div class="modal-backdrop" data-close-modal="roomModal"></div>
+    <div class="modal-card wide"><button class="modal-close" data-close-modal="roomModal">×</button><h3 id="roomModalTitle">Thêm phòng</h3>
+      <form id="roomForm" class="form-grid">
+        <input type="hidden" id="roomId" />
+        <label>Căn trọ *<select id="roomProperty" required></select></label><label>Mã/Tên phòng *<input id="roomName" required placeholder="P101" /></label>
+        <label>Giá thuê/tháng *<input id="roomPrice" type="number" required min="0" /></label><label>Tiền cọc<input id="roomDeposit" type="number" min="0" /></label>
+        <label>Diện tích (m²)<input id="roomArea" type="number" min="0" /></label><label>Sức chứa<input id="roomCapacity" type="number" min="1" value="2" /></label>
+        <label>Loại phòng<select id="roomType"><option>Phòng trọ</option><option>Studio</option><option>Phòng gác lửng</option><option>Căn hộ mini</option></select></label>
+        <label>Trạng thái<select id="roomStatus"><option value="available">Đang trống</option><option value="reserved">Đã giữ chỗ</option><option value="occupied">Đã thuê</option><option value="maintenance">Bảo trì</option></select></label>
+        <label>Đơn giá điện (đ/kWh)<input id="roomElectricRate" type="number" min="0" value="3500" /></label>
+        <label>Cách tính nước<select id="roomWaterMode"><option value="meter">Theo đồng hồ (m³)</option><option value="fixed">Cố định/tháng</option></select></label>
+        <label>Đơn giá nước (đ/m³)<input id="roomWaterRate" type="number" min="0" value="15000" /></label><label>Tiền nước cố định/tháng<input id="roomWaterFixed" type="number" min="0" value="0" /></label>
+        <label class="span-2">Tiện nghi, cách nhau bằng dấu phẩy<input id="roomAmenities" placeholder="Điều hòa, Wifi, Nóng lạnh..." /></label>
+        <label class="span-2">Ghi chú<textarea id="roomNote" rows="2"></textarea></label>
+        <label class="span-2">Ảnh phòng
+          <div class="upload-zone"><input id="roomImages" type="file" accept="image/*" multiple><span>Thêm nhiều ảnh; có thể xóa/thay ảnh bất kỳ lúc nào.</span></div>
+          <div id="roomImagePreview" class="image-preview-grid"></div>
+        </label>
+        <button class="btn btn-primary span-2" type="submit">Lưu phòng</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tenant -->
+  <div class="modal hidden" id="tenantModal">
+    <div class="modal-backdrop" data-close-modal="tenantModal"></div>
+    <div class="modal-card"><button class="modal-close" data-close-modal="tenantModal">×</button><h3 id="tenantModalTitle">Thêm người thuê</h3>
+      <form id="tenantForm" class="form-grid">
+        <input type="hidden" id="tenantId" />
+        <label>Họ tên *<input id="tenantName" required /></label><label>Số điện thoại *<input id="tenantPhone" type="tel" required /></label>
+        <label>Mã PIN đăng nhập *<input id="tenantPin" required maxlength="8" placeholder="Ví dụ 2580" /></label><label>Phòng *<select id="tenantRoom" required></select></label>
+        <label>Ngày vào ở<input id="tenantMoveIn" type="date" /></label><label>Trạng thái<select id="tenantActive"><option value="true">Đang thuê</option><option value="false">Đã trả phòng</option></select></label>
+        <label>Tiền cọc phải đóng<input id="tenantDepositRequired" type="number" min="0" /></label><label>Tiền cọc đã nhận<input id="tenantDepositPaid" type="number" min="0" /></label>
+        <label class="span-2">Ghi chú<textarea id="tenantNote" rows="2"></textarea></label>
+        <button class="btn btn-primary span-2" type="submit">Lưu người thuê</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Utility reading -->
+  <div class="modal hidden" id="utilityModal">
+    <div class="modal-backdrop" data-close-modal="utilityModal"></div>
+    <div class="modal-card wide"><button class="modal-close" data-close-modal="utilityModal">×</button><h3>Ghi chỉ số điện & nước</h3>
+      <form id="utilityForm" class="form-grid">
+        <input type="hidden" id="utilityId" />
+        <label>Phòng *<select id="utilityRoom" required></select></label><label>Tháng *<input id="utilityMonth" type="month" required /></label>
+        <div class="form-section-title span-2">Điện</div>
+        <label>Chỉ số đầu kỳ<input id="electricStart" type="number" min="0" step="0.1" /></label><label>Chỉ số cuối kỳ<input id="electricEnd" type="number" min="0" step="0.1" /></label>
+        <label>Đơn giá điện (đ/kWh)<input id="electricRate" type="number" min="0" /></label><div class="calc-card"><small>Tiền điện dự kiến</small><strong id="electricPreview">0đ</strong><span id="electricUnitsPreview">0 kWh</span></div>
+        <div class="form-section-title span-2">Nước</div>
+        <label>Cách tính<select id="waterMode"><option value="meter">Theo đồng hồ</option><option value="fixed">Cố định</option></select></label><label>Đơn giá nước (đ/m³)<input id="waterRate" type="number" min="0" /></label>
+        <label class="water-meter-field">Chỉ số nước đầu kỳ<input id="waterStart" type="number" min="0" step="0.1" /></label><label class="water-meter-field">Chỉ số nước cuối kỳ<input id="waterEnd" type="number" min="0" step="0.1" /></label>
+        <label class="water-fixed-field hidden">Tiền nước cố định<input id="waterFixed" type="number" min="0" /></label><div class="calc-card"><small>Tiền nước dự kiến</small><strong id="waterPreview">0đ</strong><span id="waterUnitsPreview">0 m³</span></div>
+        <label>Phí khác<input id="utilityOtherFee" type="number" min="0" value="0" /></label><label>Ghi chú<input id="utilityNote" /></label>
+        <div class="smart-note span-2">💡 Đầu kỳ sẽ tự lấy từ cuối kỳ tháng trước nếu có dữ liệu. Anh chỉ cần kiểm tra và nhập chỉ số cuối tháng.</div>
+        <button class="btn btn-primary span-2" type="submit">Lưu chỉ số & tính tiền</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Invoice -->
+  <div class="modal hidden" id="invoiceModal">
+    <div class="modal-backdrop" data-close-modal="invoiceModal"></div>
+    <div class="modal-card"><button class="modal-close" data-close-modal="invoiceModal">×</button><h3>Lập hóa đơn tháng</h3>
+      <form id="invoiceForm" class="form-grid">
+        <input type="hidden" id="invoiceReadingId" />
+        <label>Phòng *<select id="invoiceRoom" required></select></label><label>Tháng *<input id="invoiceMonth" type="month" required /></label>
+        <label>Hạn thanh toán<input id="invoiceDueDate" type="date" /></label><label>Tiền phòng<input id="invoiceRent" type="number" min="0" /></label>
+        <label>Tiền điện<input id="invoiceElectric" type="number" min="0" /></label><label>Tiền nước<input id="invoiceWater" type="number" min="0" /></label>
+        <label>Phí khác<input id="invoiceOther" type="number" min="0" /></label><label>Thu thêm tiền cọc còn thiếu<select id="invoiceIncludeDeposit"><option value="false">Không</option><option value="true">Có</option></select></label>
+        <div class="invoice-total-preview span-2"><span>Tổng dự kiến</span><strong id="invoiceTotalPreview">0đ</strong></div>
+        <button class="btn btn-primary span-2" type="submit">Tạo hóa đơn</button>
+      </form>
+    </div>
+  </div>
+
+
+  <div class="modal hidden" id="galleryModal">
+    <div class="modal-backdrop" data-close-modal="galleryModal"></div>
+    <div class="modal-card wide"><button class="modal-close" data-close-modal="galleryModal">×</button><div id="galleryContent"></div></div>
+  </div>
+
+  <button class="sync-pill off" id="syncPill" title="Trạng thái đồng bộ"><span class="sync-dot"></span><span id="syncText">Chưa kết nối</span></button>
+
+  <script>
+/* ============================================================
+   Chỉ dùng khi đặt website trên hosting riêng (Vercel, Netlify…).
+   Chạy thẳng trên Apps Script thì file này không có tác dụng gì.
+
+   - Để nguyên như dưới nếu deploy lên Vercel: web gọi /api/sheets,
+     đường dẫn Apps Script khai trong biến môi trường APPS_SCRIPT_URL.
+   - Hosting khác (không có serverless): thay bằng đường dẫn /exec đầy đủ.
+   ============================================================ */
+window.HUY_CONFIG = {
+  apiUrl: location.protocol.indexOf('http') === 0 ? '/api/sheets' : ''
+};
+
+</script>
+  <script>
+/* ============================================================
+   sync.js — Đồng bộ Huy Rooms với Google Sheets
+   Tự nhận biết 2 chế độ:
+   1. Nhúng trong Apps Script (google.script.run) — không cần cấu hình gì.
+   2. Đặt trên hosting riêng — gọi tới đường dẫn /exec khai trong config.js.
+   ============================================================ */
+(function () {
+  var CFG_KEY = 'huy_rooms_conn';
+  var STATE_KEY = 'huy_rooms_sync_state';
+  var COLS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments'];
+  var GUEST_PUSH = ['appointments'];
+  var GUEST_PULL = ['properties', 'rooms'];
+
+  function embedded() {
+    return !!(window.google && window.google.script && window.google.script.run);
+  }
+  function readJSON(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; }
+  }
+  function writeJSON(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+  function stable(o) {
+    if (o === null || typeof o !== 'object') return o;
+    if (Array.isArray(o)) return o.map(stable);
+    var out = {};
+    Object.keys(o).sort().forEach(function (k) { out[k] = stable(o[k]); });
+    return out;
+  }
+  function hash(o) { return JSON.stringify(stable(o)); }
+  function contentHash(o) {
+    var c = Object.assign({}, o);
+    delete c.updatedAt; delete c.deleted;
+    return hash(c);
+  }
+
+  var Sync = {
+    api: null, cfg: null, state: null, baseline: {},
+    timer: null, pushTimer: null, busy: false, again: false,
+    lastError: '', listeners: [],
+    embedded: embedded,
+
+    /* ---------- cấu hình ---------- */
+    loadCfg: function () {
+      var base = window.HUY_CONFIG || {};
+      var saved = readJSON(CFG_KEY, {});
+      this.cfg = {
+        apiUrl: saved.apiUrl || base.apiUrl || '',
+        readKey: saved.readKey || base.readKey || '',
+        writeKey: saved.writeKey || '',
+        token: saved.token || ''
+      };
+      this.state = readJSON(STATE_KEY, { since: 0, lastOk: 0 });
+      this.baseline = readJSON('huy_rooms_baseline', {});
+      return this.cfg;
+    },
+    saveCfg: function (patch) {
+      Object.assign(this.cfg, patch || {});
+      writeJSON(CFG_KEY, this.cfg);
+      this.emit();
+    },
+    saveState: function () {
+      writeJSON(STATE_KEY, this.state);
+      writeJSON('huy_rooms_baseline', this.baseline);
+    },
+    isOn: function () { return embedded() || !!this.cfg.apiUrl; },
+    isAdmin: function () { return !!(this.cfg.token || this.cfg.writeKey); },
+    activeKey: function () { return this.cfg.writeKey || this.cfg.readKey || ''; },
+
+    attach: function (api) { this.api = api; this.loadCfg(); },
+    onStatus: function (fn) { this.listeners.push(fn); },
+    emit: function (msg) {
+      var s = {
+        on: this.isOn(), role: this.isAdmin() ? 'admin' : 'guest',
+        busy: this.busy, lastOk: this.state.lastOk,
+        error: this.lastError, message: msg || ''
+      };
+      this.listeners.forEach(function (fn) { try { fn(s); } catch (e) {} });
+    },
+
+    /* ---------- gọi máy chủ ---------- */
+    request: function (payload) {
+      var self = this;
+      payload.token = payload.token || this.cfg.token || '';
+      if (payload.key === undefined) payload.key = this.activeKey();
+      var body = JSON.stringify(payload);
+
+      var call;
+      if (embedded()) {
+        call = new Promise(function (resolve, reject) {
+          window.google.script.run
+            .withSuccessHandler(function (txt) {
+              try { resolve(typeof txt === 'string' ? JSON.parse(txt) : txt); }
+              catch (e) { reject(new Error('Phản hồi không đọc được')); }
+            })
+            .withFailureHandler(function (e) { reject(new Error((e && e.message) || 'Không gọi được máy chủ')); })
+            .api(body);
+        });
+      } else if (!this.cfg.apiUrl) {
+        return Promise.reject(new Error('Chưa cấu hình đường dẫn Apps Script'));
+      } else {
+        var sameOrigin = this.cfg.apiUrl.charAt(0) === '/';
+        call = fetch(this.cfg.apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: body
+        }).then(function (r) { return r.json(); })
+          .catch(function (e) {
+            if (sameOrigin) throw e;          // qua cầu nối /api/sheets thì không cần dự phòng
+            return self.jsonp(payload);       // gọi thẳng Apps Script, dự phòng khi trình duyệt chặn POST
+          });
+      }
+
+      return call.then(function (res) {
+        if (!res || res.ok === false) {
+          if (res && res.code === 'auth') self.saveCfg({ token: '' });
+          throw new Error((res && res.error) || 'Máy chủ trả về lỗi');
+        }
+        return res;
+      });
+    },
+    jsonp: function (payload) {
+      var url = this.cfg.apiUrl;
+      return new Promise(function (resolve, reject) {
+        var cb = 'huycb' + Date.now() + Math.floor(Math.random() * 1000);
+        var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        if (b64.length > 7000) { reject(new Error('Dữ liệu quá lớn để gửi dự phòng')); return; }
+        var s = document.createElement('script');
+        var timer = setTimeout(function () { cleanup(); reject(new Error('Máy chủ không phản hồi')); }, 25000);
+        function cleanup() { clearTimeout(timer); delete window[cb]; s.remove(); }
+        window[cb] = function (res) { cleanup(); resolve(res); };
+        s.onerror = function () { cleanup(); reject(new Error('Không gọi được Apps Script')); };
+        s.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + cb + '&p=' + encodeURIComponent(b64);
+        document.body.appendChild(s);
+      });
+    },
+
+    /* ---------- so sánh thay đổi cục bộ ---------- */
+    snapshot: function () {
+      var data = this.api.getData();
+      var base = {};
+      COLS.forEach(function (c) {
+        base[c] = {};
+        (data[c] || []).forEach(function (item) { base[c][item.id] = hash(item); });
+      });
+      base.__settings = hash(data.settings);
+      this.baseline = base;
+      this.saveState();
+    },
+    computeChanges: function () {
+      var data = this.api.getData();
+      var now = Date.now(), changes = {}, self = this;
+      var cols = this.isAdmin() ? COLS : GUEST_PUSH;
+      cols.forEach(function (c) {
+        var base = self.baseline[c] || {}, seen = {}, list = [];
+        (data[c] || []).forEach(function (item) {
+          if (!item.id) return;
+          seen[item.id] = 1;
+          if (item._temp) return; // bản ghi tạm của cổng cư dân, không đẩy lên
+          var h = hash(item);
+          if (base[item.id] !== h) { item.updatedAt = now; list.push(item); }
+        });
+        Object.keys(base).forEach(function (id) {
+          if (!seen[id]) list.push({ id: id, deleted: true, updatedAt: now });
+        });
+        if (list.length) changes[c] = list;
+      });
+      if (this.isAdmin()) {
+        var sh = hash(data.settings);
+        if (this.baseline.__settings !== sh) {
+          changes.settings = [Object.assign({ id: 'app' }, data.settings, { updatedAt: now })];
+        }
+      }
+      return changes;
+    },
+    hasPending: function () { return Object.keys(this.computeChanges()).length > 0; },
+
+    applyRemote: function (changes) {
+      var data = this.api.getData(), self = this, touched = false;
+      var cols = this.isAdmin() ? COLS : GUEST_PULL;
+      cols.forEach(function (c) {
+        (changes[c] || []).forEach(function (rec) {
+          var arr = data[c] || (data[c] = []);
+          var idx = -1;
+          for (var i = 0; i < arr.length; i++) { if (arr[i].id === rec.id) { idx = i; break; } }
+          if (rec.deleted) {
+            if (idx >= 0) { arr.splice(idx, 1); touched = true; }
+            if (self.baseline[c]) delete self.baseline[c][rec.id];
+            return;
+          }
+          var same = idx >= 0 && contentHash(arr[idx]) === contentHash(rec);
+          if (idx >= 0) arr[idx] = rec; else arr.push(rec);
+          if (!self.baseline[c]) self.baseline[c] = {};
+          self.baseline[c][rec.id] = hash(rec);
+          if (!same) touched = true; // chỉ vẽ lại khi nội dung thật sự đổi
+        });
+      });
+      if (this.isAdmin() && changes.settings && changes.settings.length) {
+        var s = Object.assign({}, changes.settings[0]);
+        delete s.id; delete s.updatedAt; delete s.deleted;
+        Object.assign(data.settings, s);
+        this.baseline.__settings = hash(data.settings);
+        touched = true;
+      }
+      return touched;
+    },
+
+    /* ---------- vòng đồng bộ ---------- */
+    onLocalChange: function () {
+      if (!this.isOn()) return;
+      var self = this;
+      clearTimeout(this.pushTimer);
+      this.pushTimer = setTimeout(function () { self.cycle(); }, 900);
+      this.emit();
+    },
+    cycle: function (manual) {
+      var self = this;
+      if (!this.isOn()) return Promise.resolve();
+      if (this.busy) { this.again = true; return Promise.resolve(); } // xếp hàng, không bỏ sót
+      this.busy = true; this.again = false;
+      this.emit(manual ? 'Đang đồng bộ…' : '');
+      var changes = this.computeChanges();
+      return this.request({ action: 'sync', since: this.state.since || 0, changes: changes })
+        .then(function (res) {
+          Object.keys(changes).forEach(function (c) {
+            if (c === 'settings') { self.baseline.__settings = hash(self.api.getData().settings); return; }
+            if (!self.baseline[c]) self.baseline[c] = {};
+            changes[c].forEach(function (rec) {
+              if (rec.deleted) delete self.baseline[c][rec.id];
+              else self.baseline[c][rec.id] = hash(rec);
+            });
+          });
+          var touched = self.applyRemote(res.changes || {});
+          self.state.since = res.serverTime;
+          self.state.lastOk = Date.now();
+          self.lastError = '';
+          self.saveState();
+          if (touched) { self.api.saveLocal(); self.api.rerender(); }
+          self.busy = false; self.emit(manual ? 'Đã đồng bộ' : '');
+          if (self.again) return self.cycle();
+          return res;
+        })
+        .catch(function (err) {
+          self.busy = false; self.again = false;
+          self.lastError = err.message || String(err);
+          self.emit();
+          if (manual) self.api.toast('Không đồng bộ được: ' + self.lastError);
+        });
+    },
+    start: function () {
+      var self = this;
+      if (!this.isOn()) { this.emit(); return; }
+      this.cycle();
+      clearInterval(this.timer);
+      this.timer = setInterval(function () {
+        if (document.hidden) return;
+        self.cycle();
+      }, this.isAdmin() ? 20000 : 60000);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) self.cycle(); });
+      window.addEventListener('online', function () { self.cycle(); });
+    },
+
+    /** Lấy lại toàn bộ dữ liệu từ máy chủ (dùng ngay sau khi đăng nhập quản lý) */
+    fullPull: function () {
+      var self = this;
+      this.state.since = 0;
+      this.baseline = {};
+      return this.request({ action: 'sync', since: 0, changes: {} }).then(function (r) {
+        var data = self.api.getData();
+        COLS.forEach(function (c) { data[c] = []; });
+        self.applyRemote(r.changes || {});
+        self.state.since = r.serverTime;
+        self.state.lastOk = Date.now();
+        self.saveState();
+        self.api.saveLocal(); self.api.rerender();
+        self.start();
+        return r;
+      });
+    },
+
+    /* ---------- kết nối thủ công (bản đặt trên hosting riêng) ---------- */
+    connect: function (opts) {
+      var self = this;
+      this.saveCfg({
+        apiUrl: (opts.apiUrl || '').trim(),
+        readKey: (opts.readKey || '').trim(),
+        writeKey: (opts.writeKey || '').trim()
+      });
+      return this.request({ action: 'ping' }).then(function (res) {
+        if (opts.mode === 'pull') return self.fullPull().then(function () { return { mode: 'pull', role: res.role }; });
+        self.state.since = 0;
+        self.baseline = {};
+        return self.cycle(true).then(function () { self.start(); return { mode: 'push', role: res.role }; });
+      });
+    },
+    disconnect: function () {
+      clearInterval(this.timer);
+      this.saveCfg({ writeKey: '', token: '' });
+      this.state = { since: 0, lastOk: 0 };
+      this.baseline = {};
+      this.saveState();
+      this.emit();
+    },
+
+    /* ---------- ảnh ---------- */
+    uploadImage: function (blob, name) {
+      var self = this;
+      if (!this.isOn() || !this.isAdmin()) return Promise.reject(new Error('offline'));
+      return new Promise(function (resolve, reject) {
+        var fr = new FileReader();
+        fr.onload = function () {
+          var b64 = String(fr.result).split(',')[1];
+          self.request({
+            action: 'upload',
+            name: name || ('anh-' + Date.now() + '.jpg'),
+            mime: blob.type || 'image/jpeg',
+            data: b64
+          }).then(function (res) { resolve(res.url); }).catch(reject);
+        };
+        fr.onerror = function () { reject(new Error('Không đọc được ảnh')); };
+        fr.readAsDataURL(blob);
+      });
+    },
+
+    /* ---------- tài khoản ---------- */
+    adminLogin: function (password) {
+      var self = this;
+      return this.request({ action: 'login', password: password, key: '' }).then(function (res) {
+        self.saveCfg({ token: res.token });
+        return res;
+      });
+    },
+    changePassword: function (newPassword) {
+      return this.request({ action: 'setPassword', newPassword: newPassword });
+    },
+    residentLogin: function (phone, pin) {
+      return this.request({ action: 'resident', phone: phone, pin: pin });
+    }
+  };
+
+  window.Sync = Sync;
+})();
+
+</script>
+  <script>
+const STORAGE_KEY='huy_rooms_v2';
+const LEGACY_KEY='huy_rooms_v1';
+const ADMIN_PASSWORD='123456';
+const IMG_DB='HuyRoomsMedia';
+const IMG_STORE='images';
+let currentResidentId=null;
+let publicFilters={q:'',area:'all',status:'all',maxPrice:999999999};
+let propertyImageState={existing:[],removed:[],newFiles:[]};
+let roomImageState={existing:[],removed:[],newFiles:[]};
+const imageUrlCache=new Map();
+
+function uid(prefix='id'){return prefix+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function money(n){return new Intl.NumberFormat('vi-VN').format(Math.round(Number(n||0)))+'đ'}
+function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function today(){return new Date().toISOString().slice(0,10)}
+function monthNow(){return new Date().toISOString().slice(0,7)}
+function prevMonth(m){const [y,mo]=m.split('-').map(Number);const d=new Date(y,mo-2,1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+function nextDayISO(days=7){const d=new Date();d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)}
+function daysUntil(date){if(!date)return 9999;const a=new Date(today()+'T00:00:00'),b=new Date(date+'T00:00:00');return Math.round((b-a)/86400000)}
+function normalizePhone(v=''){return String(v).replace(/\D/g,'')}
+function statusLabel(s){return({available:'Đang trống',reserved:'Đã giữ chỗ',occupied:'Đã thuê',maintenance:'Bảo trì'})[s]||s}
+function apptStatusLabel(s){return({new:'Mới',confirmed:'Đã xác nhận',done:'Đã xem',cancelled:'Đã hủy'})[s]||s}
+function billStatusLabel(s){return({unpaid:'Chưa thanh toán',partial:'Thanh toán một phần',paid:'Đã thanh toán',overdue:'Quá hạn'})[s]||s}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function openModal(id){document.getElementById(id)?.classList.remove('hidden')}
+function closeModal(id){document.getElementById(id)?.classList.add('hidden')}
+
+const demoData={
+  properties:[
+    {id:'p1',name:'Nam Đông Hà Residence',area:'Nam Đông Hà',address:'Khu vực trung tâm Nam Đông Hà, Quảng Trị',description:'Khu trọ yên tĩnh, sáng thoáng, gần tiện ích',phone:'0846413314',imageIds:[]},
+    {id:'p2',name:'Central House 02',area:'Đông Hà',address:'Gần trung tâm Đông Hà, Quảng Trị',description:'Phù hợp người đi làm và sinh viên',phone:'0846413314',imageIds:[]},
+    {id:'p3',name:'Mini Studio 03',area:'Nam Đông Hà',address:'Khu dân cư Nam Đông Hà, Quảng Trị',description:'Căn hộ mini khép kín, riêng tư',phone:'0846413314',imageIds:[]}
+  ],
+  rooms:[
+    {id:'r1',propertyId:'p1',name:'P101',price:2200000,deposit:2200000,area:22,status:'available',type:'Phòng trọ',capacity:2,amenities:['Điều hòa','Nóng lạnh','Wifi'],note:'',electricRate:3500,waterMode:'fixed',waterRate:15000,waterFixed:100000,imageIds:[]},
+    {id:'r2',propertyId:'p1',name:'P102',price:2500000,deposit:2500000,area:25,status:'reserved',type:'Phòng trọ',capacity:2,amenities:['Điều hòa','Nóng lạnh','Ban công'],note:'',electricRate:3500,waterMode:'meter',waterRate:15000,waterFixed:0,imageIds:[]},
+    {id:'r3',propertyId:'p1',name:'P201',price:2900000,deposit:2900000,area:28,status:'occupied',type:'Phòng gác lửng',capacity:3,amenities:['Điều hòa','Nóng lạnh','Gác lửng'],note:'',electricRate:3500,waterMode:'meter',waterRate:15000,waterFixed:0,imageIds:[]},
+    {id:'r4',propertyId:'p2',name:'A01',price:1800000,deposit:1800000,area:18,status:'available',type:'Phòng trọ',capacity:1,amenities:['Wifi','WC riêng'],note:'',electricRate:3500,waterMode:'fixed',waterRate:15000,waterFixed:100000,imageIds:[]},
+    {id:'r5',propertyId:'p2',name:'A02',price:2100000,deposit:2100000,area:20,status:'available',type:'Phòng trọ',capacity:2,amenities:['Wifi','WC riêng','Chỗ để xe'],note:'',electricRate:3500,waterMode:'fixed',waterRate:15000,waterFixed:120000,imageIds:[]},
+    {id:'r6',propertyId:'p3',name:'ST01',price:3800000,deposit:5000000,area:32,status:'available',type:'Studio',capacity:2,amenities:['Điều hòa','Tủ lạnh','Bếp','Máy giặt'],note:'',electricRate:3500,waterMode:'meter',waterRate:16000,waterFixed:0,imageIds:[]},
+    {id:'r7',propertyId:'p3',name:'ST02',price:4200000,deposit:5000000,area:35,status:'maintenance',type:'Studio',capacity:2,amenities:['Điều hòa','Tủ lạnh','Bếp','Ban công'],note:'',electricRate:3500,waterMode:'meter',waterRate:16000,waterFixed:0,imageIds:[]}
+  ],
+  appointments:[
+    {id:'a1',roomId:'r1',customerName:'Nguyễn Văn An',customerPhone:'0905123456',date:nextDayISO(1),time:'09:30',note:'Muốn xem phòng buổi sáng',status:'new',createdAt:new Date().toISOString()}
+  ],
+  tenants:[
+    {id:'t1',name:'Trần Minh Tú',phone:'0935123456',pin:'2580',roomId:'r3',moveInDate:'2026-06-01',active:true,depositRequired:2900000,depositPaid:2900000,note:''}
+  ],
+  utilityReadings:[],
+  invoices:[],
+  settings:{managerName:'Quản lý Huy Rooms',managerPhone:'0846413314',defaultDueDay:5,zaloMode:'manual'}
+};
+(function seedDemoBilling(){
+  const m=monthNow();
+  demoData.utilityReadings.push({id:'u1',roomId:'r3',month:m,electricStart:1250,electricEnd:1312,electricRate:3500,electricUnits:62,electricAmount:217000,waterMode:'meter',waterStart:80,waterEnd:84,waterRate:15000,waterFixed:0,waterUnits:4,waterAmount:60000,otherFee:0,note:'',createdAt:new Date().toISOString()});
+  demoData.invoices.push({id:'i1',tenantId:'t1',roomId:'r3',readingId:'u1',month:m,dueDate:nextDayISO(5),rent:2900000,electric:217000,water:60000,other:0,depositAmount:0,total:3177000,amountPaid:0,status:'unpaid',depositApplied:false,createdAt:new Date().toISOString()});
+})();
+
+function migrateData(x){
+  const d=x&&typeof x==='object'?x:{};
+  d.properties=Array.isArray(d.properties)?d.properties:[];
+  d.rooms=Array.isArray(d.rooms)?d.rooms:[];
+  d.appointments=Array.isArray(d.appointments)?d.appointments:[];
+  d.tenants=Array.isArray(d.tenants)?d.tenants:[];
+  d.utilityReadings=Array.isArray(d.utilityReadings)?d.utilityReadings:[];
+  d.invoices=Array.isArray(d.invoices)?d.invoices:[];
+  d.settings={...demoData.settings,...(d.settings||{})};
+  d.properties.forEach(p=>{p.imageIds=Array.isArray(p.imageIds)?p.imageIds:[]});
+  d.rooms.forEach(r=>{r.imageIds=Array.isArray(r.imageIds)?r.imageIds:[];r.electricRate=Number(r.electricRate||3500);r.waterMode=r.waterMode||'fixed';r.waterRate=Number(r.waterRate||15000);r.waterFixed=Number(r.waterFixed||0)});
+  d.tenants.forEach(t=>{t.active=t.active!==false;t.depositRequired=Number(t.depositRequired||0);t.depositPaid=Number(t.depositPaid||0);t.pin=String(t.pin||'2580')});
+  return d;
+}
+function loadData(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw)return migrateData(JSON.parse(raw));
+    const legacy=localStorage.getItem(LEGACY_KEY);
+    if(legacy){const x=migrateData(JSON.parse(legacy));localStorage.setItem(STORAGE_KEY,JSON.stringify(x));return x}
+  }catch(e){}
+  return migrateData(structuredClone(demoData));
+}
+let data=loadData();
+function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+function saveData(){saveLocal();if(window.Sync&&Sync.api)Sync.onLocalChange()}
+function getProperty(id){return data.properties.find(x=>x.id===id)}
+function getRoom(id){return data.rooms.find(x=>x.id===id)}
+function getTenant(id){return data.tenants.find(x=>x.id===id)}
+function activeTenantForRoom(roomId){return data.tenants.find(t=>t.roomId===roomId&&t.active)}
+function getReading(id){return data.utilityReadings.find(x=>x.id===id)}
+function getInvoice(id){return data.invoices.find(x=>x.id===id)}
+
+// ---------- Image database ----------
+function openImageDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(IMG_DB,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(IMG_STORE))db.createObjectStore(IMG_STORE,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function dbPutImage(id,blob){const db=await openImageDB();return new Promise((resolve,reject)=>{const tx=db.transaction(IMG_STORE,'readwrite');tx.objectStore(IMG_STORE).put({id,blob,createdAt:Date.now()});tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
+async function dbGetImage(id){const db=await openImageDB();return new Promise((resolve,reject)=>{const req=db.transaction(IMG_STORE,'readonly').objectStore(IMG_STORE).get(id);req.onsuccess=()=>resolve(req.result?.blob||null);req.onerror=()=>reject(req.error)})}
+async function dbDeleteImage(id){imageUrlCache.delete(id);const db=await openImageDB();return new Promise((resolve,reject)=>{const tx=db.transaction(IMG_STORE,'readwrite');tx.objectStore(IMG_STORE).delete(id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
+async function compressImage(file){
+  try{
+    const bmp=await createImageBitmap(file);const max=1600;const scale=Math.min(1,max/Math.max(bmp.width,bmp.height));const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(bmp,0,0,w,h);bmp.close?.();return await new Promise(res=>c.toBlob(b=>res(b||file),'image/jpeg',.82));
+  }catch(e){return file}
+}
+async function saveImageFile(file){
+  const blob=await compressImage(file);
+  if(window.Sync&&Sync.isOn()&&Sync.isAdmin()){
+    try{return await Sync.uploadImage(blob,file.name||('anh-'+Date.now()+'.jpg'))}
+    catch(e){showToast('Chưa tải được ảnh lên Drive, tạm lưu trên máy này')}
+  }
+  const id=uid('img');await dbPutImage(id,blob);return id}
+async function imageUrl(id){if(!id)return'';if(/^https?:\/\//.test(id))return id;if(imageUrlCache.has(id))return imageUrlCache.get(id);try{const blob=await dbGetImage(id);if(!blob)return'';const url=URL.createObjectURL(blob);imageUrlCache.set(id,url);return url}catch(e){return''}}
+async function hydrateImages(root=document){const els=[...root.querySelectorAll('[data-image-id]')];await Promise.all(els.map(async el=>{const id=el.dataset.imageId;if(!id)return;const url=await imageUrl(id);if(url){el.onerror=()=>{if(el.dataset.retried)return;const m=String(url).match(/googleusercontent\.com\/d\/([^=]+)/);if(m){el.dataset.retried='1';el.src='https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1600'}};el.src=url;el.classList.remove('image-loading')}else el.style.display='none'}))}
+function applyTableLabels(root=document){root.querySelectorAll('table.data-table').forEach(tb=>{const heads=[...tb.querySelectorAll('thead th')].map(th=>th.textContent.trim());tb.querySelectorAll('tbody tr').forEach(tr=>{[...tr.children].forEach((td,i)=>{td.setAttribute('data-label',heads[i]||'');if(td.querySelector('.table-actions'))td.setAttribute('data-label','')})})})}
+function primaryPropertyImage(p){if(p?.imageIds?.[0])return p.imageIds[0];const r=data.rooms.find(x=>x.propertyId===p?.id&&x.imageIds?.length);return r?.imageIds?.[0]||''}
+function primaryRoomImage(r){return r?.imageIds?.[0]||primaryPropertyImage(getProperty(r?.propertyId))}
+
+async function renderImageEditor(kind){
+  const state=kind==='property'?propertyImageState:roomImageState;const el=document.getElementById(kind==='property'?'propertyImagePreview':'roomImagePreview');if(!el)return;
+  el.innerHTML='';
+  for(const id of state.existing){const item=document.createElement('div');item.className='image-preview';item.innerHTML=`<img alt="Ảnh đã lưu"><button type="button" title="Xóa ảnh">×</button>`;const url=await imageUrl(id);if(url)item.querySelector('img').src=url;item.querySelector('button').onclick=()=>{state.existing=state.existing.filter(x=>x!==id);state.removed.push(id);renderImageEditor(kind)};el.appendChild(item)}
+  state.newFiles.forEach((file,index)=>{const item=document.createElement('div');item.className='image-preview';const url=URL.createObjectURL(file);item.innerHTML=`<img src="${url}" alt="Ảnh mới"><button type="button" title="Bỏ ảnh">×</button>`;item.querySelector('button').onclick=()=>{state.newFiles.splice(index,1);renderImageEditor(kind)};el.appendChild(item)});
+}
+async function commitImageState(state){const ids=[];for(const f of state.newFiles){try{ids.push(await saveImageFile(f))}catch(e){showToast('Có ảnh không lưu được. Hãy thử lại.')}}for(const id of state.removed){try{await dbDeleteImage(id)}catch(e){}}return [...state.existing,...ids]}
+
+// ---------- Public site ----------
+function renderAreaOptions(){const areas=[...new Set(data.properties.map(p=>p.area).filter(Boolean))].sort();const html='<option value="all">Tất cả khu vực</option>'+areas.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');document.getElementById('areaFilter').innerHTML=html;document.getElementById('heroAreaFilter').innerHTML=html;document.getElementById('areaFilter').value=publicFilters.area;document.getElementById('heroAreaFilter').value=publicFilters.area}
+function renderHeroStats(){const available=data.rooms.filter(r=>r.status==='available').length;document.getElementById('heroStats').innerHTML=`<div class="stat-mini"><strong>${data.properties.length}</strong><span>Căn trọ</span></div><div class="stat-mini"><strong>${data.rooms.length}</strong><span>Tổng số phòng</span></div><div class="stat-mini"><strong>${available}</strong><span>Phòng đang trống</span></div>`}
+function roomPublicRow(r){const canBook=r.status==='available';const img=primaryRoomImage(r);return `<div class="room-row">
+  ${img?`<img class="room-thumb image-loading" data-image-id="${img}" alt="${esc(r.name)}" onclick="openGallery('${r.id}')" style="cursor:pointer">`:`<div class="room-thumb room-thumb-placeholder" onclick="openGallery('${r.id}')" style="cursor:pointer">⌂</div>`}
+  <div class="room-name"><strong>${esc(r.name)} · ${esc(r.type)}</strong><small>${r.area?`${r.area} m²`:''}${r.capacity?` · Tối đa ${r.capacity} người`:''}</small><div class="amenities">${(r.amenities||[]).slice(0,4).map(a=>`<span class="amenity">${esc(a)}</span>`).join('')}</div></div>
+  <div class="room-price"><strong>${money(r.price)}/tháng</strong><small>Cọc ${money(r.deposit)}</small></div>
+  <div class="room-actions"><span class="status-dot status-${r.status}">${statusLabel(r.status)}</span>${r.imageIds?.length?`<button class="btn-mini" onclick="openGallery('${r.id}')">Xem ảnh</button>`:''}<button class="btn-mini" ${canBook?'':'disabled'} onclick="openBooking('${r.id}')">${canBook?'Đặt lịch':'Chưa thể đặt'}</button></div>
+</div>`}
+async function renderPublic(){
+  renderAreaOptions();renderHeroStats();const q=publicFilters.q.toLowerCase();
+  const matches=data.properties.map(p=>{let rooms=data.rooms.filter(r=>r.propertyId===p.id).filter(r=>publicFilters.status==='all'||r.status===publicFilters.status).filter(r=>Number(r.price)<=publicFilters.maxPrice).filter(r=>!q||[p.name,p.address,p.area,r.name,r.type,(r.amenities||[]).join(' ')].join(' ').toLowerCase().includes(q));if(q&&[p.name,p.address,p.area].join(' ').toLowerCase().includes(q))rooms=data.rooms.filter(r=>r.propertyId===p.id).filter(r=>publicFilters.status==='all'||r.status===publicFilters.status).filter(r=>Number(r.price)<=publicFilters.maxPrice);if(publicFilters.area!=='all'&&p.area!==publicFilters.area)return null;return rooms.length?{p,rooms}:null}).filter(Boolean);
+  const total=matches.reduce((s,x)=>s+x.rooms.length,0);document.getElementById('resultCount').textContent=`${total} phòng phù hợp`;
+  document.getElementById('propertyGrid').innerHTML=matches.length?matches.map(({p,rooms})=>{const cover=primaryPropertyImage(p);return `<article class="property-card"><div class="property-cover">${cover?`<img class="image-loading" data-image-id="${cover}" alt="${esc(p.name)}">`:`<div class="property-cover-fallback"></div>`}<div class="property-cover-overlay"><div><span class="pill">${rooms.filter(r=>r.status==='available').length} phòng trống</span><h3>${esc(p.name)}</h3><p>${esc(p.address)}</p></div></div></div><div class="property-body"><div class="property-meta"><span>⌖ ${esc(p.area)}</span><span>⌂ ${data.rooms.filter(r=>r.propertyId===p.id).length} phòng</span><span>☎ ${esc(p.phone||'Liên hệ')}</span></div><div class="room-list">${rooms.map(roomPublicRow).join('')}</div></div></article>`}).join(''):'<div class="empty" style="grid-column:1/-1">Không có phòng phù hợp với bộ lọc hiện tại.</div>';
+  await hydrateImages(document.getElementById('propertyGrid'));
+}
+window.openGallery=async function(roomId){const r=getRoom(roomId);if(!r)return;const p=getProperty(r.propertyId);const ids=[...(r.imageIds||[])];if(!ids.length&&p?.imageIds?.length)ids.push(...p.imageIds);document.getElementById('galleryContent').innerHTML=`<div class="gallery-head"><h3>${esc(p?.name||'')} · ${esc(r.name)}</h3><p>${money(r.price)}/tháng · Cọc ${money(r.deposit)} · ${r.area||'-'} m²</p></div><div class="gallery-grid">${ids.length?ids.map(id=>`<img data-image-id="${id}" alt="Ảnh phòng">`).join(''):'<div class="gallery-empty">Phòng này chưa có ảnh. Quản lý có thể tải ảnh lên trong phần Căn trọ & phòng.</div>'}</div><div class="gallery-info">${(r.amenities||[]).map(a=>`<span>${esc(a)}</span>`).join('')}</div>`;openModal('galleryModal');await hydrateImages(document.getElementById('galleryContent'))}
+window.openBooking=function(roomId){const r=getRoom(roomId);if(!r)return;const p=getProperty(r.propertyId);document.getElementById('bookingRoomId').value=r.id;document.getElementById('bookingRoomSummary').innerHTML=`<h4>${esc(p?.name||'')} · ${esc(r.name)}</h4><p>${money(r.price)}/tháng · ${r.area||'-'} m² · ${statusLabel(r.status)}</p>`;const date=document.getElementById('appointmentDate');date.min=today();date.value=nextDayISO(1);document.getElementById('appointmentTime').value='09:00';openModal('bookingModal')}
+
+// ---------- Navigation / login ----------
+function showPublic(){document.getElementById('publicApp').classList.remove('hidden');document.getElementById('publicTopbar').classList.remove('hidden');document.getElementById('adminApp').classList.add('hidden');document.getElementById('residentApp').classList.add('hidden');renderPublic();updateSyncPill();window.scrollTo(0,0)}
+function showAdmin(){document.getElementById('publicApp').classList.add('hidden');document.getElementById('publicTopbar').classList.add('hidden');document.getElementById('residentApp').classList.add('hidden');document.getElementById('adminApp').classList.remove('hidden');renderAdmin();updateSyncPill();window.scrollTo(0,0)}
+function showResident(tenantId){currentResidentId=tenantId;document.getElementById('publicApp').classList.add('hidden');document.getElementById('publicTopbar').classList.add('hidden');document.getElementById('adminApp').classList.add('hidden');document.getElementById('residentApp').classList.remove('hidden');renderResident();window.scrollTo(0,0)}
+
+// ---------- Resident portal ----------
+function effectiveInvoiceStatus(i){if(i.status==='paid')return'paid';if(i.dueDate&&i.dueDate<today())return'overdue';return i.status||'unpaid'}
+function remainingInvoice(i){return Math.max(0,Number(i.total||0)-Number(i.amountPaid||0))}
+function invoiceBadge(i){const s=effectiveInvoiceStatus(i);return `<span class="badge badge-${s}">${billStatusLabel(s)}</span>`}
+async function renderResident(){
+  const t=getTenant(currentResidentId);if(!t){showPublic();return}const r=getRoom(t.roomId),p=getProperty(r?.propertyId);const inv=[...data.invoices].filter(i=>i.tenantId===t.id).sort((a,b)=>b.month.localeCompare(a.month));const readings=[...data.utilityReadings].filter(u=>u.roomId===t.roomId).sort((a,b)=>b.month.localeCompare(a.month));const latest=inv[0];const depLeft=Math.max(0,t.depositRequired-t.depositPaid);const totalDebt=inv.reduce((s,i)=>s+remainingInvoice(i),0);
+  document.getElementById('residentContent').innerHTML=`
+    <div class="resident-welcome"><div class="eyebrow dark">CỔNG THÔNG TIN CƯ DÂN</div><h1>Xin chào, ${esc(t.name)}</h1><p>${esc(p?.name||'')} · Phòng ${esc(r?.name||'-')} · ${esc(p?.address||'')}</p></div>
+    <div class="resident-grid">
+      <div class="resident-card"><h3>Phòng đang ở</h3><div class="big-number">${esc(r?.name||'-')}</div><div class="kv"><span>Tiền phòng</span><strong>${money(r?.price)}</strong></div><div class="kv"><span>Ngày vào ở</span><strong>${esc(t.moveInDate||'-')}</strong></div></div>
+      <div class="resident-card"><h3>Tiền cọc</h3><div class="big-number">${money(t.depositPaid)}</div><div class="kv"><span>Phải đóng</span><strong>${money(t.depositRequired)}</strong></div><div class="kv"><span>Còn thiếu</span><strong>${money(depLeft)}</strong></div><div class="progress-line"><i style="width:${Math.min(100,t.depositRequired?100*t.depositPaid/t.depositRequired:100)}%"></i></div></div>
+      <div class="resident-card"><h3>Công nợ hiện tại</h3><div class="big-number">${money(totalDebt)}</div><div class="kv"><span>Hóa đơn chưa xong</span><strong>${inv.filter(i=>effectiveInvoiceStatus(i)!=='paid').length}</strong></div>${latest?`<div class="kv"><span>Hóa đơn gần nhất</span>${invoiceBadge(latest)}</div>`:''}</div>
+      ${latest?`<div class="resident-card resident-history"><div class="panel-head"><div><h3>Hóa đơn tháng ${esc(latest.month)}</h3><p>Hạn thanh toán ${esc(latest.dueDate||'-')}</p></div>${invoiceBadge(latest)}</div><div class="bill-breakdown"><div class="bill-row"><span>Tiền phòng</span><strong>${money(latest.rent)}</strong></div><div class="bill-row"><span>Tiền điện</span><strong>${money(latest.electric)}</strong></div><div class="bill-row"><span>Tiền nước</span><strong>${money(latest.water)}</strong></div><div class="bill-row"><span>Phí khác</span><strong>${money(latest.other)}</strong></div>${latest.depositAmount?`<div class="bill-row"><span>Tiền cọc</span><strong>${money(latest.depositAmount)}</strong></div>`:''}<div class="bill-row total"><span>Tổng hóa đơn</span><strong>${money(latest.total)}</strong></div><div class="bill-row"><span>Đã thanh toán</span><strong>${money(latest.amountPaid)}</strong></div><div class="bill-row total"><span>Còn lại</span><strong>${money(remainingInvoice(latest))}</strong></div></div><div style="margin-top:12px"><button class="btn btn-light" onclick="copyInvoiceText('${latest.id}')">Sao chép chi tiết hóa đơn</button></div></div>`:''}
+      <div class="resident-card resident-history"><div class="panel-head"><div><h3>Lịch sử điện & nước</h3><p>Tự đối chiếu chỉ số theo từng tháng</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Tháng</th><th>Điện đầu → cuối</th><th>Số điện</th><th>Tiền điện</th><th>Nước</th><th>Tiền nước</th></tr></thead><tbody>${readings.length?readings.map(u=>`<tr><td>${esc(u.month)}</td><td>${u.electricStart} → ${u.electricEnd}</td><td>${u.electricUnits} kWh</td><td>${money(u.electricAmount)}</td><td>${u.waterMode==='fixed'?'Cố định':`${u.waterStart} → ${u.waterEnd} (${u.waterUnits} m³)`}</td><td>${money(u.waterAmount)}</td></tr>`).join(''):'<tr><td colspan="6">Chưa có dữ liệu.</td></tr>'}</tbody></table></div></div>
+      <div class="resident-card resident-history"><div class="panel-head"><div><h3>Lịch sử hóa đơn</h3><p>${inv.length} hóa đơn</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Tháng</th><th>Tổng</th><th>Đã thanh toán</th><th>Còn lại</th><th>Hạn</th><th>Trạng thái</th></tr></thead><tbody>${inv.length?inv.map(i=>`<tr><td>${esc(i.month)}</td><td>${money(i.total)}</td><td>${money(i.amountPaid)}</td><td>${money(remainingInvoice(i))}</td><td>${esc(i.dueDate||'-')}</td><td>${invoiceBadge(i)}</td></tr>`).join(''):'<tr><td colspan="6">Chưa có hóa đơn.</td></tr>'}</tbody></table></div></div>
+    </div>`;
+  await hydrateImages(document.getElementById('residentContent'));
+applyTableLabels(document.getElementById('residentApp'));
+}
+
+window.copyInvoiceText=function(id){const i=getInvoice(id);if(!i)return;const t=getTenant(i.tenantId),r=getRoom(i.roomId);const text=`HÓA ĐƠN ${i.month} - Phòng ${r?.name||''}\nTiền phòng: ${money(i.rent)}\nTiền điện: ${money(i.electric)}\nTiền nước: ${money(i.water)}\nPhí khác: ${money(i.other)}${i.depositAmount?`\nTiền cọc: ${money(i.depositAmount)}`:''}\nTổng: ${money(i.total)}\nĐã thanh toán: ${money(i.amountPaid)}\nCòn lại: ${money(remainingInvoice(i))}\nHạn thanh toán: ${i.dueDate||'-'}`;copyText(text,'Đã sao chép chi tiết hóa đơn')}
+
+// ---------- Admin common ----------
+function switchAdminView(view){document.querySelectorAll('.mobile-tabbar button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.getElementById('fabSheet')?.classList.remove('show');document.querySelectorAll('.side-link').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.querySelectorAll('.admin-view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+view)?.classList.add('active');document.getElementById('adminTitle').textContent=({dashboard:'Tổng quan',properties:'Căn trọ & phòng',tenants:'Người thuê',utilities:'Điện & nước',invoices:'Hóa đơn',appointments:'Lịch hẹn',settings:'Cài đặt'})[view]||view}
+document.querySelectorAll('.side-link').forEach(b=>b.addEventListener('click',()=>switchAdminView(b.dataset.view)));
+function renderAdmin(){renderDashboard();renderPropertyAdmin();renderTenants();renderUtilities();renderInvoices();renderAppointments();renderSettings();applyTableLabels(document.getElementById('adminApp'));syncTabbar();hydrateImages(document.getElementById('adminApp'))}
+
+function renderDashboard(){
+  const available=data.rooms.filter(r=>r.status==='available').length, occupied=data.rooms.filter(r=>r.status==='occupied').length, due=data.invoices.filter(i=>effectiveInvoiceStatus(i)!=='paid').reduce((s,i)=>s+remainingInvoice(i),0),reminders=data.invoices.filter(i=>effectiveInvoiceStatus(i)!=='paid'&&daysUntil(i.dueDate)<=3).sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));const newAppts=data.appointments.filter(a=>a.status==='new');
+  document.getElementById('view-dashboard').innerHTML=`<div class="dashboard-grid">
+    <div class="metric"><small>TỔNG PHÒNG</small><strong>${data.rooms.length}</strong><div class="trend">${data.properties.length} căn trọ</div></div>
+    <div class="metric"><small>PHÒNG TRỐNG</small><strong>${available}</strong><div class="trend">Sẵn sàng cho thuê</div></div>
+    <div class="metric"><small>ĐANG THUÊ</small><strong>${occupied}</strong><div class="trend">${data.tenants.filter(t=>t.active).length} người thuê</div></div>
+    <div class="metric"><small>CÔNG NỢ</small><strong>${money(due)}</strong><div class="trend">${data.invoices.filter(i=>effectiveInvoiceStatus(i)!=='paid').length} hóa đơn</div></div>
+    <div class="metric"><small>LỊCH HẸN MỚI</small><strong>${newAppts.length}</strong><div class="trend">Cần xác nhận</div></div>
+  </div><div class="admin-grid-2">
+    <div class="panel"><div class="panel-head"><div><h3>Việc cần xử lý</h3><p>Ưu tiên công nợ quá hạn và lịch hẹn mới</p></div></div>${reminders.length?reminders.slice(0,6).map(i=>{const t=getTenant(i.tenantId),r=getRoom(i.roomId),d=daysUntil(i.dueDate);return `<div class="reminder-box"><strong>${esc(t?.name||'')} · ${esc(r?.name||'')} · còn ${money(remainingInvoice(i))}</strong><span>${d<0?`Quá hạn ${Math.abs(d)} ngày`:d===0?'Đến hạn hôm nay':`Còn ${d} ngày đến hạn`} · hóa đơn ${esc(i.month)}</span><div class="table-actions" style="margin-top:8px"><button class="icon-btn" onclick="copyZaloReminder('${i.id}')">Sao chép nhắc Zalo</button><button class="icon-btn" onclick="recordPayment('${i.id}')">Ghi nhận thanh toán</button></div></div>`}).join(''):'<div class="empty">Không có hóa đơn đến hạn trong 3 ngày tới.</div>'}</div>
+    <div class="panel"><div class="panel-head"><div><h3>Lịch hẹn mới</h3><p>${newAppts.length} yêu cầu</p></div></div>${newAppts.length?newAppts.slice(0,5).map(appointmentCard).join(''):'<div class="empty">Chưa có lịch hẹn mới.</div>'}</div>
+  </div>`;
+}
+
+// ---------- Properties / rooms ----------
+function renderPropertyAdmin(){
+  const root=document.getElementById('view-properties');root.innerHTML=`<div class="panel-head"><div><h3>Danh sách căn trọ</h3><p>Sửa giá trực tiếp hoặc mở “Sửa & ảnh” để cập nhật chi tiết</p></div><button class="btn btn-primary" onclick="openPropertyForm()">+ Thêm căn</button></div>`+(data.properties.length?data.properties.map(p=>{const rooms=data.rooms.filter(r=>r.propertyId===p.id),img=primaryPropertyImage(p);return `<div class="property-admin-card"><div class="property-admin-head"><div class="property-admin-title">${img?`<img class="admin-property-thumb" data-image-id="${img}">`:`<div class="admin-property-thumb room-thumb-placeholder">⌂</div>`}<div><h3>${esc(p.name)}</h3><p>${esc(p.address)} · ${rooms.length} phòng</p></div></div><div class="property-admin-actions"><button class="icon-btn" onclick="openRoomForm(null,'${p.id}')">+ Phòng</button><button class="icon-btn" onclick="openPropertyForm('${p.id}')">Sửa & ảnh</button><button class="icon-btn danger" onclick="deleteProperty('${p.id}')">Xóa</button></div></div><div class="property-admin-body"><div class="table-wrap"><table class="data-table"><thead><tr><th>Ảnh</th><th>Phòng</th><th>Diện tích</th><th>Giá/tháng</th><th>Cọc</th><th>Trạng thái</th><th></th></tr></thead><tbody>${rooms.length?rooms.map(r=>{const ri=primaryRoomImage(r);return `<tr>${ri?`<td><img class="thumb-mini" data-image-id="${ri}"></td>`:`<td><div class="thumb-mini room-thumb-placeholder">⌂</div></td>`}<td><strong>${esc(r.name)}</strong><br><span style="color:var(--muted)">${esc(r.type)}</span></td><td>${r.area||'-'} m²</td><td><input class="inline-input" type="number" value="${Number(r.price||0)}" onchange="quickRoomMoney('${r.id}','price',this.value)"></td><td><input class="inline-input" type="number" value="${Number(r.deposit||0)}" onchange="quickRoomMoney('${r.id}','deposit',this.value)"></td><td><select class="select-small" onchange="quickRoomStatus('${r.id}',this.value)"><option value="available" ${r.status==='available'?'selected':''}>Đang trống</option><option value="reserved" ${r.status==='reserved'?'selected':''}>Giữ chỗ</option><option value="occupied" ${r.status==='occupied'?'selected':''}>Đã thuê</option><option value="maintenance" ${r.status==='maintenance'?'selected':''}>Bảo trì</option></select></td><td><div class="table-actions"><button class="icon-btn" onclick="openRoomForm('${r.id}')">Sửa & ảnh</button><button class="icon-btn danger" onclick="deleteRoom('${r.id}')">Xóa</button></div></td></tr>`}).join(''):'<tr><td colspan="7"><div class="empty">Chưa có phòng trong căn này.</div></td></tr>'}</tbody></table></div></div></div>`}).join(''):'<div class="empty">Chưa có căn trọ nào.</div>');hydrateImages(root)}
+window.quickRoomMoney=function(id,key,value){const r=getRoom(id);if(!r)return;r[key]=Math.max(0,Number(value||0));saveData();renderPublic();showToast(key==='price'?'Đã cập nhật giá phòng':'Đã cập nhật tiền cọc')}
+window.quickRoomStatus=function(id,status){const r=getRoom(id);if(!r)return;r.status=status;saveData();renderAdmin();renderPublic();showToast('Đã đổi trạng thái phòng')}
+window.deleteRoom=async function(id){const r=getRoom(id);if(!r)return;if(!confirm('Xóa phòng này? Dữ liệu hóa đơn/lịch sử cũ vẫn được giữ để đối chiếu.'))return;for(const img of r.imageIds||[])await dbDeleteImage(img);data.rooms=data.rooms.filter(x=>x.id!==id);data.tenants.filter(t=>t.roomId===id&&t.active).forEach(t=>t.active=false);saveData();renderAdmin();renderPublic();showToast('Đã xóa phòng')}
+window.deleteProperty=async function(id){const p=getProperty(id);const rooms=data.rooms.filter(r=>r.propertyId===id);if(!confirm(`Xóa căn trọ này và ${rooms.length} phòng thuộc căn?`))return;for(const img of p?.imageIds||[])await dbDeleteImage(img);for(const r of rooms)for(const img of r.imageIds||[])await dbDeleteImage(img);const roomIds=new Set(rooms.map(r=>r.id));data.properties=data.properties.filter(x=>x.id!==id);data.rooms=data.rooms.filter(r=>!roomIds.has(r.id));data.tenants.filter(t=>roomIds.has(t.roomId)&&t.active).forEach(t=>t.active=false);saveData();renderAdmin();renderPublic();showToast('Đã xóa căn trọ')}
+window.openPropertyForm=function(id=null){const p=id?getProperty(id):null;document.getElementById('propertyModalTitle').textContent=p?'Sửa căn trọ & ảnh':'Thêm căn trọ';document.getElementById('propertyId').value=p?.id||'';document.getElementById('propertyName').value=p?.name||'';document.getElementById('propertyArea').value=p?.area||'';document.getElementById('propertyAddress').value=p?.address||'';document.getElementById('propertyDescription').value=p?.description||'';document.getElementById('propertyPhone').value=p?.phone||data.settings.managerPhone||'';document.getElementById('propertyImages').value='';propertyImageState={existing:[...(p?.imageIds||[])],removed:[],newFiles:[]};renderImageEditor('property');openModal('propertyModal')}
+function fillRoomPropertySelect(selected){document.getElementById('roomProperty').innerHTML=data.properties.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${esc(p.name)}</option>`).join('')}
+window.openRoomForm=function(id=null,propertyId=null){if(!data.properties.length){showToast('Hãy tạo ít nhất 1 căn trọ trước.');return}const r=id?getRoom(id):null;document.getElementById('roomModalTitle').textContent=r?'Sửa phòng & ảnh':'Thêm phòng';document.getElementById('roomId').value=r?.id||'';fillRoomPropertySelect(r?.propertyId||propertyId||data.properties[0].id);document.getElementById('roomName').value=r?.name||'';document.getElementById('roomPrice').value=r?.price||'';document.getElementById('roomDeposit').value=r?.deposit||'';document.getElementById('roomArea').value=r?.area||'';document.getElementById('roomCapacity').value=r?.capacity||2;document.getElementById('roomType').value=r?.type||'Phòng trọ';document.getElementById('roomStatus').value=r?.status||'available';document.getElementById('roomElectricRate').value=r?.electricRate||3500;document.getElementById('roomWaterMode').value=r?.waterMode||'fixed';document.getElementById('roomWaterRate').value=r?.waterRate||15000;document.getElementById('roomWaterFixed').value=r?.waterFixed||0;document.getElementById('roomAmenities').value=(r?.amenities||[]).join(', ');document.getElementById('roomNote').value=r?.note||'';document.getElementById('roomImages').value='';roomImageState={existing:[...(r?.imageIds||[])],removed:[],newFiles:[]};renderImageEditor('room');openModal('roomModal')}
+
+// ---------- Tenants ----------
+function fillTenantRoomSelect(selected){document.getElementById('tenantRoom').innerHTML=data.rooms.map(r=>{const p=getProperty(r.propertyId);return `<option value="${r.id}" ${r.id===selected?'selected':''}>${esc(p?.name||'')} · ${esc(r.name)}</option>`}).join('')}
+window.openTenantForm=function(id=null,roomId=null){if(!data.rooms.length){showToast('Hãy tạo phòng trước.');return}const t=id?getTenant(id):null;document.getElementById('tenantModalTitle').textContent=t?'Sửa người thuê':'Thêm người thuê';document.getElementById('tenantId').value=t?.id||'';document.getElementById('tenantName').value=t?.name||'';document.getElementById('tenantPhone').value=t?.phone||'';document.getElementById('tenantPin').value=t?.pin||'2580';fillTenantRoomSelect(t?.roomId||roomId||data.rooms[0].id);document.getElementById('tenantMoveIn').value=t?.moveInDate||today();document.getElementById('tenantActive').value=String(t?.active!==false);const rr=getRoom(t?.roomId||roomId||data.rooms[0].id);document.getElementById('tenantDepositRequired').value=t?.depositRequired??rr?.deposit??0;document.getElementById('tenantDepositPaid').value=t?.depositPaid??0;document.getElementById('tenantNote').value=t?.note||'';openModal('tenantModal')}
+function renderTenants(){const root=document.getElementById('view-tenants');root.innerHTML=`<div class="panel"><div class="panel-head"><div><h3>Người thuê & tài khoản cư dân</h3><p>Tạo tài khoản bằng số điện thoại + PIN và gán đúng phòng</p></div><button class="btn btn-primary" onclick="openTenantForm()">+ Thêm người thuê</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Người thuê</th><th>Điện thoại</th><th>Phòng</th><th>Cọc phải đóng</th><th>Đã nhận</th><th>Còn thiếu</th><th>Tài khoản</th><th></th></tr></thead><tbody>${data.tenants.length?data.tenants.map(t=>{const r=getRoom(t.roomId),p=getProperty(r?.propertyId);return `<tr><td><strong>${esc(t.name)}</strong><br><span style="color:var(--muted)">${t.active?'Đang thuê':'Đã trả phòng'}</span></td><td>${esc(t.phone)}</td><td>${esc(p?.name||'')} · ${esc(r?.name||'-')}</td><td>${money(t.depositRequired)}</td><td>${money(t.depositPaid)}</td><td>${money(Math.max(0,t.depositRequired-t.depositPaid))}</td><td>PIN: <strong>${esc(t.pin)}</strong></td><td><div class="table-actions"><button class="icon-btn" onclick="openTenantForm('${t.id}')">Sửa</button><button class="icon-btn" onclick="copyTenantLogin('${t.id}')">Gửi thông tin đăng nhập</button><button class="icon-btn danger" onclick="deleteTenant('${t.id}')">Xóa</button></div></td></tr>`}).join(''):'<tr><td colspan="8"><div class="empty">Chưa có người thuê.</div></td></tr>'}</tbody></table></div></div>`}
+window.copyTenantLogin=function(id){const t=getTenant(id),r=getRoom(t?.roomId);if(!t)return;copyText(`Huy Rooms - thông tin đăng nhập cư dân\nSố điện thoại: ${t.phone}\nMã PIN: ${t.pin}\nPhòng: ${r?.name||''}\nBạn có thể dùng tài khoản này để xem tiền phòng, điện, nước, tiền cọc và lịch sử hóa đơn.`, 'Đã sao chép thông tin tài khoản')}
+window.deleteTenant=function(id){if(!confirm('Xóa người thuê này? Hóa đơn cũ vẫn được giữ để đối chiếu.'))return;data.tenants=data.tenants.filter(t=>t.id!==id);saveData();renderAdmin();showToast('Đã xóa người thuê')}
+
+// ---------- Utilities ----------
+function roomOptionHtml(selected){return data.rooms.map(r=>{const p=getProperty(r.propertyId);return `<option value="${r.id}" ${r.id===selected?'selected':''}>${esc(p?.name||'')} · ${esc(r.name)}</option>`}).join('')}
+function calcUtilityFromForm(){const es=Number(document.getElementById('electricStart').value||0),ee=Number(document.getElementById('electricEnd').value||0),er=Number(document.getElementById('electricRate').value||0);const eu=Math.max(0,ee-es),ea=eu*er;document.getElementById('electricUnitsPreview').textContent=`${eu.toLocaleString('vi-VN')} kWh`;document.getElementById('electricPreview').textContent=money(ea);const wm=document.getElementById('waterMode').value;document.querySelectorAll('.water-meter-field').forEach(e=>e.classList.toggle('hidden',wm==='fixed'));document.querySelectorAll('.water-fixed-field').forEach(e=>e.classList.toggle('hidden',wm!=='fixed'));let wu=0,wa=0;if(wm==='fixed'){wa=Number(document.getElementById('waterFixed').value||0);document.getElementById('waterUnitsPreview').textContent='Cố định'}else{const ws=Number(document.getElementById('waterStart').value||0),we=Number(document.getElementById('waterEnd').value||0),wr=Number(document.getElementById('waterRate').value||0);wu=Math.max(0,we-ws);wa=wu*wr;document.getElementById('waterUnitsPreview').textContent=`${wu.toLocaleString('vi-VN')} m³`}document.getElementById('waterPreview').textContent=money(wa);return{electricUnits:eu,electricAmount:ea,waterUnits:wu,waterAmount:wa}}
+function smartPrefillUtility(force=false){const roomId=document.getElementById('utilityRoom').value,month=document.getElementById('utilityMonth').value;if(!roomId||!month)return;const r=getRoom(roomId);document.getElementById('electricRate').value=r?.electricRate||3500;document.getElementById('waterMode').value=r?.waterMode||'fixed';document.getElementById('waterRate').value=r?.waterRate||15000;document.getElementById('waterFixed').value=r?.waterFixed||0;const previous=[...data.utilityReadings].filter(u=>u.roomId===roomId&&u.month<month).sort((a,b)=>b.month.localeCompare(a.month))[0];if(force||!document.getElementById('utilityId').value){document.getElementById('electricStart').value=previous?.electricEnd??'';document.getElementById('electricEnd').value='';document.getElementById('waterStart').value=previous?.waterEnd??'';document.getElementById('waterEnd').value='';}calcUtilityFromForm()}
+window.openUtilityForm=function(id=null,roomId=null){if(!data.rooms.length){showToast('Chưa có phòng để ghi điện nước.');return}const u=id?getReading(id):null;document.getElementById('utilityId').value=u?.id||'';document.getElementById('utilityRoom').innerHTML=roomOptionHtml(u?.roomId||roomId||data.rooms[0].id);document.getElementById('utilityMonth').value=u?.month||monthNow();if(u){['electricStart','electricEnd','electricRate','waterStart','waterEnd','waterRate','waterFixed','utilityOtherFee','utilityNote'].forEach(k=>{});document.getElementById('electricStart').value=u.electricStart??'';document.getElementById('electricEnd').value=u.electricEnd??'';document.getElementById('electricRate').value=u.electricRate??3500;document.getElementById('waterMode').value=u.waterMode||'fixed';document.getElementById('waterStart').value=u.waterStart??'';document.getElementById('waterEnd').value=u.waterEnd??'';document.getElementById('waterRate').value=u.waterRate??15000;document.getElementById('waterFixed').value=u.waterFixed??0;document.getElementById('utilityOtherFee').value=u.otherFee??0;document.getElementById('utilityNote').value=u.note||'';calcUtilityFromForm()}else{document.getElementById('utilityOtherFee').value=0;document.getElementById('utilityNote').value='';smartPrefillUtility(true)}openModal('utilityModal')}
+function renderUtilities(){const sorted=[...data.utilityReadings].sort((a,b)=>(b.month+b.roomId).localeCompare(a.month+a.roomId));document.getElementById('view-utilities').innerHTML=`<div class="panel"><div class="panel-head"><div><h3>Chốt điện & nước theo tháng</h3><p>Đầu kỳ tự lấy từ chỉ số cuối kỳ gần nhất; chỉ nhập cuối kỳ để hệ thống tự trừ</p></div><button class="btn btn-primary" onclick="openUtilityForm()">+ Ghi chỉ số</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Tháng</th><th>Phòng</th><th>Điện đầu → cuối</th><th>kWh</th><th>Tiền điện</th><th>Nước</th><th>Tiền nước</th><th>Phí khác</th><th></th></tr></thead><tbody>${sorted.length?sorted.map(u=>{const r=getRoom(u.roomId),p=getProperty(r?.propertyId);const hasInvoice=data.invoices.some(i=>i.readingId===u.id);return `<tr><td><strong>${esc(u.month)}</strong></td><td>${esc(p?.name||'')} · ${esc(r?.name||'-')}</td><td>${u.electricStart} → ${u.electricEnd}</td><td>${u.electricUnits} kWh</td><td>${money(u.electricAmount)}</td><td>${u.waterMode==='fixed'?'Cố định':`${u.waterStart} → ${u.waterEnd} (${u.waterUnits} m³)`}</td><td>${money(u.waterAmount)}</td><td>${money(u.otherFee)}</td><td><div class="table-actions"><button class="icon-btn" onclick="openUtilityForm('${u.id}')">Sửa</button><button class="icon-btn" onclick="openInvoiceForm('${u.id}')">${hasInvoice?'Xem/Lập lại HĐ':'Lập hóa đơn'}</button><button class="icon-btn danger" onclick="deleteReading('${u.id}')">Xóa</button></div></td></tr>`}).join(''):'<tr><td colspan="9"><div class="empty">Chưa có chỉ số điện nước. Chọn “Ghi chỉ số” để bắt đầu.</div></td></tr>'}</tbody></table></div></div>`}
+window.deleteReading=function(id){if(!confirm('Xóa bản ghi điện nước này?'))return;data.utilityReadings=data.utilityReadings.filter(x=>x.id!==id);saveData();renderAdmin();showToast('Đã xóa chỉ số')}
+
+// ---------- Invoices ----------
+function calcInvoicePreview(){const roomId=document.getElementById('invoiceRoom').value,t=activeTenantForRoom(roomId);const dep=t?Math.max(0,t.depositRequired-t.depositPaid):0;const include=document.getElementById('invoiceIncludeDeposit').value==='true';const total=['invoiceRent','invoiceElectric','invoiceWater','invoiceOther'].reduce((s,id)=>s+Number(document.getElementById(id).value||0),0)+(include?dep:0);document.getElementById('invoiceTotalPreview').textContent=money(total);return{total,depositAmount:include?dep:0}}
+window.openInvoiceForm=function(readingId=null){if(!data.rooms.length){showToast('Chưa có phòng.');return}const u=readingId?getReading(readingId):null;const roomId=u?.roomId||data.rooms.find(r=>activeTenantForRoom(r.id))?.id||data.rooms[0].id;const r=getRoom(roomId),t=activeTenantForRoom(roomId);if(!t){showToast('Phòng này chưa có người thuê đang hoạt động. Hãy tạo người thuê trước.');return}const existing=data.invoices.find(i=>i.roomId===roomId&&i.month===(u?.month||monthNow()));document.getElementById('invoiceReadingId').value=u?.id||existing?.readingId||'';document.getElementById('invoiceRoom').innerHTML=roomOptionHtml(roomId);document.getElementById('invoiceMonth').value=u?.month||existing?.month||monthNow();document.getElementById('invoiceDueDate').value=existing?.dueDate||nextDayISO(Number(data.settings.defaultDueDay||5));document.getElementById('invoiceRent').value=existing?.rent??r.price??0;document.getElementById('invoiceElectric').value=existing?.electric??u?.electricAmount??0;document.getElementById('invoiceWater').value=existing?.water??u?.waterAmount??0;document.getElementById('invoiceOther').value=existing?.other??u?.otherFee??0;document.getElementById('invoiceIncludeDeposit').value=String((existing?.depositAmount||0)>0);calcInvoicePreview();openModal('invoiceModal')}
+function renderInvoices(){const sorted=[...data.invoices].sort((a,b)=>(b.month+b.createdAt).localeCompare(a.month+a.createdAt));const debt=sorted.reduce((s,i)=>s+remainingInvoice(i),0);document.getElementById('view-invoices').innerHTML=`<div class="panel"><div class="panel-head"><div><h3>Hóa đơn & công nợ</h3><p>Tổng còn phải thu: ${money(debt)}</p></div><button class="btn btn-primary" onclick="openInvoiceForm()">+ Lập hóa đơn</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Tháng</th><th>Người thuê</th><th>Căn / Phòng</th><th>Tiền phòng</th><th>Điện</th><th>Nước</th><th>Cọc</th><th>Tổng</th><th>Đã thu</th><th>Còn lại</th><th>Hạn</th><th>Trạng thái</th><th></th></tr></thead><tbody>${sorted.length?sorted.map(i=>{const t=getTenant(i.tenantId),r=getRoom(i.roomId),p=getProperty(r?.propertyId);return `<tr><td><strong>${esc(i.month)}</strong></td><td>${esc(t?.name||'')}<br><span style="color:var(--muted)">${esc(t?.phone||'')}</span></td><td>${esc(p?.name||'')} · ${esc(r?.name||'-')}</td><td>${money(i.rent)}</td><td>${money(i.electric)}</td><td>${money(i.water)}</td><td>${money(i.depositAmount)}</td><td><strong>${money(i.total)}</strong></td><td>${money(i.amountPaid)}</td><td><strong>${money(remainingInvoice(i))}</strong></td><td>${esc(i.dueDate||'-')}</td><td>${invoiceBadge(i)}</td><td><div class="table-actions"><button class="icon-btn" onclick="recordPayment('${i.id}')">Thanh toán</button><button class="icon-btn" onclick="copyZaloReminder('${i.id}')">Nhắc Zalo</button><button class="icon-btn danger" onclick="deleteInvoice('${i.id}')">Xóa</button></div></td></tr>`}).join(''):'<tr><td colspan="13"><div class="empty">Chưa có hóa đơn.</div></td></tr>'}</tbody></table></div></div>`}
+window.recordPayment=function(id){const i=getInvoice(id);if(!i)return;const value=prompt(`Nhập TỔNG số tiền khách đã thanh toán cho hóa đơn này.\nTổng hóa đơn: ${money(i.total)}`,String(i.amountPaid||0));if(value===null)return;const oldApplied=!!i.depositApplied;i.amountPaid=Math.max(0,Math.min(Number(value||0),Number(i.total||0)));i.status=i.amountPaid>=i.total?'paid':i.amountPaid>0?'partial':'unpaid';const t=getTenant(i.tenantId);if(i.status==='paid'&&i.depositAmount>0&&!oldApplied&&t){t.depositPaid=Math.min(t.depositRequired,t.depositPaid+i.depositAmount);i.depositApplied=true}else if(i.status!=='paid'&&oldApplied&&t){t.depositPaid=Math.max(0,t.depositPaid-i.depositAmount);i.depositApplied=false}saveData();renderAdmin();if(currentResidentId===i.tenantId)renderResident();showToast('Đã cập nhật thanh toán')}
+window.deleteInvoice=function(id){if(!confirm('Xóa hóa đơn này?'))return;const i=getInvoice(id),t=getTenant(i?.tenantId);if(i?.depositApplied&&t)t.depositPaid=Math.max(0,t.depositPaid-i.depositAmount);data.invoices=data.invoices.filter(x=>x.id!==id);saveData();renderAdmin();showToast('Đã xóa hóa đơn')}
+window.copyZaloReminder=function(id){const i=getInvoice(id);if(!i)return;const t=getTenant(i.tenantId),r=getRoom(i.roomId),p=getProperty(r?.propertyId);const text=`Xin chào ${t?.name||'anh/chị'}, ${data.settings.managerName||'quản lý'} nhắc hóa đơn tháng ${i.month} của phòng ${r?.name||''} - ${p?.name||''}.\nTiền phòng: ${money(i.rent)}\nTiền điện: ${money(i.electric)}\nTiền nước: ${money(i.water)}\nPhí khác: ${money(i.other)}${i.depositAmount?`\nTiền cọc: ${money(i.depositAmount)}`:''}\nTổng: ${money(i.total)}\nĐã thanh toán: ${money(i.amountPaid)}\nCòn lại: ${money(remainingInvoice(i))}\nHạn thanh toán: ${i.dueDate||'-'}.\nCảm ơn anh/chị.`;copyText(text,'Đã sao chép tin nhắn. Có thể dán vào Zalo của khách.')}
+function copyText(text,msg){if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>showToast(msg)).catch(()=>fallbackCopy(text,msg))}else fallbackCopy(text,msg)}
+function fallbackCopy(text,msg){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();showToast(msg)}
+
+// ---------- Appointments ----------
+function appointmentCard(a){const r=getRoom(a.roomId),p=getProperty(r?.propertyId);const d=new Date(`${a.date}T00:00:00`);return `<div class="appointment-card"><div class="appt-date"><strong>${String(d.getDate()).padStart(2,'0')}</strong><small>TH${d.getMonth()+1}</small></div><div class="appt-info"><strong>${esc(a.customerName)} · ${esc(a.customerPhone)}</strong><span>${esc(p?.name||'')} · ${esc(r?.name||'-')} · ${esc(a.time)}</span><small>${esc(a.note||'Không ghi chú')}</small></div><div class="appt-actions"><select class="select-small" onchange="updateAppointmentStatus('${a.id}',this.value)"><option value="new" ${a.status==='new'?'selected':''}>Mới</option><option value="confirmed" ${a.status==='confirmed'?'selected':''}>Đã xác nhận</option><option value="done" ${a.status==='done'?'selected':''}>Đã xem</option><option value="cancelled" ${a.status==='cancelled'?'selected':''}>Đã hủy</option></select><button class="icon-btn danger" onclick="deleteAppointment('${a.id}')">Xóa</button></div></div>`}
+function renderAppointments(){const sorted=[...data.appointments].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));document.getElementById('view-appointments').innerHTML=`<div class="panel"><div class="panel-head"><div><h3>Toàn bộ lịch hẹn</h3><p>${sorted.length} lịch · ${sorted.filter(a=>a.status==='new').length} lịch mới</p></div></div>${sorted.length?sorted.map(appointmentCard).join(''):'<div class="empty">Chưa có khách đặt lịch.</div>'}</div>`}
+window.updateAppointmentStatus=function(id,status){const a=data.appointments.find(x=>x.id===id);if(!a)return;a.status=status;saveData();renderAdmin();showToast('Đã cập nhật lịch hẹn')}
+window.deleteAppointment=function(id){if(!confirm('Xóa lịch hẹn này?'))return;data.appointments=data.appointments.filter(a=>a.id!==id);saveData();renderAdmin();showToast('Đã xóa lịch hẹn')}
+
+// ---------- Settings / export ----------
+function renderSettings(){
+  const cfg=Sync.cfg||{},connected=Sync.isOn();
+  const roleText=Sync.isAdmin()?'Quản lý (đọc & ghi)':connected?'Chỉ xem':'Chưa kết nối';
+  const last=Sync.state?.lastOk?new Date(Sync.state.lastOk).toLocaleString('vi-VN'):'chưa lần nào';
+  document.getElementById('view-settings').innerHTML=`<div class="settings-grid">
+  <div class="conn-card" style="grid-column:1/-1">
+    ${Sync.embedded()?`
+    <h3>Đồng bộ Google Sheets</h3>
+    <p class="muted-text">Website này chạy thẳng trên Google của anh nên đã nối sẵn với bảng dữ liệu — không cần cài thêm gì. Gửi đúng đường dẫn này cho khách xem phòng và cho cư dân đăng nhập.</p>
+    <label>Đổi mật khẩu quản lý</label>
+    <input id="cfgNewPass" type="password" placeholder="Mật khẩu mới, ít nhất 4 ký tự">
+    <div class="conn-actions">
+      <button class="btn btn-primary" onclick="changeAdminPassword()">Lưu mật khẩu mới</button>
+      <button class="btn btn-light" onclick="Sync.cycle(true)">Đồng bộ ngay</button>
+      <button class="btn btn-danger" onclick="forgetAdminKey()">Thoát quyền quản lý</button>
+    </div>`:`
+    <h3>Kết nối Google Sheets</h3>
+    <p class="muted-text">Để nguyên <b>/api/sheets</b> nếu chạy trên Vercel (đường dẫn Apps Script khai ở biến môi trường APPS_SCRIPT_URL). Hosting khác thì dán đường dẫn /exec đầy đủ.</p>
+    <label>Đường dẫn máy chủ</label>
+    <input id="cfgApiUrl" placeholder="/api/sheets" value="${esc(cfg.apiUrl||'')}">
+    <label>Mật khẩu quản lý (để trống nếu chỉ xem)</label>
+    <input id="cfgWriteKey" type="password" placeholder="Mật khẩu quản lý">
+    <div class="conn-actions">
+      <button class="btn btn-primary" onclick="connectSheets('pull')">Kết nối & lấy dữ liệu từ Sheets</button>
+      <button class="btn btn-light" onclick="connectSheets('push')">Kết nối & đẩy dữ liệu máy này lên</button>
+      <button class="btn btn-light" onclick="Sync.cycle(true)">Đồng bộ ngay</button>
+      <button class="btn btn-danger" onclick="forgetAdminKey()">Thoát quyền quản lý</button>
+    </div>`}
+    <div class="conn-state">Trạng thái: <b>${roleText}</b> · Đồng bộ gần nhất: <b>${last}</b>${Sync.lastError?` · Lỗi: <b>${esc(Sync.lastError)}</b>`:''}</div>
+  </div>
+  <div class="settings-card"><h3>Thông tin quản lý</h3>
+    <label style="display:block;font-size:12px;color:var(--muted);margin:10px 0 4px">Tên hiển thị khi nhắc thu tiền</label>
+    <input id="setManagerName" value="${esc(data.settings.managerName||'')}" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit">
+    <label style="display:block;font-size:12px;color:var(--muted);margin:10px 0 4px">Số điện thoại</label>
+    <input id="setManagerPhone" value="${esc(data.settings.managerPhone||'')}" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit">
+    <label style="display:block;font-size:12px;color:var(--muted);margin:10px 0 4px">Số ngày tới hạn mặc định</label>
+    <input id="setDueDay" type="number" min="1" max="28" value="${Number(data.settings.defaultDueDay||5)}" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font:inherit">
+    <button class="btn btn-primary" style="margin-top:12px" onclick="saveManagerSettings()">Lưu thông tin</button>
+  </div>
+  <div class="settings-card"><h3>Nhắc thanh toán qua Zalo</h3><p>Mỗi hóa đơn có nút “Nhắc Zalo”: hệ thống soạn sẵn tiền phòng, điện, nước, cọc, số còn lại và hạn thanh toán để anh sao chép gửi khách.</p><div class="code-note">Gửi Zalo tự động cần Zalo Official Account + backend riêng. Không đặt access token Zalo trong file web công khai.</div></div>
+  <div class="settings-card"><h3>Sao lưu dữ liệu</h3><p>Tải căn trọ, phòng, người thuê, điện nước, hóa đơn và lịch hẹn về máy dạng JSON.</p><button class="btn btn-light" onclick="exportData()">Tải file sao lưu</button></div>
+  <div class="settings-card"><h3>Khôi phục dữ liệu</h3><p>Nhập lại file JSON đã sao lưu. Nếu đang kết nối Sheets, dữ liệu này sẽ được đẩy lên Sheets ở lần đồng bộ kế tiếp.</p><input type="file" id="importFile" accept="application/json" style="margin:8px 0 12px"><button class="btn btn-light" onclick="importData()">Nhập dữ liệu</button></div>
+  <div class="settings-card"><h3>Xuất danh sách phòng CSV</h3><p>Mở bằng Excel để kiểm tra giá, tình trạng phòng và đơn giá điện nước.</p><button class="btn btn-light" onclick="exportRoomsCSV()">Xuất CSV</button></div>
+  <div class="settings-card"><h3>Khôi phục dữ liệu mẫu</h3><p>Xóa dữ liệu trên máy này và nạp lại bản demo. Nếu đang kết nối Sheets, thao tác này cũng ghi đè dữ liệu chung — cân nhắc trước khi dùng.</p><button class="btn btn-danger" onclick="resetDemo()">Khôi phục bản demo</button></div>
+</div>`}
+window.saveManagerSettings=function(){
+  data.settings.managerName=document.getElementById('setManagerName').value.trim();
+  data.settings.managerPhone=document.getElementById('setManagerPhone').value.trim();
+  data.settings.defaultDueDay=Number(document.getElementById('setDueDay').value||5);
+  saveData();renderAdmin();showToast('Đã lưu thông tin quản lý');
+}
+window.connectSheets=async function(mode){
+  const apiUrl=document.getElementById('cfgApiUrl').value.trim();
+  const pass=document.getElementById('cfgWriteKey').value.trim();
+  if(!apiUrl){showToast('Chưa nhập đường dẫn Apps Script');return}
+  if(mode==='push'&&!confirm('Đẩy toàn bộ dữ liệu trên máy này lên Google Sheets? Dữ liệu trùng mã trên Sheets sẽ bị ghi đè.'))return;
+  if(mode==='pull'&&!confirm('Lấy dữ liệu từ Google Sheets? Dữ liệu đang lưu trên máy này sẽ được thay bằng dữ liệu trên Sheets.'))return;
+  showToast('Đang kết nối…');
+  try{
+    Sync.saveCfg({apiUrl});
+    if(pass)await Sync.adminLogin(pass);
+    const res=await Sync.connect({apiUrl,mode});
+    renderAdmin();renderPublic();
+    showToast(res.mode==='pull'?'Đã lấy dữ liệu từ Google Sheets':'Đã đẩy dữ liệu lên Google Sheets');
+  }catch(err){showToast('Kết nối lỗi: '+(err.message||err))}
+}
+window.changeAdminPassword=async function(){
+  const np=document.getElementById('cfgNewPass').value.trim();
+  if(np.length<4){showToast('Mật khẩu cần ít nhất 4 ký tự');return}
+  try{await Sync.changePassword(np);document.getElementById('cfgNewPass').value='';showToast('Đã đổi mật khẩu quản lý')}
+  catch(err){showToast('Không đổi được: '+(err.message||err))}
+}
+window.forgetAdminKey=function(){
+  if(!confirm('Thoát quyền quản lý trên máy này? Máy sẽ chỉ còn quyền xem phòng.'))return;
+  Sync.disconnect();showPublic();showToast('Đã thoát quyền quản lý trên máy này');
+}
+window.exportData=function(){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});downloadBlob(blob,'huy-rooms-backup-v2.json')}
+window.importData=function(){const f=document.getElementById('importFile')?.files?.[0];if(!f){showToast('Chọn file JSON trước.');return}const reader=new FileReader();reader.onload=()=>{try{data=migrateData(JSON.parse(reader.result));saveData();renderAdmin();renderPublic();showToast('Đã khôi phục dữ liệu')}catch(e){showToast('File dữ liệu không hợp lệ')}};reader.readAsText(f)}
+window.exportRoomsCSV=function(){const header=['Can tro','Dia chi','Phong','Loai','Dien tich','Gia thang','Tien coc','Trang thai','Gia dien','Cach tinh nuoc','Gia nuoc','Nuoc co dinh'];const rows=data.rooms.map(r=>{const p=getProperty(r.propertyId);return[p?.name||'',p?.address||'',r.name,r.type,r.area,r.price,r.deposit,statusLabel(r.status),r.electricRate,r.waterMode,r.waterRate,r.waterFixed]});const csv='\ufeff'+[header,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'danh-sach-phong.csv')}
+function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+window.resetDemo=function(){if(!confirm('Khôi phục dữ liệu mẫu và xóa các thay đổi nghiệp vụ hiện tại?'))return;data=migrateData(structuredClone(demoData));saveData();renderAdmin();renderPublic();showToast('Đã khôi phục dữ liệu mẫu')}
+
+// ---------- Form handlers ----------
+document.querySelectorAll('[data-close-modal]').forEach(el=>el.addEventListener('click',()=>closeModal(el.dataset.closeModal)));
+document.getElementById('bookingForm').addEventListener('submit',e=>{e.preventDefault();data.appointments.unshift({id:uid('a'),roomId:document.getElementById('bookingRoomId').value,customerName:document.getElementById('customerName').value.trim(),customerPhone:document.getElementById('customerPhone').value.trim(),date:document.getElementById('appointmentDate').value,time:document.getElementById('appointmentTime').value,note:document.getElementById('customerNote').value.trim(),status:'new',createdAt:new Date().toISOString()});saveData();e.target.reset();closeModal('bookingModal');renderAdmin();showToast('Đã gửi yêu cầu. Quản lý sẽ liên hệ xác nhận.')});
+
+document.getElementById('propertyImages').addEventListener('change',e=>{propertyImageState.newFiles.push(...[...e.target.files]);renderImageEditor('property')});
+document.getElementById('roomImages').addEventListener('change',e=>{roomImageState.newFiles.push(...[...e.target.files]);renderImageEditor('room')});
+document.getElementById('propertyForm').addEventListener('submit',async e=>{e.preventDefault();const id=document.getElementById('propertyId').value;const imageIds=await commitImageState(propertyImageState);const item={id:id||uid('p'),name:document.getElementById('propertyName').value.trim(),area:document.getElementById('propertyArea').value.trim(),address:document.getElementById('propertyAddress').value.trim(),description:document.getElementById('propertyDescription').value.trim(),phone:document.getElementById('propertyPhone').value.trim(),imageIds};if(id)Object.assign(getProperty(id),item);else data.properties.push(item);saveData();closeModal('propertyModal');renderAdmin();renderPublic();showToast(id?'Đã cập nhật căn trọ và ảnh':'Đã thêm căn trọ')});
+document.getElementById('roomForm').addEventListener('submit',async e=>{e.preventDefault();const id=document.getElementById('roomId').value;const imageIds=await commitImageState(roomImageState);const item={id:id||uid('r'),propertyId:document.getElementById('roomProperty').value,name:document.getElementById('roomName').value.trim(),price:Number(document.getElementById('roomPrice').value||0),deposit:Number(document.getElementById('roomDeposit').value||0),area:Number(document.getElementById('roomArea').value||0),capacity:Number(document.getElementById('roomCapacity').value||1),type:document.getElementById('roomType').value,status:document.getElementById('roomStatus').value,electricRate:Number(document.getElementById('roomElectricRate').value||0),waterMode:document.getElementById('roomWaterMode').value,waterRate:Number(document.getElementById('roomWaterRate').value||0),waterFixed:Number(document.getElementById('roomWaterFixed').value||0),amenities:document.getElementById('roomAmenities').value.split(',').map(x=>x.trim()).filter(Boolean),note:document.getElementById('roomNote').value.trim(),imageIds};if(id)Object.assign(getRoom(id),item);else data.rooms.push(item);saveData();closeModal('roomModal');renderAdmin();renderPublic();showToast(id?'Đã cập nhật phòng và ảnh':'Đã thêm phòng')});
+document.getElementById('tenantRoom').addEventListener('change',()=>{const r=getRoom(document.getElementById('tenantRoom').value);if(!document.getElementById('tenantId').value)document.getElementById('tenantDepositRequired').value=r?.deposit||0});
+document.getElementById('tenantForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('tenantId').value,roomId=document.getElementById('tenantRoom').value;const existingActive=activeTenantForRoom(roomId);if(existingActive&&existingActive.id!==id&&document.getElementById('tenantActive').value==='true'){showToast('Phòng này đang có người thuê hoạt động. Hãy kết thúc người thuê cũ trước.');return}const item={id:id||uid('t'),name:document.getElementById('tenantName').value.trim(),phone:document.getElementById('tenantPhone').value.trim(),pin:document.getElementById('tenantPin').value.trim(),roomId,moveInDate:document.getElementById('tenantMoveIn').value,active:document.getElementById('tenantActive').value==='true',depositRequired:Number(document.getElementById('tenantDepositRequired').value||0),depositPaid:Number(document.getElementById('tenantDepositPaid').value||0),note:document.getElementById('tenantNote').value.trim()};if(id)Object.assign(getTenant(id),item);else data.tenants.push(item);const r=getRoom(roomId);if(r&&item.active)r.status='occupied';saveData();closeModal('tenantModal');renderAdmin();renderPublic();showToast(id?'Đã cập nhật người thuê':'Đã tạo người thuê & tài khoản cư dân')});
+['utilityRoom','utilityMonth'].forEach(id=>document.getElementById(id).addEventListener('change',()=>smartPrefillUtility(true)));
+['electricStart','electricEnd','electricRate','waterMode','waterStart','waterEnd','waterRate','waterFixed'].forEach(id=>document.getElementById(id).addEventListener('input',calcUtilityFromForm));
+document.getElementById('waterMode').addEventListener('change',calcUtilityFromForm);
+document.getElementById('utilityForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('utilityId').value,roomId=document.getElementById('utilityRoom').value,month=document.getElementById('utilityMonth').value;const es=Number(document.getElementById('electricStart').value||0),ee=Number(document.getElementById('electricEnd').value||0),ws=Number(document.getElementById('waterStart').value||0),we=Number(document.getElementById('waterEnd').value||0),wm=document.getElementById('waterMode').value;if(ee<es){showToast('Chỉ số điện cuối kỳ phải lớn hơn hoặc bằng đầu kỳ.');return}if(wm==='meter'&&we<ws){showToast('Chỉ số nước cuối kỳ phải lớn hơn hoặc bằng đầu kỳ.');return}const calc=calcUtilityFromForm();const existingSame=data.utilityReadings.find(u=>u.roomId===roomId&&u.month===month&&u.id!==id);if(existingSame&&!confirm('Phòng này đã có chỉ số trong tháng. Vẫn lưu thêm bản ghi?'))return;const item={id:id||uid('u'),roomId,month,electricStart:es,electricEnd:ee,electricRate:Number(document.getElementById('electricRate').value||0),electricUnits:calc.electricUnits,electricAmount:calc.electricAmount,waterMode:wm,waterStart:ws,waterEnd:we,waterRate:Number(document.getElementById('waterRate').value||0),waterFixed:Number(document.getElementById('waterFixed').value||0),waterUnits:calc.waterUnits,waterAmount:calc.waterAmount,otherFee:Number(document.getElementById('utilityOtherFee').value||0),note:document.getElementById('utilityNote').value.trim(),createdAt:new Date().toISOString()};if(id)Object.assign(getReading(id),item);else data.utilityReadings.push(item);saveData();closeModal('utilityModal');renderAdmin();showToast(`Đã lưu: điện ${money(item.electricAmount)}, nước ${money(item.waterAmount)}`)});
+['invoiceRent','invoiceElectric','invoiceWater','invoiceOther','invoiceIncludeDeposit'].forEach(id=>document.getElementById(id).addEventListener('input',calcInvoicePreview));document.getElementById('invoiceIncludeDeposit').addEventListener('change',calcInvoicePreview);
+document.getElementById('invoiceRoom').addEventListener('change',()=>{const roomId=document.getElementById('invoiceRoom').value,r=getRoom(roomId);document.getElementById('invoiceRent').value=r?.price||0;calcInvoicePreview()});
+document.getElementById('invoiceForm').addEventListener('submit',e=>{e.preventDefault();const roomId=document.getElementById('invoiceRoom').value,month=document.getElementById('invoiceMonth').value,t=activeTenantForRoom(roomId);if(!t){showToast('Phòng chưa có người thuê đang hoạt động.');return}const calc=calcInvoicePreview();let item=data.invoices.find(i=>i.roomId===roomId&&i.month===month);if(item&&item.status==='paid'&&!confirm('Hóa đơn này đã thanh toán. Bạn vẫn muốn cập nhật lại?'))return;const values={tenantId:t.id,roomId,readingId:document.getElementById('invoiceReadingId').value||'',month,dueDate:document.getElementById('invoiceDueDate').value,rent:Number(document.getElementById('invoiceRent').value||0),electric:Number(document.getElementById('invoiceElectric').value||0),water:Number(document.getElementById('invoiceWater').value||0),other:Number(document.getElementById('invoiceOther').value||0),depositAmount:calc.depositAmount,total:calc.total,createdAt:item?.createdAt||new Date().toISOString()};if(item){Object.assign(item,values);item.amountPaid=Math.min(item.amountPaid||0,item.total);item.status=item.amountPaid>=item.total?'paid':item.amountPaid>0?'partial':'unpaid'}else{item={id:uid('i'),...values,amountPaid:0,status:'unpaid',depositApplied:false};data.invoices.push(item)}saveData();closeModal('invoiceModal');renderAdmin();if(currentResidentId===t.id)renderResident();showToast('Đã tạo/cập nhật hóa đơn')});
+
+// Drag & drop ảnh
+document.querySelectorAll('.upload-zone').forEach(zone=>{const input=zone.querySelector('input[type=file]');['dragenter','dragover'].forEach(evt=>zone.addEventListener(evt,e=>{e.preventDefault();zone.style.borderColor='#9f8974'}));['dragleave','drop'].forEach(evt=>zone.addEventListener(evt,e=>{e.preventDefault();zone.style.borderColor=''}));zone.addEventListener('drop',e=>{const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'));if(!files.length)return;if(input.id==='propertyImages')propertyImageState.newFiles.push(...files);else roomImageState.newFiles.push(...files);renderImageEditor(input.id==='propertyImages'?'property':'room')})});
+
+// ---------- Login events ----------
+['adminBtn'].forEach(id=>document.getElementById(id).addEventListener('click',()=>openModal('loginModal')));
+['residentBtn','heroResidentBtn'].forEach(id=>document.getElementById(id).addEventListener('click',()=>openModal('residentLoginModal')));
+document.getElementById('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const field=document.getElementById('adminPassword'),value=field.value.trim();
+  if(Sync.isOn()){
+    showToast('Đang kiểm tra mật khẩu…');
+    try{
+      const res=await Sync.adminLogin(value);
+      field.value='';closeModal('loginModal');showAdmin();
+      await Sync.fullPull();renderAdmin();renderPublic();
+      showToast(res.mustChangePassword?'Đã vào quản lý — nên đổi mật khẩu trong Cài đặt':'Đã mở quyền quản lý trên máy này');
+    }catch(err){showToast(err.message||'Mật khẩu chưa đúng')}
+    return;
+  }
+  if(value===ADMIN_PASSWORD){field.value='';closeModal('loginModal');showAdmin()}
+  else showToast('Mật khẩu chưa đúng. Bản chưa kết nối dùng: 123456')});
+document.getElementById('residentLoginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const phone=normalizePhone(document.getElementById('residentPhone').value),pin=document.getElementById('residentPin').value.trim();
+  const local=data.tenants.find(x=>normalizePhone(x.phone)===phone&&String(x.pin)===pin&&x.active);
+  if(local){closeModal('residentLoginModal');e.target.reset();showResident(local.id);return}
+  if(Sync.isOn()){
+    showToast('Đang kiểm tra tài khoản…');
+    try{
+      const res=await Sync.residentLogin(phone,pin);
+      mergeResidentBundle(res);
+      closeModal('residentLoginModal');e.target.reset();showResident(res.tenant.id);return;
+    }catch(err){showToast(err.message||'Số điện thoại hoặc mã PIN không đúng.');return}
+  }
+  showToast('Số điện thoại hoặc mã PIN không đúng.')});
+function mergeResidentBundle(res){
+  const put=(arr,item)=>{if(!item)return;const i=arr.findIndex(x=>x.id===item.id);if(i>=0)arr[i]=item;else arr.push(item)};
+  put(data.tenants,Object.assign({pin:'',_temp:true},res.tenant));
+  put(data.rooms,res.room);put(data.properties,res.property);
+  (res.invoices||[]).forEach(i=>put(data.invoices,i));
+  (res.readings||[]).forEach(u=>put(data.utilityReadings,u));
+  if(res.settings)Object.assign(data.settings,res.settings);
+}
+document.getElementById('residentLogout').addEventListener('click',()=>{currentResidentId=null;data.tenants=data.tenants.filter(t=>!t._temp);showPublic()});document.getElementById('backPublic').addEventListener('click',showPublic);
+document.getElementById('quickAddProperty').addEventListener('click',()=>openPropertyForm());document.getElementById('quickAddRoom').addEventListener('click',()=>openRoomForm());document.getElementById('quickAddTenant').addEventListener('click',()=>openTenantForm());
+
+// ---------- Public filters ----------
+['searchInput','areaFilter','statusFilter','priceFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='searchInput'?'input':'change',()=>{publicFilters.q=document.getElementById('searchInput').value;publicFilters.area=document.getElementById('areaFilter').value;publicFilters.status=document.getElementById('statusFilter').value;publicFilters.maxPrice=Number(document.getElementById('priceFilter').value);renderPublic()}));
+document.getElementById('resetFilters').addEventListener('click',()=>{publicFilters={q:'',area:'all',status:'all',maxPrice:999999999};document.getElementById('searchInput').value='';document.getElementById('statusFilter').value='all';document.getElementById('priceFilter').value='999999999';renderPublic()});
+document.getElementById('heroSearchBtn').addEventListener('click',()=>{publicFilters.area=document.getElementById('heroAreaFilter').value;publicFilters.maxPrice=Number(document.getElementById('heroPriceFilter').value);publicFilters.status='available';document.getElementById('statusFilter').value='available';document.getElementById('priceFilter').value=String(publicFilters.maxPrice);renderPublic();document.getElementById('properties').scrollIntoView({behavior:'smooth'})});
+
+// ---------- Giao diện điện thoại ----------
+function syncTabbar(){
+  const active=document.querySelector('.side-link.active')?.dataset.view||'dashboard';
+  document.querySelectorAll('.mobile-tabbar button').forEach(b=>b.classList.toggle('active',b.dataset.view===active));
+  const newAppts=data.appointments.filter(a=>a.status==='new').length;
+  const tab=document.querySelector('.mobile-tabbar button[data-view="appointments"]');
+  if(tab){tab.querySelector('.tab-badge')?.remove();if(newAppts)tab.insertAdjacentHTML('afterbegin',`<span class="tab-badge">${newAppts}</span>`)}
+}
+document.querySelectorAll('.mobile-tabbar button').forEach(b=>b.addEventListener('click',()=>switchAdminView(b.dataset.view)));
+document.getElementById('mobileBackPublic')?.addEventListener('click',showPublic);
+document.getElementById('mobileFab')?.addEventListener('click',()=>document.getElementById('fabSheet').classList.add('show'));
+document.getElementById('fabSheet')?.addEventListener('click',e=>{
+  const act=e.target.dataset?.fab;
+  if(!act){if(e.target.id==='fabSheet')e.currentTarget.classList.remove('show');return}
+  e.currentTarget.classList.remove('show');
+  if(act==='property')openPropertyForm();
+  else if(act==='room')openRoomForm();
+  else if(act==='tenant')openTenantForm();
+  else if(act==='utility')openUtilityForm();
+  else if(act==='invoice')openInvoiceForm();
+});
+
+// ---------- Đồng bộ ----------
+function timeAgo(ts){
+  if(!ts)return'chưa lần nào';
+  const m=Math.round((Date.now()-ts)/60000);
+  if(m<1)return'vừa xong';if(m<60)return m+' phút trước';
+  const h=Math.round(m/60);if(h<24)return h+' giờ trước';
+  return new Date(ts).toLocaleDateString('vi-VN');
+}
+function updateSyncPill(st){
+  const pill=document.getElementById('syncPill'),txt=document.getElementById('syncText');
+  if(!pill)return;const s=st||{on:Sync.isOn(),busy:Sync.busy,error:Sync.lastError,lastOk:Sync.state?.lastOk};
+  const adminOpen=!document.getElementById('adminApp').classList.contains('hidden');
+  pill.style.display=(adminOpen||(s.on&&Sync.isAdmin()))?'inline-flex':'none';
+  pill.className='sync-pill '+(!s.on?'off':s.busy?'busy':s.error?'err':'ok');
+  txt.textContent=!s.on?'Chưa kết nối':s.busy?'Đang đồng bộ…':s.error?'Lỗi đồng bộ · bấm để thử lại':(Sync.isAdmin()?'Đã đồng bộ ':'Đang xem bản chung · ')+timeAgo(s.lastOk);
+}
+function looksLikeDemo(){
+  const ids=x=>x.map(i=>i.id).join(',');
+  return ids(data.properties)===ids(demoData.properties)&&ids(data.rooms)===ids(demoData.rooms);
+}
+function updateLoginHint(){
+  const hint=document.getElementById('adminLoginHint'),field=document.getElementById('adminPassword'),label=document.getElementById('adminPasswordLabel');
+  if(!hint)return;
+  if(Sync.isOn()){
+    hint.innerHTML='Nhập <strong>mật khẩu quản lý</strong>. Lần đầu là <strong>123456</strong> — vào Cài đặt đổi ngay sau khi đăng nhập.';
+    field.placeholder='Nhập mật khẩu quản lý';
+    label.childNodes[0].nodeValue='Mật khẩu quản lý';
+  }else{
+    hint.innerHTML='Chưa kết nối Google Sheets — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.';
+  }
+}
+Sync.attach({
+  getData:()=>data,
+  saveLocal:saveLocal,
+  rerender:()=>{renderAdmin();renderPublic();if(currentResidentId)renderResident()},
+  toast:showToast
+});
+Sync.onStatus(updateSyncPill);
+document.getElementById('syncPill').addEventListener('click',()=>{
+  if(!Sync.isOn()){showToast('Vào Quản lý → Cài đặt để kết nối Google Sheets');return}
+  Sync.cycle(true);
+});
+setInterval(()=>updateSyncPill(),30000);
+
+if(Sync.isOn()&&!Sync.isAdmin()&&!(Sync.state.since>0)&&looksLikeDemo()){
+  ['properties','rooms','tenants','utilityReadings','invoices','appointments'].forEach(c=>{data[c]=[]});
+  Sync.baseline={};
+}
+saveLocal();
+updateLoginHint();
+updateSyncPill();
+renderPublic();renderAdmin();
+Sync.start();
+
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!Sync.embedded()){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+</script>
+</body>
+</html>
