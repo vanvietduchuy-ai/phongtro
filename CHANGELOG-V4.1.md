@@ -56,3 +56,13 @@ Phản hồi thực tế trên máy: bộ lọc (loại phòng, diện tích, s�
 - Thanh lọc chính (khu vực/trạng thái/giá) chuyển từ xếp dọc từng ô sang **lưới 2 cột** trên điện thoại — gọn hơn khoảng một nửa chiều cao trước đó; ô tìm kiếm và nút "Đặt lại" vẫn full-width để dễ bấm.
 - Giảm khoảng trống phía trên khu vực danh sách phòng để phòng hiện ra sớm hơn khi cuộn.
 - Không đổi hành vi desktop: bộ lọc nâng cao vẫn luôn hiện sẵn như cũ, nút thu gọn chỉ xuất hiện ở khổ điện thoại/tablet nhỏ (≤860px).
+
+## v4.2.2 — Cân đối lại bố cục quản trị trên điện thoại
+Bốn lỗi thấy trên máy thật, đã kiểm chứng và sửa:
+
+1. **Chữ giữa biểu đồ tròn tràn ra ngoài vòng** — "32 phòng" vẽ ở cỡ chữ 8 trong viewBox 42 đơn vị, rộng ~35 đơn vị trong khi lỗ giữa donut chỉ 25,8 đơn vị nên chữ đè lên vành. Tách thành 2 dòng (số lớn / chữ "phòng" nhỏ), tính lại cỡ chữ để nằm gọn trong lỗ.
+2. **Biểu đồ doanh thu trống trơn** — khi mọi giá trị bằng 0 thì chỉ còn trục tháng, trông như hỏng. Nay hiện thông báo "Chưa có số liệu cho kỳ này" kèm gợi ý; donut khi chưa có phòng cũng vậy. Có số liệu thật thì vẽ như cũ.
+3. **"Tháng" và "Căn trọ" đè lên nhau** — ô chọn tháng nở tự do đẩy nhãn kế bên. Đặt flex-basis + min-width:0 cho từng ô, input/select chiếm đúng bề rộng ô cha; màn hẹp thì mỗi ô một dòng.
+4. **Danh sách phòng quá dài, lộn xộn** — ở chế độ điện thoại mỗi phòng bung thành 7 hàng nhãn/giá trị (ẢNH, PHÒNG, DIỆN TÍCH, GIÁ, CỌC, TRẠNG THÁI, thao tác), 32 phòng phải cuộn rất nhiều. Nay mỗi phòng gọn còn ~3 dòng: dòng 1 ảnh nhỏ + **tên phòng nổi bật** + loại + diện tích; dòng 2 giá và cọc chia đôi; dòng 3 trạng thái; nút thao tác gom xuống dưới chia đều 2 cột. Bỏ nhãn thừa "ẢNH"/"PHÒNG". Giữ nguyên toàn bộ chức năng sửa nhanh giá/cọc/trạng thái tại chỗ.
+
+Thẻ KPI cũng được canh chiều cao tối thiểu để các thẻ thẳng hàng nhau khi chữ phụ dài ngắn khác nhau. Không đổi logic, ID hay cấu trúc dữ liệu.

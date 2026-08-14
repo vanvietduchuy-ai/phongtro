@@ -1002,6 +1002,10 @@ function svgBarChart(series,labels,{h=150,money:isMoney=true}={}){
   // v4.1: viewBox toạ độ thật, KHÔNG preserveAspectRatio="none" → chữ không méo
   const W=320,PAD=6,LBL=16;
   const all=series.flatMap(x=>x.values);
+  // v4.2.2: chưa có số liệu thì nói rõ, không vẽ khung trống trơn trông như lỗi
+  if(!all.some(v=>Number(v)>0)){
+    return `<div class="chart-empty">${icon('chart',26)}<p>Chưa có số liệu cho kỳ này</p><small>Biểu đồ sẽ hiện khi có hóa đơn được phát hành và ghi nhận thanh toán.</small></div>`;
+  }
   const max=Math.max(1,...all);
   const n=Math.max(1,labels.length),gw=(W-PAD*2)/n;
   const bw=Math.min(22,gw*0.32);
@@ -1015,6 +1019,9 @@ function svgBarChart(series,labels,{h=150,money:isMoney=true}={}){
   return `<div class="chart-legend">${legend}</div><svg viewBox="0 0 ${W} ${h}" width="100%" role="img" aria-label="Biểu đồ cột doanh thu">${bars}${lbls}</svg>`;
 }
 function svgDonut(parts,{size=140}={}){
+  if(!parts.some(p=>Number(p.value)>0)){
+    return `<div class="chart-empty">${icon('home',26)}<p>Chưa có phòng nào</p><small>Thêm phòng để xem tỷ lệ trạng thái.</small></div>`;
+  }
   const total=Math.max(1,parts.reduce((a,p)=>a+p.value,0));
   let acc=0;const r=15.9,cx=21,cy=21;
   const segs=parts.filter(p=>p.value>0).map(p=>{
@@ -1023,7 +1030,7 @@ function svgDonut(parts,{size=140}={}){
     acc+=frac;return seg;
   }).join('');
   const legend=parts.map(p=>`<span class="chart-leg"><i style="background:${p.color}"></i>${esc(p.name)}: <b>${p.value}</b></span>`).join('');
-  return `<div class="donut-wrap"><svg viewBox="0 0 42 42" width="${size}" height="${size}" role="img" aria-label="Tỷ lệ trạng thái phòng">${segs}<text x="21" y="23" text-anchor="middle" font-size="8" fill="#2C2723" font-weight="700">${total} phòng</text></svg><div class="donut-legend">${legend}</div></div>`;
+  return `<div class="donut-wrap"><svg viewBox="0 0 42 42" width="${size}" height="${size}" role="img" aria-label="Tỷ lệ trạng thái phòng">${segs}<text x="21" y="20.6" text-anchor="middle" font-size="7" fill="#2C2723" font-weight="700">${total}</text><text x="21" y="25.4" text-anchor="middle" font-size="3.6" fill="#675F58" font-weight="600">phòng</text></svg><div class="donut-legend">${legend}</div></div>`;
 }
 function svgHBars(items){
   const max=Math.max(1,...items.map(x=>x.value));
