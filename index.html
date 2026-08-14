@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
+  <meta name="description" content="Huy Rooms — tìm phòng trọ, xem ảnh, đặt lịch xem phòng trực tuyến." />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#F6F1EA" />
   <title>Huy Rooms — Tìm phòng & Quản lý nhà trọ</title>
@@ -22,7 +23,7 @@
     <div class="container nav-wrap">
       <a class="brand" href="#">
         <span class="brand-mark">H</span>
-        <span><strong>Huy Rooms</strong><small>Find a calm place to live</small></span>
+        <span><strong class="brand-name">Huy Rooms</strong><small>Find a calm place to live</small></span>
       </a>
       <nav class="nav-links">
         <a href="#properties">Phòng trống</a>
@@ -30,8 +31,8 @@
         <a href="#contact">Liên hệ</a>
       </nav>
       <div class="nav-actions">
-        <button class="btn btn-light" id="residentBtn">Cư dân</button>
-        <button class="btn btn-dark" id="adminBtn">Quản lý</button>
+        <button class="btn btn-gold-outline" id="residentBtn">Cư dân</button>
+        <button class="btn btn-primary" id="adminBtn">Quản lý</button>
       </div>
     </div>
   </header>
@@ -97,6 +98,19 @@
           </select>
           <button class="btn btn-ghost" id="resetFilters">Đặt lại</button>
         </div>
+        <div class="filter-bar" id="extraFilters">
+          <select id="typeFilter" aria-label="Loại phòng"></select>
+          <select id="minAreaFilter" aria-label="Diện tích tối thiểu">
+            <option value="0">Mọi diện tích</option><option value="15">≥ 15 m²</option>
+            <option value="20">≥ 20 m²</option><option value="25">≥ 25 m²</option><option value="30">≥ 30 m²</option>
+          </select>
+          <select id="capacityFilter" aria-label="Số người ở">
+            <option value="0">Mấy người cũng được</option><option value="1">≥ 1 người</option>
+            <option value="2">≥ 2 người</option><option value="3">≥ 3 người</option><option value="4">≥ 4 người</option>
+          </select>
+          <label class="movein-label">Ngày vào ở <input type="date" id="moveInFilter" aria-label="Ngày muốn vào ở" /></label>
+          <div id="amenityChips" class="amenity-chip-row" aria-label="Lọc theo tiện nghi"></div>
+        </div>
         <div id="propertyGrid" class="property-grid"></div>
       </div>
     </section>
@@ -115,7 +129,7 @@
     <section class="section" id="contact">
       <div class="container contact-card">
         <div><div class="eyebrow dark">CẦN HỖ TRỢ?</div><h2>Chưa biết chọn phòng nào?</h2><p>Liên hệ trực tiếp để được gợi ý phòng phù hợp ngân sách và nhu cầu.</p></div>
-        <div class="contact-actions"><a class="btn btn-dark" href="tel:0846413314">Gọi 0846 413 314</a><a class="btn btn-light" href="#properties">Xem phòng</a></div>
+        <div class="contact-actions"><a class="btn btn-dark" id="contactCallBtn" href="tel:0846413314">Gọi 0846 413 314</a><a class="btn btn-light" href="#properties">Xem phòng</a></div>
       </div>
     </section>
   </main>
@@ -123,7 +137,7 @@
   <section id="residentApp" class="resident-shell hidden">
     <header class="resident-topbar">
       <div class="container nav-wrap">
-        <div class="brand"><span class="brand-mark">H</span><span><strong>Huy Rooms</strong><small>Cổng thông tin cư dân</small></span></div>
+        <div class="brand"><span class="brand-mark">H</span><span><strong class="brand-name">Huy Rooms</strong><small>Cổng thông tin cư dân</small></span></div>
         <button class="btn btn-light" id="residentLogout">Đăng xuất</button>
       </div>
     </header>
@@ -132,15 +146,17 @@
 
   <section id="adminApp" class="admin-shell hidden">
     <aside class="sidebar">
-      <div class="sidebar-brand"><span class="brand-mark">H</span><div><strong>Huy Rooms</strong><small>Quản lý nhà trọ</small></div></div>
+      <div class="sidebar-brand"><span class="brand-mark">H</span><div><strong class="brand-name">Huy Rooms</strong><small>Quản lý nhà trọ</small></div></div>
       <nav class="side-nav">
-        <button class="side-link active" data-view="dashboard">◫ <span>Tổng quan</span></button>
-        <button class="side-link" data-view="properties">⌂ <span>Căn trọ & phòng</span></button>
-        <button class="side-link" data-view="tenants">♙ <span>Người thuê</span></button>
-        <button class="side-link" data-view="utilities">⌁ <span>Điện & nước</span></button>
-        <button class="side-link" data-view="invoices">₫ <span>Hóa đơn</span></button>
-        <button class="side-link" data-view="appointments">◷ <span>Lịch hẹn</span></button>
-        <button class="side-link" data-view="settings">⚙ <span>Cài đặt</span></button>
+        <button class="side-link active" data-view="dashboard" data-ic="dashboard"><span>Tổng quan</span></button>
+        <button class="side-link" data-view="properties" data-ic="home"><span>Căn trọ & phòng</span></button>
+        <button class="side-link" data-view="leases" data-ic="filetext"><span>Hợp đồng thuê</span></button>
+        <button class="side-link" data-view="tenants" data-ic="users"><span>Người thuê</span></button>
+        <button class="side-link" data-view="utilities" data-ic="zap"><span>Điện & nước</span></button>
+        <button class="side-link" data-view="invoices" data-ic="receipt"><span>Hóa đơn</span></button>
+        <button class="side-link" data-view="appointments" data-ic="calendar"><span>Lịch hẹn</span></button>
+        <button class="side-link" data-view="tickets" data-ic="wrench"><span>Sự cố & thông báo</span></button>
+        <button class="side-link" data-view="settings" data-ic="settings"><span>Cài đặt</span></button>
       </nav>
       <div class="sidebar-bottom"><button class="btn btn-light full" id="backPublic">← Trang khách</button></div>
     </aside>
@@ -150,6 +166,7 @@
         <button class="btn btn-light mobile-only" id="mobileBackPublic" style="padding:10px 12px">←</button>
         <div><small>HỆ THỐNG QUẢN LÝ NHÀ TRỌ</small><h2 id="adminTitle">Tổng quan</h2></div>
         <div class="admin-actions">
+          <button class="btn btn-light" id="globalSearchBtn" data-ic="search" aria-label="Tìm kiếm toàn hệ thống (Ctrl+K)"><span class="desktop-only">Tìm nhanh <kbd>Ctrl K</kbd></span></button>
           <button class="btn btn-light" id="quickAddTenant">+ Người thuê</button>
           <button class="btn btn-light" id="quickAddRoom">+ Phòng</button>
           <button class="btn btn-primary" id="quickAddProperty">+ Căn trọ</button>
@@ -158,15 +175,17 @@
       <div class="admin-content">
         <div id="view-dashboard" class="admin-view active"></div>
         <div id="view-properties" class="admin-view"></div>
+        <div id="view-leases" class="admin-view"></div>
         <div id="view-tenants" class="admin-view"></div>
         <div id="view-utilities" class="admin-view"></div>
         <div id="view-invoices" class="admin-view"></div>
         <div id="view-appointments" class="admin-view"></div>
+        <div id="view-tickets" class="admin-view"></div>
         <div id="view-settings" class="admin-view"></div>
       </div>
     </div>
 
-    <button class="mobile-fab" id="mobileFab" aria-label="Thêm nhanh">+</button>
+    <button class="mobile-fab" id="mobileFab" aria-label="Thêm nhanh căn, phòng, người thuê, chỉ số, hóa đơn">+</button>
     <div class="fab-sheet" id="fabSheet">
       <div class="fab-sheet-inner">
         <button data-fab="property">Thêm căn trọ</button>
@@ -178,13 +197,26 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" id="mobileTabbar">
-      <button data-view="dashboard" class="active"><i>◫</i>Tổng quan</button>
-      <button data-view="properties"><i>⌂</i>Phòng</button>
-      <button data-view="utilities"><i>⌁</i>Điện nước</button>
-      <button data-view="invoices"><i>₫</i>Hóa đơn</button>
-      <button data-view="appointments"><i>◷</i>Lịch hẹn</button>
+    <nav class="mobile-tabbar" id="mobileTabbar" aria-label="Điều hướng quản lý">
+      <button data-view="dashboard" class="active" aria-label="Tổng quan"><i aria-hidden="true" data-ic="dashboard"></i>Tổng quan</button>
+      <button data-view="properties" aria-label="Căn trọ và phòng"><i aria-hidden="true" data-ic="home"></i>Phòng</button>
+      <button data-view="utilities" aria-label="Điện nước"><i aria-hidden="true" data-ic="zap"></i>Điện nước</button>
+      <button data-view="invoices" aria-label="Hóa đơn"><i aria-hidden="true" data-ic="receipt"></i>Hóa đơn</button>
+      <button id="moreTabBtn" aria-label="Mở thêm mục: người thuê, lịch hẹn, cài đặt"><i aria-hidden="true" data-ic="menu"></i>Khác</button>
     </nav>
+
+    <div class="fab-sheet" id="moreSheet" role="dialog" aria-label="Các mục khác">
+      <div class="fab-sheet-inner">
+        <button data-more="search" aria-label="Tìm kiếm toàn hệ thống"><i data-ic="search" aria-hidden="true"></i> Tìm nhanh</button>
+        <button data-more="leases" aria-label="Hợp đồng thuê"><i data-ic="filetext" aria-hidden="true"></i> Hợp đồng</button>
+        <button data-more="tenants" aria-label="Người thuê"><i data-ic="users" aria-hidden="true"></i> Người thuê</button>
+        <button data-more="appointments" aria-label="Lịch hẹn"><i data-ic="calendar" aria-hidden="true"></i> Lịch hẹn <span class="more-badge hidden" id="moreApptBadge"></span></button>
+        <button data-more="tickets" aria-label="Sự cố và thông báo"><i data-ic="wrench" aria-hidden="true"></i> Sự cố / Thông báo</button>
+        <button data-more="settings" aria-label="Cài đặt"><i data-ic="settings" aria-hidden="true"></i> Cài đặt</button>
+        <button data-more="public" aria-label="Quay về trang khách"><i data-ic="back" aria-hidden="true"></i> Quay về trang khách</button>
+        <button data-more="close" aria-label="Đóng menu">Đóng</button>
+      </div>
+    </div>
   </section>
 
   <!-- Booking -->
@@ -197,9 +229,12 @@
         <label>Họ và tên *<input required id="customerName" /></label>
         <label>Số điện thoại *<input required id="customerPhone" type="tel" /></label>
         <label>Ngày xem phòng *<input required id="appointmentDate" type="date" /></label>
-        <label>Giờ dự kiến *<input required id="appointmentTime" type="time" /></label>
+        <label>Giờ dự kiến *<select required id="appointmentTime" aria-label="Chọn khung giờ xem phòng"></select></label>
         <label class="span-2">Ghi chú<textarea id="customerNote" rows="3" placeholder="Ví dụ: ở 2 người, cần ban công..."></textarea></label>
-        <button class="btn btn-primary span-2" type="submit">Gửi yêu cầu đặt lịch</button>
+        <label class="hp-field" aria-hidden="true">Website<input id="bookingWebsite" type="text" tabindex="-1" autocomplete="off"></label>
+        <label class="consent-row span-2"><input type="checkbox" id="bookingConsent" required />
+          <span>Tôi đồng ý cho quản lý lưu họ tên và số điện thoại để liên hệ xếp lịch xem phòng. Thông tin không dùng vào mục đích khác và được xóa khi tôi yêu cầu.</span></label>
+        <button class="btn btn-primary span-2" type="submit" id="bookingSubmit">Gửi yêu cầu đặt lịch</button>
       </form>
     </div>
   </div>
@@ -209,7 +244,7 @@
     <div class="modal-backdrop" data-close-modal="loginModal"></div>
     <div class="modal-card small"><button class="modal-close" data-close-modal="loginModal">×</button>
       <div class="modal-icon">✦</div><h3>Đăng nhập quản lý</h3><p class="muted-text" id="adminLoginHint">Chưa kết nối Google Sheets — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.</p>
-      <form id="loginForm" class="stack-form"><label id="adminPasswordLabel">Mật khẩu<input id="adminPassword" type="password" required placeholder="Nhập mật khẩu" /></label><button class="btn btn-primary full" type="submit">Đăng nhập</button></form>
+      <form id="loginForm" class="stack-form"><label>Tài khoản nhân viên <small style="color:var(--muted)">(bỏ trống nếu là chủ nhà)</small><input id="adminUser" type="text" autocomplete="username" placeholder="vd: kimchi.ketoan" /></label><label id="adminPasswordLabel">Mật khẩu<input id="adminPassword" type="password" required placeholder="Nhập mật khẩu" autocomplete="current-password" /></label><button class="btn btn-primary full" type="submit">Đăng nhập</button></form>
     </div>
   </div>
 
@@ -231,11 +266,12 @@
         <label>Khu vực *<input required id="propertyArea" placeholder="Ví dụ: Nam Đông Hà" /></label>
         <label class="span-2">Địa chỉ *<input required id="propertyAddress" /></label>
         <label>Mô tả ngắn<input id="propertyDescription" /></label><label>Số điện thoại<input id="propertyPhone" /></label>
+        <label class="span-2">Đường dẫn riêng (slug)<input id="propertySlug" placeholder="tự tạo từ tên nếu bỏ trống" /></label>
         <label class="span-2">Ảnh căn trọ
           <div class="upload-zone"><input id="propertyImages" type="file" accept="image/*" multiple><span>Chọn hoặc kéo thả ảnh. Ảnh được tự nén trước khi lưu.</span></div>
           <div id="propertyImagePreview" class="image-preview-grid"></div>
         </label>
-        <button class="btn btn-primary span-2" type="submit">Lưu căn trọ</button>
+        <button class="btn btn-primary span-2" type="submit" id="propertySubmit">Lưu căn trọ</button>
       </form>
     </div>
   </div>
@@ -246,21 +282,27 @@
     <div class="modal-card wide"><button class="modal-close" data-close-modal="roomModal">×</button><h3 id="roomModalTitle">Thêm phòng</h3>
       <form id="roomForm" class="form-grid">
         <input type="hidden" id="roomId" />
+        <div class="form-section">THÔNG TIN CHÍNH</div>
         <label>Căn trọ *<select id="roomProperty" required></select></label><label>Mã/Tên phòng *<input id="roomName" required placeholder="P101" /></label>
         <label>Giá thuê/tháng *<input id="roomPrice" type="number" required min="0" /></label><label>Tiền cọc<input id="roomDeposit" type="number" min="0" /></label>
         <label>Diện tích (m²)<input id="roomArea" type="number" min="0" /></label><label>Sức chứa<input id="roomCapacity" type="number" min="1" value="2" /></label>
         <label>Loại phòng<select id="roomType"><option>Phòng trọ</option><option>Studio</option><option>Phòng gác lửng</option><option>Căn hộ mini</option></select></label>
         <label>Trạng thái<select id="roomStatus"><option value="available">Đang trống</option><option value="reserved">Đã giữ chỗ</option><option value="occupied">Đã thuê</option><option value="maintenance">Bảo trì</option></select></label>
+        <div class="form-section">ĐIỆN & NƯỚC</div>
         <label>Đơn giá điện (đ/kWh)<input id="roomElectricRate" type="number" min="0" value="3500" /></label>
         <label>Cách tính nước<select id="roomWaterMode"><option value="meter">Theo đồng hồ (m³)</option><option value="fixed">Cố định/tháng</option></select></label>
         <label>Đơn giá nước (đ/m³)<input id="roomWaterRate" type="number" min="0" value="15000" /></label><label>Tiền nước cố định/tháng<input id="roomWaterFixed" type="number" min="0" value="0" /></label>
+        <div class="form-section">HIỂN THỊ TRÊN TRANG KHÁCH</div>
         <label class="span-2">Tiện nghi, cách nhau bằng dấu phẩy<input id="roomAmenities" placeholder="Điều hòa, Wifi, Nóng lạnh..." /></label>
-        <label class="span-2">Ghi chú<textarea id="roomNote" rows="2"></textarea></label>
+        <label class="span-2">Ghi chú nội bộ (khách KHÔNG nhìn thấy)<textarea id="roomNote" rows="2"></textarea></label>
+        <label>Đường dẫn riêng (slug)<input id="roomSlug" placeholder="tự tạo từ tên nếu bỏ trống" /></label>
+        <label>Ngày có thể vào ở<input id="roomAvailableFrom" type="date" /></label>
+        <label class="span-2">Chính sách (hiện trên trang phòng)<textarea id="roomPolicies" rows="2" placeholder="Ở tối đa 2 người, nuôi thú cưng nhỏ, giờ giấc tự do, gửi xe miễn phí…"></textarea></label>
         <label class="span-2">Ảnh phòng
           <div class="upload-zone"><input id="roomImages" type="file" accept="image/*" multiple><span>Thêm nhiều ảnh; có thể xóa/thay ảnh bất kỳ lúc nào.</span></div>
           <div id="roomImagePreview" class="image-preview-grid"></div>
         </label>
-        <button class="btn btn-primary span-2" type="submit">Lưu phòng</button>
+        <button class="btn btn-primary span-2" type="submit" id="roomSubmit">Lưu phòng</button>
       </form>
     </div>
   </div>
@@ -272,11 +314,12 @@
       <form id="tenantForm" class="form-grid">
         <input type="hidden" id="tenantId" />
         <label>Họ tên *<input id="tenantName" required /></label><label>Số điện thoại *<input id="tenantPhone" type="tel" required /></label>
-        <label>Mã PIN đăng nhập *<input id="tenantPin" required maxlength="8" placeholder="Ví dụ 2580" /></label><label>Phòng *<select id="tenantRoom" required></select></label>
+        <label>Phòng *<select id="tenantRoom" required></select></label>
+        <div class="smart-note span-2" id="tenantPinNote">🔒 Mã PIN đăng nhập của cư dân được tạo tự động và chỉ hiển thị một lần sau khi lưu. Muốn cấp lại, dùng nút “Đặt lại PIN” trong danh sách người thuê.</div>
         <label>Ngày vào ở<input id="tenantMoveIn" type="date" /></label><label>Trạng thái<select id="tenantActive"><option value="true">Đang thuê</option><option value="false">Đã trả phòng</option></select></label>
         <label>Tiền cọc phải đóng<input id="tenantDepositRequired" type="number" min="0" /></label><label>Tiền cọc đã nhận<input id="tenantDepositPaid" type="number" min="0" /></label>
         <label class="span-2">Ghi chú<textarea id="tenantNote" rows="2"></textarea></label>
-        <button class="btn btn-primary span-2" type="submit">Lưu người thuê</button>
+        <button class="btn btn-primary span-2" type="submit" id="tenantSubmit">Lưu người thuê</button>
       </form>
     </div>
   </div>
@@ -296,8 +339,8 @@
         <label class="water-meter-field">Chỉ số nước đầu kỳ<input id="waterStart" type="number" min="0" step="0.1" /></label><label class="water-meter-field">Chỉ số nước cuối kỳ<input id="waterEnd" type="number" min="0" step="0.1" /></label>
         <label class="water-fixed-field hidden">Tiền nước cố định<input id="waterFixed" type="number" min="0" /></label><div class="calc-card"><small>Tiền nước dự kiến</small><strong id="waterPreview">0đ</strong><span id="waterUnitsPreview">0 m³</span></div>
         <label>Phí khác<input id="utilityOtherFee" type="number" min="0" value="0" /></label><label>Ghi chú<input id="utilityNote" /></label>
-        <div class="smart-note span-2">💡 Đầu kỳ sẽ tự lấy từ cuối kỳ tháng trước nếu có dữ liệu. Anh chỉ cần kiểm tra và nhập chỉ số cuối tháng.</div>
-        <button class="btn btn-primary span-2" type="submit">Lưu chỉ số & tính tiền</button>
+        <div class="smart-note span-2" id="utilitySmartNote">💡 Đầu kỳ sẽ tự lấy từ cuối kỳ tháng trước nếu có dữ liệu. Anh chỉ cần kiểm tra và nhập chỉ số cuối tháng.</div>
+        <button class="btn btn-primary span-2" type="submit" id="utilitySubmit">Lưu chỉ số & tính tiền</button>
       </form>
     </div>
   </div>
@@ -307,24 +350,380 @@
     <div class="modal-backdrop" data-close-modal="invoiceModal"></div>
     <div class="modal-card"><button class="modal-close" data-close-modal="invoiceModal">×</button><h3>Lập hóa đơn tháng</h3>
       <form id="invoiceForm" class="form-grid">
-        <input type="hidden" id="invoiceReadingId" />
+        <input type="hidden" id="invoiceReadingId" /><input type="hidden" id="invoiceLeaseId" />
         <label>Phòng *<select id="invoiceRoom" required></select></label><label>Tháng *<input id="invoiceMonth" type="month" required /></label>
         <label>Hạn thanh toán<input id="invoiceDueDate" type="date" /></label><label>Tiền phòng<input id="invoiceRent" type="number" min="0" /></label>
         <label>Tiền điện<input id="invoiceElectric" type="number" min="0" /></label><label>Tiền nước<input id="invoiceWater" type="number" min="0" /></label>
         <label>Phí khác<input id="invoiceOther" type="number" min="0" /></label><label>Thu thêm tiền cọc còn thiếu<select id="invoiceIncludeDeposit"><option value="false">Không</option><option value="true">Có</option></select></label>
+        <div class="smart-note span-2" id="invoiceTenantNote"></div>
         <div class="invoice-total-preview span-2"><span>Tổng dự kiến</span><strong id="invoiceTotalPreview">0đ</strong></div>
-        <button class="btn btn-primary span-2" type="submit">Tạo hóa đơn</button>
+        <button class="btn btn-primary span-2" type="submit" id="invoiceSubmit">Tạo hóa đơn</button>
       </form>
     </div>
   </div>
 
+
+  <!-- Payment -->
+  <div class="modal hidden" id="paymentModal">
+    <div class="modal-backdrop" data-close-modal="paymentModal"></div>
+    <div class="modal-card small"><button class="modal-close" data-close-modal="paymentModal" aria-label="Đóng">×</button>
+      <h3>Ghi nhận thanh toán</h3>
+      <div class="booking-summary" id="paymentSummary"></div>
+      <form id="paymentForm" class="form-grid">
+        <input type="hidden" id="paymentInvoiceId" />
+        <label>Số tiền thu lần này *<input id="paymentAmount" type="number" min="0" required /></label>
+        <label>Ngày thu *<input id="paymentDate" type="date" required /></label>
+        <label>Phương thức<select id="paymentMethod"><option value="cash">Tiền mặt</option><option value="bank">Chuyển khoản</option><option value="other">Khác</option></select></label>
+        <label>Số chứng từ / mã CK<input id="paymentRef" maxlength="60" placeholder="Mã giao dịch ngân hàng…" /></label>
+        <label>Ghi chú<input id="paymentNote" maxlength="200" /></label>
+        <button class="btn btn-primary span-2" type="submit" id="paymentSubmit">Lưu thanh toán</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- One-time PIN display -->
+
+
+
+
+
+  <!-- ============ v6: TÌM NHANH (Ctrl+K) ============ -->
+  <div class="modal hidden" id="palModal">
+    <div class="modal-backdrop" onclick="closePalette()"></div>
+    <div class="pal-card" role="dialog" aria-label="Tìm kiếm toàn hệ thống">
+      <div class="pal-input-row"><input id="palInput" placeholder="Tìm phòng, người thuê, hóa đơn, lead… hoặc gõ hành động" aria-label="Ô tìm kiếm toàn hệ thống" autocomplete="off"><kbd>Esc</kbd></div>
+      <div id="palResults" class="pal-results"></div>
+    </div>
+  </div>
+
+  <!-- ============ v6: NHÂN VIÊN ============ -->
+  <div class="modal hidden" id="staffModal">
+    <div class="modal-card small">
+      <div class="modal-head"><h3>Nhân viên & quyền</h3><button class="modal-close" data-close-modal="staffModal" aria-label="Đóng">✕</button></div>
+      <form id="staffForm" class="form-grid">
+        <input type="hidden" id="staffId">
+        <label>Họ tên *<input id="staffName" required></label>
+        <label>Tài khoản đăng nhập *<input id="staffUsername" required placeholder="chữ thường, không dấu"></label>
+        <label class="span-2">Vai trò<select id="staffRole">
+          <option value="manager">Quản lý — mọi việc trừ nhân sự</option>
+          <option value="accountant">Kế toán — hóa đơn, sổ thu, sổ cọc, nhắc nợ</option>
+          <option value="staff">Nhân viên — lịch hẹn, sự cố, điện nước</option>
+        </select></label>
+        <div class="span-2"><small style="color:var(--muted)">Phạm vi căn (không chọn = tất cả)</small><div id="staffProps" class="check-grid"></div></div>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="staffModal">Hủy</button><button type="submit" class="btn btn-primary">Lưu nhân viên</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ GIAI ĐOẠN 5: CRM ĐỔI LỊCH + GIỮ CHỖ ============ -->
+  <div class="modal hidden" id="rescheduleModal">
+    <div class="modal-card small">
+      <div class="modal-head"><h3>Đổi lịch hẹn</h3><button class="modal-close" data-close-modal="rescheduleModal" aria-label="Đóng">✕</button></div>
+      <form id="rescheduleForm" class="form-grid">
+        <input type="hidden" id="resLeadId">
+        <label>Ngày mới *<input id="resDate" type="date" required onchange="refreshRescheduleSlots()"></label>
+        <label>Khung giờ *<select id="resTime" required></select></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="rescheduleModal">Hủy</button><button type="submit" class="btn btn-primary">Lưu lịch mới</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="reserveModal">
+    <div class="modal-card small">
+      <div class="modal-head"><h3>Giữ chỗ cho khách</h3><button class="modal-close" data-close-modal="reserveModal" aria-label="Đóng">✕</button></div>
+      <div class="booking-summary" id="rsvSummary"></div>
+      <form id="reserveForm" class="form-grid">
+        <input type="hidden" id="rsvLeadId">
+        <label>Tiền giữ chỗ (đ) *<input id="rsvAmount" type="number" min="0" required></label>
+        <label>Giữ đến hết ngày *<input id="rsvUntil" type="date" required></label>
+        <p class="muted-text span-2">Phòng sẽ chuyển sang "Đã giữ chỗ" và ngừng nhận lịch xem. Quá hạn mà chưa ký, hệ thống nhắc anh xác nhận trả phòng về Đang trống.</p>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="reserveModal">Hủy</button><button type="submit" class="btn btn-primary">Ghi giữ chỗ</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ CỔNG CƯ DÂN (v4 giai đoạn 4) ============ -->
+  <div class="modal hidden" id="rsInvoiceModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3 id="rsInvoiceTitle">Hóa đơn</h3><button class="modal-close" data-close-modal="rsInvoiceModal" aria-label="Đóng">✕</button></div>
+      <div id="rsInvoiceBody" class="lease-detail-body"></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="rsTicketModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Báo sự cố</h3><button class="modal-close" data-close-modal="rsTicketModal" aria-label="Đóng">✕</button></div>
+      <form id="rsTicketForm" class="form-grid">
+        <label class="span-2">Sự cố gì? *<input id="rsTicketTitle" maxlength="120" placeholder="VD: Vòi nước bồn rửa bị rỉ" required></label>
+        <label>Loại<select id="rsTicketCategory">
+          <option value="dien">Điện</option><option value="nuoc">Nước</option><option value="thietbi">Thiết bị / nội thất</option>
+          <option value="vesinh">Vệ sinh</option><option value="anninh">An ninh</option><option value="khac">Khác</option>
+        </select></label>
+        <label>Mức độ<select id="rsTicketPriority">
+          <option value="normal">Bình thường</option><option value="low">Không gấp</option>
+          <option value="high">Cao</option><option value="urgent">Khẩn cấp</option>
+        </select></label>
+        <label class="span-2">Mô tả thêm<textarea id="rsTicketDesc" rows="3" maxlength="2000" placeholder="Vị trí, tình trạng, thời điểm phát hiện…" style="width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:11px"></textarea></label>
+        <div class="span-2">
+          <button type="button" class="btn btn-light" onclick="rsTicketPickPhotos()">📷 Thêm ảnh (tối đa 3)</button>
+          <div id="rsTicketPreview" class="rs-thumbs"></div>
+        </div>
+        <p class="rs-form-error span-2" id="rsTicketError" role="alert"></p>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="rsTicketModal">Hủy</button><button type="submit" class="btn btn-primary">Gửi cho quản lý</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="ticketDetailModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3 id="ticketDetailTitle">Sự cố</h3><button class="modal-close" data-close-modal="ticketDetailModal" aria-label="Đóng">✕</button></div>
+      <div id="ticketDetailBody" class="lease-detail-body"></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="pinChangeModal">
+    <div class="modal-card small">
+      <div class="modal-head"><h3>Đổi mã PIN</h3><button class="modal-close" data-close-modal="pinChangeModal" aria-label="Đóng">✕</button></div>
+      <form id="pinChangeForm" class="form-grid">
+        <label class="span-2">PIN hiện tại *<input id="pinOld" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" required></label>
+        <label class="span-2">PIN mới (6 chữ số) *<input id="pinNew" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" required></label>
+        <label class="span-2">Nhập lại PIN mới *<input id="pinNew2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" required></label>
+        <p class="rs-form-error span-2" id="pinChangeError" role="alert"></p>
+        <p class="muted-text span-2">Đổi PIN xong, tài khoản sẽ tự đăng xuất khỏi mọi thiết bị để bảo đảm an toàn.</p>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="pinChangeModal">Hủy</button><button type="submit" class="btn btn-primary">Đổi PIN</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ GIAI ĐOẠN 3: DỊCH VỤ, HÓA ĐƠN HÀNG LOẠT, SỔ THU, CỌC, NHẮC NỢ ============ -->
+  <div class="modal hidden" id="serviceModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Dịch vụ</h3><button class="modal-close" data-close-modal="serviceModal" aria-label="Đóng">✕</button></div>
+      <form id="serviceForm" class="form-grid">
+        <input type="hidden" id="serviceId">
+        <label>Tên dịch vụ<input id="serviceName" placeholder="Wifi, rác, giữ xe, máy giặt…" required></label>
+        <label>Cách tính<select id="serviceCalcType">
+          <option value="fixed">Cố định / phòng</option><option value="perPerson">Theo người</option>
+          <option value="perUnit">Theo số lượng</option><option value="manual">Nhập tay mỗi tháng</option>
+          <option value="meter">Theo đồng hồ (ngoài điện nước)</option>
+        </select></label>
+        <label>Đơn vị<input id="serviceUnit" placeholder="tháng / người / xe / kWh…"></label>
+        <label>Đơn giá (đ)<input id="servicePrice" type="number" min="0" required></label>
+        <label>Thuế (%)<input id="serviceTax" type="number" min="0" max="100" value="0"></label>
+        <div class="span-2" id="serviceFromRow"><label>Giá mới áp dụng từ tháng<input id="serviceFrom" type="month"></label>
+          <p class="muted-text">Đổi giá chỉ áp dụng từ tháng chọn trở đi — hóa đơn các tháng trước giữ nguyên giá cũ.</p></div>
+        <label class="span-2">Ghi chú<input id="serviceNote"></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="serviceModal">Hủy</button><button type="submit" class="btn btn-primary">Lưu dịch vụ</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="leaseServiceModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Gắn dịch vụ vào hợp đồng</h3><button class="modal-close" data-close-modal="leaseServiceModal" aria-label="Đóng">✕</button></div>
+      <form id="leaseServiceForm" class="form-grid">
+        <input type="hidden" id="lsLeaseId">
+        <label class="span-2">Dịch vụ<select id="lsService"></select></label>
+        <label>Số lượng (nếu tính theo SL)<input id="lsQty" type="number" min="1" value="1"></label>
+        <label>Giá riêng cho HĐ này (đ, bỏ trống = giá chung)<input id="lsOverride" type="number" min="0"></label>
+        <label>Miễn giảm (%)<input id="lsDiscount" type="number" min="0" max="100" value="0"></label>
+        <label>Áp dụng từ ngày<input id="lsFrom" type="date"></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="leaseServiceModal">Hủy</button><button type="submit" class="btn btn-primary">Gắn dịch vụ</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="bulkInvoiceModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3>Tạo hóa đơn hàng loạt</h3><button class="modal-close" data-close-modal="bulkInvoiceModal" aria-label="Đóng">✕</button></div>
+      <div class="meter-controls">
+        <label>Căn trọ<select id="bulkProperty" onchange="renderBulkPreview()"></select></label>
+        <label>Tháng<input id="bulkMonth" type="month" onchange="renderBulkPreview()"></label>
+      </div>
+      <div id="bulkPreviewBody" class="lease-detail-body"></div>
+      <div class="form-actions"><button type="button" class="btn btn-light" data-close-modal="bulkInvoiceModal">Đóng</button><button type="button" class="btn btn-primary" id="bulkIssueBtn" onclick="issueBulkInvoices()">Phát hành</button></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="depositModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Sổ cọc</h3><button class="modal-close" data-close-modal="depositModal" aria-label="Đóng">✕</button></div>
+      <form id="depositForm" class="form-grid">
+        <input type="hidden" id="depLeaseId">
+        <div class="smart-note span-2" id="depSummary"></div>
+        <label>Loại giao dịch<select id="depType"><option value="collect">Thu cọc</option><option value="refund">Hoàn cọc</option><option value="deduct">Trừ cọc</option></select></label>
+        <label>Số tiền (đ)<input id="depAmount" type="number" min="0" required></label>
+        <label>Ngày<input id="depDate" type="date" required></label>
+        <label>Hình thức<select id="depMethod"><option value="cash">Tiền mặt</option><option value="bank">Chuyển khoản</option></select></label>
+        <label class="span-2">Ghi chú<input id="depNote"></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="depositModal">Hủy</button><button type="submit" class="btn btn-primary">Ghi sổ cọc</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="payHistoryModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3 id="payHistoryTitle">Sổ thu</h3><button class="modal-close" data-close-modal="payHistoryModal" aria-label="Đóng">✕</button></div>
+      <div id="payHistoryBody" class="lease-detail-body"></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="reminderModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Nhắc thanh toán</h3><button class="modal-close" data-close-modal="reminderModal" aria-label="Đóng">✕</button></div>
+      <input type="hidden" id="remInvoiceId">
+      <label>Mẫu tin<select id="remKind" onchange="remKindChanged()"><option value="before">Nhắc trước hạn</option><option value="due">Đến hạn hôm nay</option><option value="overdue">Quá hạn</option></select></label>
+      <label style="display:block;margin-top:8px">Nội dung<textarea id="remText" rows="7" style="width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:11px"></textarea></label>
+      <div class="form-actions"><button type="button" class="btn btn-light" data-close-modal="reminderModal">Đóng</button><button type="button" class="btn btn-primary" onclick="sendReminder()">Sao chép & ghi lịch sử</button><button type="button" class="btn btn-light" onclick="sendReminderZalo()">Gửi Zalo OA</button></div>
+      <div id="remHistory" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="meterPhotoModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3 id="meterPhotoTitle">Ảnh công tơ</h3><button class="modal-close" data-close-modal="meterPhotoModal" aria-label="Đóng">✕</button></div>
+      <div id="meterPhotoBody" class="meter-photo-body"></div>
+    </div>
+  </div>
+
+  <!-- ============ HỢP ĐỒNG (v4 giai đoạn 2) ============ -->
+  <div class="modal hidden" id="leaseModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Hợp đồng thuê</h3><button class="modal-close" data-close-modal="leaseModal" aria-label="Đóng">✕</button></div>
+      <form id="leaseForm" class="form-grid">
+        <input type="hidden" id="leaseId">
+        <div class="smart-note span-2" id="leaseSnapshotNote"></div>
+        <label>Phòng<select id="leaseRoom" required></select></label>
+        <label>Người đại diện thanh toán<select id="leaseOccupant" onchange="toggleLeaseNewOccupant()" required></select></label>
+        <div class="span-2 form-grid hidden" id="leaseNewOccupantRow" style="padding:0;margin:0">
+          <label>Họ tên người mới<input id="leaseNewName" placeholder="Nguyễn Văn A"></label>
+          <label>Số điện thoại<input id="leaseNewPhone" inputmode="numeric" placeholder="0905xxxxxx"></label>
+        </div>
+        <label>Ngày bắt đầu<input type="date" id="leaseStart" required></label>
+        <label>Ngày kết thúc (bỏ trống nếu không thời hạn)<input type="date" id="leaseEnd"></label>
+        <label>Ngày thu tiền hàng tháng<input type="number" id="leaseBillingDay" min="1" max="28" value="5"></label>
+        <label>Giá thuê chốt trên hợp đồng (đ/tháng)<input type="number" id="leaseRent" min="0" required></label>
+        <label>Tiền cọc yêu cầu (đ)<input type="number" id="leaseDepositRequired" min="0" value="0"></label>
+        <label>Cọc đã nhận / giữ chỗ (đ)<input type="number" id="leaseDepositPaid" min="0" value="0"></label>
+        <label class="span-2">Ghi chú<textarea id="leaseNote" rows="2" placeholder="Điều khoản riêng, thỏa thuận thêm…"></textarea></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="leaseModal">Hủy</button><button type="submit" class="btn btn-primary" id="leaseSubmit">Lưu hợp đồng</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="leaseDetailModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3 id="leaseDetailTitle">Chi tiết hợp đồng</h3><button class="modal-close" data-close-modal="leaseDetailModal" aria-label="Đóng">✕</button></div>
+      <div id="leaseDetailBody" class="lease-detail-body"></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="checkinModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3>Nhận phòng & bàn giao tài sản</h3><button class="modal-close" data-close-modal="checkinModal" aria-label="Đóng">✕</button></div>
+      <form id="checkinForm" class="form-grid">
+        <input type="hidden" id="checkinLeaseId">
+        <div class="span-2" id="checkinSummary"></div>
+        <label>Ngày nhận phòng<input type="date" id="checkinDate" required></label>
+        <div class="span-2 table-wrap" id="checkinHandover"></div>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="checkinModal">Hủy</button><button type="submit" class="btn btn-primary">Xác nhận nhận phòng</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="occupantModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Thêm người ở cùng</h3><button class="modal-close" data-close-modal="occupantModal" aria-label="Đóng">✕</button></div>
+      <form id="occupantForm" class="form-grid">
+        <input type="hidden" id="occupantLeaseId">
+        <div class="smart-note span-2" id="occupantCapNote"></div>
+        <label class="span-2">Chọn người ở<select id="occupantSelect" onchange="toggleOccupantNew()"></select></label>
+        <div class="span-2 form-grid hidden" id="occupantNewRow" style="padding:0;margin:0">
+          <label>Họ tên<input id="occupantNewName"></label>
+          <label>Số điện thoại<input id="occupantNewPhone" inputmode="numeric"></label>
+        </div>
+        <label>Ngày vào ở<input type="date" id="occupantJoinDate"></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="occupantModal">Hủy</button><button type="submit" class="btn btn-primary">Thêm người ở</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="transferModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Chuyển phòng</h3><button class="modal-close" data-close-modal="transferModal" aria-label="Đóng">✕</button></div>
+      <form id="transferForm" class="form-grid">
+        <input type="hidden" id="transferLeaseId">
+        <div class="smart-note span-2" id="transferNote"></div>
+        <label class="span-2">Phòng mới<select id="transferRoom"></select></label>
+        <label>Ngày hiệu lực<input type="date" id="transferDate" required></label>
+        <label class="check-label"><input type="checkbox" id="transferKeepRent" checked> Giữ nguyên giá hợp đồng cũ</label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="transferModal">Hủy</button><button type="submit" class="btn btn-primary">Chuyển phòng</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="renewModal">
+    <div class="modal-card">
+      <div class="modal-head"><h3>Gia hạn hợp đồng</h3><button class="modal-close" data-close-modal="renewModal" aria-label="Đóng">✕</button></div>
+      <form id="renewForm" class="form-grid">
+        <input type="hidden" id="renewLeaseId">
+        <div class="smart-note span-2" id="renewInfo"></div>
+        <label>Ngày kết thúc mới<input type="date" id="renewEnd" required></label>
+        <label>Giá thuê từ đợt gia hạn (đ/tháng)<input type="number" id="renewRent" min="0"></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="renewModal">Hủy</button><button type="submit" class="btn btn-primary">Gia hạn</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="endLeaseModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3>Trả phòng / Thanh lý hợp đồng</h3><button class="modal-close" data-close-modal="endLeaseModal" aria-label="Đóng">✕</button></div>
+      <form id="endLeaseForm" class="form-grid">
+        <input type="hidden" id="endLeaseId">
+        <div class="span-2" id="endSummary"></div>
+        <label>Ngày trả phòng<input type="date" id="endDate2" required></label>
+        <label>Lý do kết thúc<input id="endReason" placeholder="Hết hạn / chuyển đi / vi phạm…"></label>
+        <div class="span-2 table-wrap" id="endHandover"></div>
+        <label>Trừ vào cọc (hư hỏng, nợ…) (đ)<input type="number" id="endDeduct" min="0" value="0" oninput="updateEndRefund()"></label>
+        <label>Ghi chú thanh lý<input id="endSettleNote" placeholder="Chi tiết trừ cọc, đối chiếu…"></label>
+        <div class="smart-note span-2" id="endRefundPreview"></div>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="endLeaseModal">Hủy</button><button type="submit" class="btn btn-danger">Xác nhận thanh lý</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="assetsModal">
+    <div class="modal-card modal-wide">
+      <div class="modal-head"><h3 id="assetsTitle">Tài sản phòng</h3><button class="modal-close" data-close-modal="assetsModal" aria-label="Đóng">✕</button></div>
+      <input type="hidden" id="assetsRoomId">
+      <div class="table-wrap" id="assetsRows"></div>
+      <div class="form-grid" style="margin-top:10px">
+        <label>Tên tài sản<input id="assetNewName" placeholder="Điều hòa, giường, tủ…"></label>
+        <label>Số lượng<input type="number" id="assetNewQty" min="1" value="1"></label>
+        <label>Tình trạng<input id="assetNewCond" placeholder="Tốt"></label>
+        <div class="form-actions"><button type="button" class="btn btn-primary" onclick="addAssetRow()">+ Thêm tài sản</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="pinModal">
+    <div class="modal-backdrop" data-close-modal="pinModal"></div>
+    <div class="modal-card small"><button class="modal-close" data-close-modal="pinModal" aria-label="Đóng">×</button>
+      <div class="modal-icon">🔑</div><h3>Mã PIN của cư dân</h3>
+      <p class="muted-text">Mã PIN chỉ hiển thị <strong>một lần duy nhất</strong>. Hãy sao chép và gửi ngay cho cư dân. Nếu quên, dùng “Đặt lại PIN” để cấp mã mới.</p>
+      <div class="pin-display" id="pinDisplay">------</div>
+      <div class="conn-actions">
+        <button class="btn btn-primary full" id="pinCopyBtn">Sao chép nội dung gửi cư dân</button>
+      </div>
+    </div>
+  </div>
 
   <div class="modal hidden" id="galleryModal">
     <div class="modal-backdrop" data-close-modal="galleryModal"></div>
     <div class="modal-card wide"><button class="modal-close" data-close-modal="galleryModal">×</button><div id="galleryContent"></div></div>
   </div>
 
-  <button class="sync-pill off" id="syncPill" title="Trạng thái đồng bộ"><span class="sync-dot"></span><span id="syncText">Chưa kết nối</span></button>
+  <button class="sync-pill off" id="syncPill" title="Trạng thái đồng bộ" aria-label="Trạng thái đồng bộ, bấm để đồng bộ ngay"><span class="sync-dot"></span><span id="syncText">Chưa kết nối</span></button>
 
   <script src="config.js"></script>
   <script src="sync.js"></script>

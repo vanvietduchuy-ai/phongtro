@@ -7,8 +7,14 @@
 (function () {
   var CFG_KEY = 'huy_rooms_conn';
   var STATE_KEY = 'huy_rooms_sync_state';
-  var COLS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments'];
-  var GUEST_PUSH = ['appointments'];
+  // v6: đủ mọi collection của giai đoạn 3–6 (trước đây thiếu → tiền/sự cố không lên máy chủ)
+  var COLS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments',
+    'leases', 'leaseOccupants', 'accounts', 'assets', 'handoverItems',
+    'serviceDefinitions', 'leaseServices', 'payments', 'depositLedger', 'reminders',
+    'maintenanceTickets', 'notifications', 'staffUsers'];
+  var PULL_ONLY = ['auditLog'];  // máy chủ tự ghi, client chỉ đọc
+  // Khách không đẩy gì qua sync — đặt lịch dùng action 'book' có kiểm tra riêng
+  var GUEST_PUSH = [];
   var GUEST_PULL = ['properties', 'rooms'];
 
   function embedded() {
@@ -48,8 +54,11 @@
         apiUrl: saved.apiUrl || base.apiUrl || '',
         readKey: saved.readKey || base.readKey || '',
         writeKey: saved.writeKey || '',
-        token: saved.token || ''
+        token: saved.token || '',
+        staff: saved.staff || null   // v4.1: vai trò nhân viên SỐNG QUA reload
       };
+      // token nhân viên mà thiếu hồ sơ vai trò → KHÔNG đoán là owner; xác minh với máy chủ
+      this.roleVerified = !this.cfg.token || !!this.cfg.staff;
       this.state = readJSON(STATE_KEY, { since: 0, lastOk: 0 });
       this.baseline = readJSON('huy_rooms_baseline', {});
       return this.cfg;
@@ -139,9 +148,15 @@
     snapshot: function () {
       var data = this.api.getData();
       var base = {};
+      this.baseStamp = this.baseStamp || {};
+      var bs = this.baseStamp;
       COLS.forEach(function (c) {
         base[c] = {};
-        (data[c] || []).forEach(function (item) { base[c][item.id] = hash(item); });
+        bs[c] = bs[c] || {};
+        (data[c] || []).forEach(function (item) {
+          base[c][item.id] = hash(item);
+          if (item.updatedAt) bs[c][item.id] = item.updatedAt;
+        });
       });
       base.__settings = hash(data.settings);
       this.baseline = base;
@@ -158,7 +173,13 @@
           seen[item.id] = 1;
           if (item._temp) return; // bản ghi tạm của cổng cư dân, không đẩy lên
           var h = hash(item);
-          if (base[item.id] !== h) { item.updatedAt = now; list.push(item); }
+          if (base[item.id] !== h) {
+            item.updatedAt = now;
+            var copy = {}; for (var k in item) copy[k] = item[k];
+            // v4.1: kèm dấu thời gian bản đã đọc — máy chủ sẽ TỪ CHỐI ghi đè nếu bản trên đó mới hơn
+            copy.baseUpdatedAt = (self.baseStamp && self.baseStamp[c] && self.baseStamp[c][item.id]) || 0;
+            list.push(copy);
+          }
         });
         Object.keys(base).forEach(function (id) {
           if (!seen[id]) list.push({ id: id, deleted: true, updatedAt: now });
@@ -177,12 +198,23 @@
 
     applyRemote: function (changes) {
       var data = this.api.getData(), self = this, touched = false;
-      var cols = this.isAdmin() ? COLS : GUEST_PULL;
+      var cols = this.isAdmin() ? COLS.concat(PULL_ONLY) : GUEST_PULL;
+      // Bản ghi TÀI CHÍNH bị thiết bị khác sửa trong lúc máy này cũng đang sửa → cảnh báo, không im lặng
+      var FINANCIAL = { invoices: 'Hóa đơn', payments: 'Sổ thu', depositLedger: 'Sổ cọc', leases: 'Hợp đồng', utilityReadings: 'Chỉ số điện nước' };
+      var conflicts = [];
       cols.forEach(function (c) {
         (changes[c] || []).forEach(function (rec) {
           var arr = data[c] || (data[c] = []);
           var idx = -1;
           for (var i = 0; i < arr.length; i++) { if (arr[i].id === rec.id) { idx = i; break; } }
+          if (FINANCIAL[c] && idx >= 0 && !rec.deleted) {
+            var baseH = self.baseline[c] && self.baseline[c][rec.id];
+            var localH = hash(arr[idx]), remoteH = hash(rec);
+            // máy này có sửa (khác baseline) VÀ máy khác cũng đã sửa khác đi
+            if (baseH && localH !== baseH && remoteH !== baseH && remoteH !== localH) {
+              conflicts.push({ col: c, colName: FINANCIAL[c], id: rec.id, local: arr[idx], remote: rec });
+            }
+          }
           if (rec.deleted) {
             if (idx >= 0) { arr.splice(idx, 1); touched = true; }
             if (self.baseline[c]) delete self.baseline[c][rec.id];
@@ -192,9 +224,16 @@
           if (idx >= 0) arr[idx] = rec; else arr.push(rec);
           if (!self.baseline[c]) self.baseline[c] = {};
           self.baseline[c][rec.id] = hash(rec);
+          if (!self.baseStamp) self.baseStamp = {};
+          if (!self.baseStamp[c]) self.baseStamp[c] = {};
+          if (rec.updatedAt) self.baseStamp[c][rec.id] = rec.updatedAt;
           if (!same) touched = true; // chỉ vẽ lại khi nội dung thật sự đổi
         });
       });
+      if (conflicts.length) {
+        this.lastConflicts = conflicts;
+        try { window.dispatchEvent(new CustomEvent('sync-conflict', { detail: conflicts })); } catch (e) {}
+      }
       if (this.isAdmin() && changes.settings && changes.settings.length) {
         var s = Object.assign({}, changes.settings[0]);
         delete s.id; delete s.updatedAt; delete s.deleted;
@@ -231,6 +270,26 @@
             });
           });
           var touched = self.applyRemote(res.changes || {});
+          if (res.conflicts && res.conflicts.length) {
+            // máy chủ TỪ CHỐI ghi đè: giữ bản máy chủ, báo người dùng, ghi nhật ký
+            try { window.dispatchEvent(new CustomEvent('server-conflict', { detail: res.conflicts })); } catch (e) {}
+            res.conflicts.forEach(function (cf) {
+              if (cf.serverRecord) self.applyRemote((function () { var o = {}; o[cf.collection] = [cf.serverRecord]; return o; })());
+            });
+          }
+          if (res.rejected && res.rejected.length) {
+            try { window.dispatchEvent(new CustomEvent('sync-rejected', { detail: res.rejected })); } catch (e) {}
+            // đồng bộ lại bản máy chủ để bản máy không giữ mãi thay đổi bị từ chối
+            self.state.since = 0;
+          }
+          if (res.scopeSkipped && res.scopeSkipped.length) {
+            try { window.dispatchEvent(new CustomEvent('sync-scope-skipped', { detail: res.scopeSkipped })); } catch (e) {}
+          }
+          if (res.skippedWrite && res.skippedWrite.length && !self._warnedSkip) {
+            self._warnedSkip = true;
+            self.lastSkipped = res.skippedWrite;
+            try { window.dispatchEvent(new CustomEvent('sync-skipped', { detail: res.skippedWrite })); } catch (e) {}
+          }
           self.state.since = res.serverTime;
           self.state.lastOk = Date.now();
           self.lastError = '';
@@ -303,7 +362,7 @@
     },
 
     /* ---------- ảnh ---------- */
-    uploadImage: function (blob, name) {
+    uploadImage: function (blob, name, scope) {
       var self = this;
       if (!this.isOn() || !this.isAdmin()) return Promise.reject(new Error('offline'));
       return new Promise(function (resolve, reject) {
@@ -314,27 +373,106 @@
             action: 'upload',
             name: name || ('anh-' + Date.now() + '.jpg'),
             mime: blob.type || 'image/jpeg',
-            data: b64
-          }).then(function (res) { resolve(res.url); }).catch(reject);
+            data: b64,
+            scope: scope || 'public'   // v4.1: ảnh nghiệp vụ đi kho private
+          }).then(function (res) { resolve(scope === 'private' ? ('priv:' + res.id) : res.url); }).catch(reject);
         };
         fr.onerror = function () { reject(new Error('Không đọc được ảnh')); };
         fr.readAsDataURL(blob);
       });
     },
+    fetchPrivateImage: function (imageId) {
+      return this.request({ action: 'getPrivateImage', imageId: imageId });
+    },
 
     /* ---------- tài khoản ---------- */
-    adminLogin: function (password) {
+    deviceName: function () {
+      try {
+        var ua = navigator.userAgent || '';
+        var os = /Android/i.test(ua) ? 'Android' : /iPhone|iPad/i.test(ua) ? 'iOS'
+          : /Windows/i.test(ua) ? 'Windows' : /Mac/i.test(ua) ? 'Mac' : 'Thiết bị';
+        return os + ' · ' + new Date().toLocaleDateString('vi-VN');
+      } catch (e) { return 'Thiết bị'; }
+    },
+    adminLogin: function (password, user) {
       var self = this;
-      return this.request({ action: 'login', password: password, key: '' }).then(function (res) {
-        self.saveCfg({ token: res.token });
+      return this.request({ action: 'login', password: password, user: user || '', key: '', deviceName: this.deviceName() }).then(function (res) {
+        self.saveCfg({ token: res.token, staff: res.staff || { role: 'owner', name: 'Chủ nhà', id: '', propertyIds: [] } });
+        self.roleVerified = true;
         return res;
       });
     },
+    staff: function () {
+      if (!this.isOn() || !this.isAdmin()) return null;
+      if (this.cfg.staff) return this.cfg.staff;
+      // có token nhưng chưa rõ vai trò (dữ liệu cũ trước v4.1) → trạng thái chờ xác minh, KHÔNG phải owner
+      return this.cfg.token ? { role: 'pending', name: '…', id: '', propertyIds: [] } : { role: 'owner', name: 'Chủ nhà', id: '', propertyIds: [] };
+    },
+    /** v4.1: hỏi máy chủ hồ sơ vai trò của token hiện tại (dùng sau reload nếu thiếu). */
+    verifyRole: function () {
+      var self = this;
+      if (!this.isOn() || !this.cfg.token || this.cfg.staff) { this.roleVerified = true; return Promise.resolve(this.cfg.staff); }
+      return this.request({ action: 'ping' }).then(function (res) {
+        if (res.staff) self.saveCfg({ staff: res.staff });
+        self.roleVerified = true;
+        try { window.dispatchEvent(new CustomEvent('role-verified', { detail: res.staff })); } catch (e) {}
+        return res.staff;
+      }).catch(function () { return null; }); // giữ trạng thái pending → UI vẫn khóa
+    },
+    setStaffPass: function (staffId, password) {
+      return this.request({ action: 'setStaffPass', staffId: staffId, password: password || '' });
+    },
     changePassword: function (newPassword) {
-      return this.request({ action: 'setPassword', newPassword: newPassword });
+      var self = this;
+      return this.request({ action: 'setPassword', newPassword: newPassword, deviceName: this.deviceName() })
+        .then(function (res) {
+          // Máy chủ đã vô hiệu hóa mọi token cũ và cấp token mới cho phiên này
+          if (res.token) self.saveCfg({ token: res.token });
+          return res;
+        });
+    },
+    logoutDevice: function () {
+      var self = this;
+      return this.request({ action: 'logout' })
+        .catch(function () {})
+        .then(function () { self.saveCfg({ token: '', writeKey: '' }); self.emit(); });
+    },
+    logoutAll: function () {
+      var self = this;
+      return this.request({ action: 'logoutAll' }).then(function () {
+        self.saveCfg({ token: '', writeKey: '' });
+        self.emit();
+      });
+    },
+    setTenantPin: function (tenantId, pin) {
+      return this.request({ action: 'setTenantPin', tenantId: tenantId, pin: pin || '' });
+    },
+    deleteImage: function (fileId) {
+      return this.request({ action: 'deleteImage', fileId: fileId });
+    },
+    book: function (payload) {
+      return this.request(Object.assign({ action: 'book' }, payload));
     },
     residentLogin: function (phone, pin) {
       return this.request({ action: 'resident', phone: phone, pin: pin });
+    },
+    residentPing: function (phone, sessionKey) {
+      return this.request({ action: 'residentPing', phone: phone, sessionKey: sessionKey });
+    },
+    residentTicket: function (payload) {
+      return this.request(Object.assign({ action: 'residentTicket' }, payload));
+    },
+    residentChangePin: function (payload) {
+      return this.request(Object.assign({ action: 'residentChangePin' }, payload));
+    },
+    residentLogoutAll: function (phone, sessionKey) {
+      return this.request({ action: 'residentLogoutAll', phone: phone, sessionKey: sessionKey });
+    },
+    residentMarkRead: function (phone, sessionKey, ids) {
+      return this.request({ action: 'residentMarkRead', phone: phone, sessionKey: sessionKey, ids: ids });
+    },
+    sendZalo: function (tenantId, message) {
+      return this.request({ action: 'sendZalo', tenantId: tenantId, message: message });
     }
   };
 

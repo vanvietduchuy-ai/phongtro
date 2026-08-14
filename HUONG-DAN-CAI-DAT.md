@@ -27,7 +27,7 @@ Cách nhanh (máy có Node):
 
 ```bash
 npm i -g vercel
-cd huy-rooms-v3
+cd huy-rooms-v4.1-production-fixed
 vercel            # lần đầu: đăng nhập, cứ Enter theo mặc định
 vercel --prod
 ```
@@ -50,7 +50,7 @@ Save xong vào tab **Deployments → dấu ⋯ ở bản mới nhất → Redepl
 ## Bước 4 — Gắn tên miền và vào quản lý
 
 1. **Settings → Domains → Add** → nhập tên miền → làm theo hướng dẫn trỏ DNS mà Vercel hiện ra.
-2. Mở tên miền vừa gắn → bấm **Quản lý** → mật khẩu **123456** → vào **Cài đặt** đổi mật khẩu ngay.
+2. Mở tên miền vừa gắn → bấm **Quản lý** → mật khẩu **123456 (bắt buộc đổi ngay sau khi đăng nhập — tối thiểu 10 ký tự, nên có cả chữ và số)** → vào **Cài đặt** đổi mật khẩu ngay.
 3. Thêm căn trọ và phòng bằng nút tròn **+** góc dưới phải.
 
 Xong. Gửi chính tên miền đó cho khách xem phòng và cho cư dân đăng nhập.
@@ -95,3 +95,57 @@ Xong. Gửi chính tên miền đó cho khách xem phòng và cho cư dân đăn
 ## Phụ lục — cách không cần hosting
 
 Nếu lúc nào đó không muốn dùng Vercel: trong Apps Script bấm **+ → HTML**, đặt tên đúng chữ `Index`, dán file **apps-script/Index.html**, rồi Deploy lại. Khi đó chính đường dẫn `/exec` đã là website hoàn chỉnh — không cần Vercel, không cần biến môi trường, đổi lại là địa chỉ dài và không gắn được tên miền riêng.
+
+
+> **Lưu ý v4:** sau khi dán code mới, chạy lại hàm `setup()` một lần để bảng dữ liệu tự thêm các cột mới (không mất dữ liệu cũ), rồi Deploy phiên bản mới.
+
+
+---
+## Nâng cấp lên v4 giai đoạn 2 (hợp đồng thuê)
+1. Dán đè `Code.gs` và `Index.html` mới vào Apps Script.
+2. Chạy lại hàm **setup** (Run) — dữ liệu cũ được giữ nguyên và tự chuyển sang mô hình hợp đồng.
+3. **Deploy → Manage deployments → New version → Deploy.**
+4. Tải code mới lên Vercel (hoặc git push). Xong: mục **Hợp đồng** xuất hiện trong trang quản lý.
+
+
+---
+## Nâng cấp lên v4 giai đoạn 3 (điện nước – hóa đơn – thanh toán)
+1. Dán đè `Code.gs` và `Index.html` mới vào Apps Script.
+2. Chạy lại hàm **setup** — tạo 5 sheet mới (`DichVu`, `DVHopDong`, `ThanhToan`, `SoCoc`, `NhacNo`) và chuyển dữ liệu thu tiền + cọc cũ sang sổ mới, không mất gì.
+3. **Deploy → Manage deployments → New version → Deploy.**
+4. Tải code mới lên Vercel. Vào **Cài đặt** khai báo Ngân hàng + Số tài khoản để hóa đơn có mã VietQR.
+
+
+---
+## Nâng cấp lên v4 giai đoạn 4 (cổng cư dân)
+1. Dán đè `Code.gs` và `Index.html` mới vào Apps Script → chạy **setup** (tạo sheet `SuCo`, `ThongBao`, cột mới).
+2. **Deploy → Manage deployments → New version → Deploy.**
+3. Tải code mới lên Vercel.
+4. (Tùy chọn) Zalo OA: Project Settings → Script Properties → thêm `ZALO_OA_TOKEN`; muốn chạy thử thì thêm `ZALO_OA_MOCK=1`.
+
+
+---
+## Nâng cấp lên v4 giai đoạn 5 (trang bán phòng + CRM)
+1. Dán đè `Code.gs` và `Index.html` mới vào Apps Script → chạy **setup** → **Deploy → New version**.
+2. Tải code mới lên Vercel.
+3. Vào **Cài đặt**: kiểm tra giờ nhận khách xem phòng (mặc định 08:00–20:00) và số Zalo.
+4. Mở từng phòng bấm "Sửa & ảnh" để bổ sung **ngày có thể vào ở** và **chính sách** — trang phòng sẽ đẹp và đủ thông tin hơn.
+
+
+---
+## Nâng cấp lên v4 giai đoạn 6 (quản trị SaaS + phân quyền)
+1. Dán đè `Code.gs` và `Index.html` mới → chạy **setup** (tạo sheet NhanSu, NhatKy) → **Deploy → New version**.
+2. Đẩy code mới lên Vercel.
+3. Vào **Cài đặt → Nhân sự & phân quyền**: thêm nhân viên, chọn vai trò + phạm vi căn, bấm **Mật khẩu** để cấp (chỉ hiện một lần).
+4. Nhân viên đăng nhập ở nút quản lý: điền **tài khoản + mật khẩu riêng**; chủ nhà để trống ô tài khoản như cũ.
+5. Nhật ký thao tác xem ở cuối trang Cài đặt (chủ nhà & quản lý).
+
+
+---
+## Bản PRODUCTION — checklist trước khi dùng thật
+1. Dán đè `Code.gs` + `Index.html` → chạy **setup** → **Deploy → New version**.
+2. Script Properties: đổi **ADMIN_PASSWORD** (≥10 ký tự). Đây là chìa khóa gốc — quên thì vào chính Script Properties đặt lại.
+3. **Triggers** → Add Trigger → hàm `backupSpreadsheet` → Time-driven → Day timer. Xong: mỗi ngày một bản copy spreadsheet, giữ 14 bản.
+4. Vercel: biến môi trường `APPS_SCRIPT_URL` trỏ URL Web App mới nhất; đẩy code.
+5. Cài đặt trong app: giờ nhận khách, số Zalo, ngân hàng VietQR; thêm nhân viên + cấp mật khẩu.
+6. Diễn tập khôi phục MỘT lần: xuất JSON → mở tab ẩn danh (bản máy) → nhập lại → kiểm số hóa đơn. 5 phút, đáng giá.
