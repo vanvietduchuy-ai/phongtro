@@ -159,3 +159,34 @@ Cách gửi mới, **mặc định dùng**: bấm Gửi → nội dung được 
 
 ### Sửa trong lúc làm
 Bộ kiểm thử bắt được việc tên người thuê bị nhét thẳng vào thuộc tính `data-*` — thuộc tính không escape dấu `<` khi tuần tự hóa nên chuỗi thô lộ ra trong HTML. Đã chuyển sang chỉ truyền mã người thuê, lời chào dựng bên trong hàm.
+
+## v4.2.10 — Sửa lỗi do chính bản v4.2.8 gây ra: nuốt mất lý do từ chối đặt lịch
+
+**Chẩn đoán bằng cách chạy lại đúng đường của khách (không có token):** chức năng đặt lịch KHÔNG hỏng. Lần đầu gửi thành công; các lần sau máy chủ từ chối có lý do rõ ràng ("Bạn đã đặt đúng khung giờ này rồi", "quá nhiều yêu cầu"…). Nhưng bản v4.2.8 đã thay mọi thông báo lỗi bằng một câu chung "Chưa gửi được lịch hẹn lên hệ thống", khiến người dùng tưởng hệ thống hỏng và không biết lý do thật.
+
+- **Phân biệt hai loại thất bại**: máy chủ vẫn sống nhưng từ chối có lý do → hiện đúng lý do đó, KHÔNG bày lối gọi/Zalo dự phòng (vì hệ thống không hỏng). Hỏng đường truyền / sai cấu hình / bản deploy cũ → câu chung + mở lối liên hệ trực tiếp như v4.2.8.
+- Lỗi trả về từ máy chủ nay giữ nguyên mã lỗi và cờ "máy chủ có trả lời" để phân loại chính xác.
+- **Trùng khung giờ thì tự gợi ý khung trống gần nhất** và nhảy sẵn ô giờ sang khung đó, khách chỉ cần bấm Gửi lại; nếu ngày đã kín thì nhắc chọn ngày khác.
+
+## v4.3 — Đặt cọc giữ chỗ theo khoảng ngày
+
+Người thuê đặt cọc giữ phòng **từ ngày → đến ngày**:
+- **Phòng** chuyển sang trạng thái **"Đã giữ chỗ"** (không còn nhận đặt lịch như phòng trống).
+- **Người thuê** ở trạng thái **"Đang đặt cọc giữ chỗ"**, hiển thị kèm phòng đang giữ, khoảng ngày và số tiền cọc.
+- Nút **Giữ chỗ** trong bảng Người thuê mở bảng nhập: chọn phòng (chỉ liệt kê phòng trống), ngày bắt đầu, ngày kết thúc, tiền cọc, ghi chú. Có nút **Hủy giữ chỗ** khi cần.
+- **Chặn hai người giữ cùng một phòng**, báo rõ ai đang giữ và giữ tới ngày nào. Đổi phòng giữ chỗ thì phòng cũ tự về Đang trống.
+- **Quá hạn giữ**: trạng thái đổi thành "Giữ chỗ đã hết hạn", dòng được tô sáng để chủ nhà xử lý — không tự động nhả phòng, chủ nhà chủ động quyết định.
+- **Nhận phòng thật** (có hợp đồng hiệu lực) thì trạng thái tự chuyển sang "Đang thuê", hết giai đoạn giữ chỗ.
+- Tự gửi thông báo xác nhận giữ chỗ cho người thuê (kèm Zalo theo chế độ đã chọn).
+
+Sheet `NguoiThue` cần chạy lại `setup` để thêm cột: holdRoomId, holdFrom, holdUntil, holdAmount, holdNote.
+
+## v4.3.1 — Giữ chỗ chỉ Chủ nhà / Quản lý được chỉnh sửa
+
+Vì giữ chỗ gắn với **tiền cọc thật**, quyền đặt và hủy giữ chỗ được siết ở **cả hai tầng**:
+
+- **Máy chủ**: bảng Người thuê và Phòng vốn chỉ cho Chủ nhà / Quản lý ghi — Kế toán và Nhân viên gửi lên sẽ bị bỏ qua và báo về rõ ràng.
+- **Máy chủ (mới)**: giữ chỗ **bắt buộc có tiền cọc > 0** và **ngày kết thúc không sớm hơn ngày bắt đầu**; thiếu là từ chối kèm lý do, không ghi nửa vời.
+- **Giao diện**: nút "Giữ chỗ" / "Hủy giữ chỗ" chỉ hiện với Chủ nhà và Quản lý. Vai trò khác gọi thẳng hàm cũng bị chặn, kèm giải thích "giữ chỗ đi kèm tiền cọc thật" thay vì im lặng không phản hồi.
+
+Lý do chọn đúng hai vai trò này (không mở cho Kế toán): máy chủ không cho Kế toán ghi bảng Người thuê, nên nếu bày nút ra thì thao tác sẽ bị bỏ qua âm thầm — thà chặn ngay và nói rõ.

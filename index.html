@@ -403,6 +403,23 @@
     </div>
   </div>
 
+  <!-- ============ v4.3: ĐẶT CỌC GIỮ CHỖ ============ -->
+  <div class="modal hidden" id="holdModal">
+    <div class="modal-card small">
+      <div class="modal-head"><h3>Đặt cọc giữ chỗ</h3><button class="modal-close" data-close-modal="holdModal" aria-label="Đóng">✕</button></div>
+      <div id="holdSummary" class="rsv-summary"></div>
+      <form id="holdForm" class="form-grid">
+        <input type="hidden" id="holdTenantId">
+        <label class="span-2">Phòng giữ chỗ *<select id="holdRoom" required></select></label>
+        <label>Giữ từ ngày *<input type="date" id="holdFrom" required></label>
+        <label>Đến hết ngày *<input type="date" id="holdUntil" required></label>
+        <label class="span-2">Tiền cọc giữ chỗ (đ) *<input type="text" inputmode="numeric" data-money-input id="holdAmount" required placeholder="vd: 1.000.000"></label>
+        <label class="span-2">Ghi chú<input type="text" id="holdNote" placeholder="vd: hẹn ký hợp đồng cuối tuần"></label>
+        <div class="form-actions span-2"><button type="button" class="btn btn-light" data-close-modal="holdModal">Hủy</button><button type="submit" class="btn btn-primary">Lưu giữ chỗ</button></div>
+      </form>
+    </div>
+  </div>
+
   <!-- ============ v6: NHÂN VIÊN ============ -->
   <div class="modal hidden" id="staffModal">
     <div class="modal-card small">

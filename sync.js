@@ -123,7 +123,11 @@
       return call.then(function (res) {
         if (!res || res.ok === false) {
           if (res && res.code === 'auth') self.saveCfg({ token: '' });
-          throw new Error((res && res.error) || 'Máy chủ trả về lỗi');
+          // v4.2.10: giữ lại mã lỗi + phân biệt "máy chủ từ chối có lý do" với "hỏng đường truyền"
+          var e2 = new Error((res && res.error) || 'Máy chủ trả về lỗi');
+          e2.code = (res && res.code) || '';
+          e2.serverAnswered = !!res;   // có phản hồi = máy chủ vẫn sống, chỉ là từ chối
+          throw e2;
         }
         return res;
       });

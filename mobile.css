@@ -1039,3 +1039,8 @@ body:has(#adminApp:not(.hidden)) .sync-pill{bottom:auto;right:auto}
 .btn-zalo{border-color:#0068FF;color:#0068FF;background:var(--surface-elevated)}
 .btn-zalo:hover{background:#EAF2FF;border-color:#0055D4}
 .btn-zalo .lc{color:#0068FF}
+
+/* --- v4.3: giữ chỗ hết hạn --- */
+.row-hold-expired{background:var(--warning-bg)!important}
+.rsv-summary h4{margin:0 0 4px}
+.rsv-summary p{margin:0;font-size:13px;color:var(--text-secondary)}

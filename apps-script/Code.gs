@@ -38,7 +38,8 @@ var SCHEMA = {
       ['id', 's'], ['name', 's'], ['phone', 's'], ['pin', 's'], ['roomId', 's'],
       ['moveInDate', 's'], ['active', 'b'], ['depositRequired', 'n'],
       ['depositPaid', 'n'], ['note', 's'],
-      ['pinHash', 's'], ['pinSalt', 's'], ['pinUpdatedAt', 's'], ['moveOutDate', 's'], ['zaloUserId', 's']
+      ['pinHash', 's'], ['pinSalt', 's'], ['pinUpdatedAt', 's'], ['moveOutDate', 's'], ['zaloUserId', 's'],
+      ['holdRoomId', 's'], ['holdFrom', 's'], ['holdUntil', 's'], ['holdAmount', 'n'], ['holdNote', 's']
     ]
   },
   utilityReadings: {
@@ -967,6 +968,13 @@ function applyChanges(col, list, stamp, role, staff, opt) {
           var urec = rowToRec(ur);
           if (urec.roomId === rec.roomId && urec.month === rec.month) { reject(id, 'Đã có chỉ số tháng ' + rec.month + ' cho phòng này'); return; }
         }
+      }
+    }
+    // v4.3: GIỮ CHỖ phải có TIỀN CỌC thật và khoảng ngày hợp lệ — chặn ngay ở máy chủ
+    if (col === 'tenants' && !rec.deleted && rec.holdRoomId) {
+      if (!(Number(rec.holdAmount) > 0)) { reject(id, 'Giữ chỗ phải có tiền cọc lớn hơn 0'); return; }
+      if (!rec.holdFrom || !rec.holdUntil || String(rec.holdUntil) < String(rec.holdFrom)) {
+        reject(id, 'Khoảng ngày giữ chỗ không hợp lệ'); return;
       }
     }
     // Enum lạ → từ chối (chống nhét chuỗi tùy ý vào trạng thái/vai trò)
