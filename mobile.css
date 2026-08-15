@@ -1044,3 +1044,11 @@ body:has(#adminApp:not(.hidden)) .sync-pill{bottom:auto;right:auto}
 .row-hold-expired{background:var(--warning-bg)!important}
 .rsv-summary h4{margin:0 0 4px}
 .rsv-summary p{margin:0;font-size:13px;color:var(--text-secondary)}
+
+/* --- v4.3.2: nhật ký gọn, không tràn trang Cài đặt --- */
+.audit-list{max-height:min(420px,55vh);overflow-y:auto;margin-top:10px;border:1px solid var(--border);border-radius:var(--radius-md);padding:4px 10px;background:var(--bg-soft)}
+.audit-row{padding:9px 2px}
+.audit-main strong{font-size:13.5px}
+.audit-diff span{display:inline-block;max-width:100%;overflow-wrap:anywhere}
+.settings-card{overflow:hidden}
+.settings-card p,.settings-card small{overflow-wrap:anywhere}

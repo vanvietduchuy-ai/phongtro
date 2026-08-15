@@ -190,3 +190,16 @@ Vì giữ chỗ gắn với **tiền cọc thật**, quyền đặt và hủy gi
 - **Giao diện**: nút "Giữ chỗ" / "Hủy giữ chỗ" chỉ hiện với Chủ nhà và Quản lý. Vai trò khác gọi thẳng hàm cũng bị chặn, kèm giải thích "giữ chỗ đi kèm tiền cọc thật" thay vì im lặng không phản hồi.
 
 Lý do chọn đúng hai vai trò này (không mở cho Kế toán): máy chủ không cho Kế toán ghi bảng Người thuê, nên nếu bày nút ra thì thao tác sẽ bị bỏ qua âm thầm — thà chặn ngay và nói rõ.
+
+## v4.3.2 — Sửa lỗi mất dữ liệu đang gõ + dọn lại trang Cài đặt
+
+### Lỗi "lưu thông tin ngân hàng không được" — đã tái hiện và sửa
+Nguyên nhân: **màn quản trị bị vẽ lại giữa lúc người dùng đang gõ**. Cứ có một đợt đồng bộ về là toàn bộ màn (kể cả trang Cài đặt) được dựng lại, xóa sạch số đang nhập khi chưa kịp bấm Lưu — cùng loại lỗi từng gặp với ô giá phòng.
+Sửa tận gốc cho **toàn bộ ứng dụng**: nếu con trỏ đang nằm trong một ô nhập (kể cả trong popup), việc vẽ lại được **hoãn cho tới khi người dùng rời ô**. Dữ liệu mới từ máy khác vẫn về đủ, chỉ chờ đúng lúc mới hiển thị.
+
+### Trang Cài đặt gọn lại
+- **Nhật ký thao tác thu gọn mặc định**, chỉ còn một nút "Xem nhật ký (n)". Trước đây nó đổ toàn bộ JSON thô ra trang, đẩy các mục khác (trong đó có ô ngân hàng) đi rất xa.
+- Khi mở: danh sách **cuộn riêng trong khung**, tối đa 40 mục gần nhất, có ô lọc.
+- Mỗi dòng viết cho người đọc: hành động dịch sang tiếng Việt ("Trùng sửa 2 máy" thay cho "conflict"), số tiền hiện dạng có dấu ngăn cách, giá trị dài bị rút gọn, không còn chuỗi JSON tràn trang.
+- Vai trò "Hệ thống" hiển thị đúng thay vì "Không xác định".
+- Chuỗi dài tự xuống dòng, không tràn ngang.

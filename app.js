@@ -1083,7 +1083,40 @@ window.copyInvoiceText=function(id){let i,t,r;if(residentSession){i=(residentSes
 // ---------- Admin common ----------
 function switchAdminView(view){document.getElementById('fabSheet')?.classList.remove('show');document.getElementById('moreSheet')?.classList.remove('show');document.querySelectorAll('.side-link').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.querySelectorAll('.admin-view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+view)?.classList.add('active');document.getElementById('adminTitle').textContent=({dashboard:'Tổng quan',properties:'Căn trọ & phòng',leases:'Hợp đồng thuê',tenants:'Người thuê',utilities:'Điện & nước',invoices:'Hóa đơn',appointments:'Lịch hẹn',tickets:'Sự cố & thông báo',settings:'Cài đặt'})[view]||view;syncTabbar()}
 document.querySelectorAll('.side-link').forEach(b=>b.addEventListener('click',()=>switchAdminView(b.dataset.view)));
-function renderAdmin(){renderDashboard();renderPropertyAdmin();renderLeases();renderTenants();renderUtilities();renderInvoices();renderAppointments();renderTicketsAdmin();renderSettings();applyTableLabels(document.getElementById('adminApp'));syncTabbar();hydrateImages(document.getElementById('adminApp'))}
+/** v4.3.2 — KHÔNG vẽ lại màn quản trị khi người dùng đang gõ dở.
+ * Trước đây một đợt đồng bộ về là cả màn được vẽ lại, xóa sạch số đang nhập
+ * (số tài khoản ngân hàng, giá phòng…). Nay nếu con trỏ đang nằm trong một ô
+ * nhập thì hoãn lại, vẽ ngay sau khi người dùng rời ô. */
+let _pendingRender=false;
+function isTypingInAdmin(){
+  const el=document.activeElement;
+  if(!el)return false;
+  if(!/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName))return false;
+  if(el.type==='file'||el.type==='button'||el.type==='submit')return false;
+  const admin=document.getElementById('adminApp');
+  return !!(admin&&admin.contains(el))||!!el.closest('.modal:not(.hidden)');
+}
+function renderAdminNow(){
+  renderDashboard();renderPropertyAdmin();renderLeases();renderTenants();renderUtilities();
+  renderInvoices();renderAppointments();renderTicketsAdmin();renderSettings();
+  applyTableLabels(document.getElementById('adminApp'));syncTabbar();
+  hydrateImages(document.getElementById('adminApp'));
+}
+function renderAdmin(){
+  if(isTypingInAdmin()){
+    if(_pendingRender)return;
+    _pendingRender=true;
+    const finish=()=>{
+      document.removeEventListener('focusout',onOut,true);
+      _pendingRender=false;
+      if(!isTypingInAdmin())renderAdminNow();
+    };
+    const onOut=()=>setTimeout(finish,120);   // chờ xem con trỏ có nhảy sang ô khác không
+    document.addEventListener('focusout',onOut,true);
+    return;
+  }
+  renderAdminNow();
+}
 
 function svgBarChart(series,labels,{h=150,money:isMoney=true}={}){
   // v4.1: viewBox toạ độ thật, KHÔNG preserveAspectRatio="none" → chữ không méo
@@ -3562,27 +3595,44 @@ Chỉ hiển thị MỘT LẦN — gửi ngay cho nhân viên và nhắc họ kh
 /* ---------- v6: NHẬT KÝ THAO TÁC ---------- */
 function auditCardHtml(){
   const st=ui('audit');const q=(st.q||'').toLowerCase();
+  const open=!!st.open;
   let list=[...(data.auditLog||[])].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   if(q)list=list.filter(x=>[x.actor,x.action,x.col,x.recordId].join(' ').toLowerCase().includes(q));
-  list=list.slice(0,100);
-  const COL_VI={invoices:'Hóa đơn',payments:'Sổ thu',depositLedger:'Sổ cọc',leases:'Hợp đồng',rooms:'Phòng',tenants:'Người thuê',utilityReadings:'Chỉ số',serviceDefinitions:'Dịch vụ',staffUsers:'Nhân sự',settings:'Cài đặt'};
-  const ACT_VI={create:'Tạo',update:'Sửa',delete:'Xóa',login:'Đăng nhập',setPass:'Cấp mật khẩu'};
+  const total=list.length;
+  list=list.slice(0,open?40:0);
+  const COL_VI={invoices:'Hóa đơn',payments:'Sổ thu',depositLedger:'Sổ cọc',leases:'Hợp đồng',rooms:'Phòng',
+    tenants:'Người thuê',utilityReadings:'Chỉ số',serviceDefinitions:'Dịch vụ',staffUsers:'Nhân sự',
+    settings:'Cài đặt',properties:'Căn trọ'};
+  const ACT_VI={create:'Tạo',update:'Sửa',delete:'Xóa',login:'Đăng nhập',setPass:'Cấp mật khẩu',conflict:'Trùng sửa 2 máy'};
+  const ROLE_VI={owner:'Chủ nhà',manager:'Quản lý',accountant:'Kế toán',staff:'Nhân viên',system:'Hệ thống'};
+  const shortVal=v=>{
+    if(v===undefined||v===null||v==='')return '—';
+    let t=typeof v==='object'?JSON.stringify(v):String(v);
+    if(/^\d{6,}$/.test(t))return money(Number(t));
+    return t.length>48?t.slice(0,48)+'…':t;
+  };
   const diffHtml=x=>{
-    if(!x.before&&!x.after)return'';
-    const keys=[...new Set([...Object.keys(x.before||{}),...Object.keys(x.after||{})])];
-    return `<div class="audit-diff">${keys.map(k=>{
+    if(x.action==='conflict')return '<div class="audit-diff"><span>Hai máy sửa cùng lúc — bản máy chủ đã được giữ.</span></div>';
+    if(!x.before&&!x.after)return '';
+    const keys=[...new Set([...Object.keys(x.before||{}),...Object.keys(x.after||{})])].slice(0,6);
+    const rows=keys.map(k=>{
       const b=x.before?.[k],a=x.after?.[k];
-      if(JSON.stringify(b)===JSON.stringify(a))return'';
-      return `<span><em>${esc(k)}</em>: ${b===undefined?'—':esc(String(b))} → <strong>${a===undefined?'—':esc(String(a))}</strong></span>`;
-    }).filter(Boolean).join('')}</div>`;
+      if(JSON.stringify(b)===JSON.stringify(a))return '';
+      return `<span><em>${esc(k)}</em>: ${esc(shortVal(b))} → <strong>${esc(shortVal(a))}</strong></span>`;
+    }).filter(Boolean);
+    return rows.length?`<div class="audit-diff">${rows.join('')}</div>`:'';
   };
   return `<div class="settings-card" style="grid-column:1/-1"><h3>${icon('book',17)} Nhật ký thao tác</h3>
-  <p>Ai làm gì, lúc nào, trên bản ghi nào — dữ liệu quan trọng có trước/sau. Máy chủ tự ghi khi online; bản chạy máy ghi tạm tại đây.</p>
-  <div class="table-tools"><span class="tt-search">${icon('search',15)}<input value="${esc(st.q||'')}" placeholder="Lọc theo người, hành động, bảng…" aria-label="Lọc nhật ký" oninput="setUi('audit',{q:this.value});renderSettings()"></span></div>
-  ${list.length?list.map(x=>`<div class="audit-row"><div class="audit-main"><strong>${esc(x.actor)} · ${ACT_VI[x.action]||esc(x.action)} ${COL_VI[x.col]||esc(x.col)}</strong><small>${esc(String(x.at).replace('T',' ').slice(0,19))}${x.recordId?' · '+esc(x.recordId):''} · vai trò ${ROLE_LABEL[x.role]||'Không xác định'}</small>${diffHtml(x)}</div></div>`).join('')
-  :emptyState('book','Chưa có nhật ký','Nhật ký sẽ tự xuất hiện khi có thao tác lên dữ liệu quan trọng (hóa đơn, sổ thu, hợp đồng, phòng…).','')}
+  <p>Ai làm gì, lúc nào, trên bản ghi nào — ${total} mục đã ghi. Máy chủ tự ghi khi online.</p>
+  <button class="btn btn-light" data-evt="click" data-call="toggleAuditLog">${open?'Ẩn nhật ký':`Xem nhật ký (${total})`}</button>
+  ${open?`<div class="table-tools" style="margin-top:12px"><span class="tt-search">${icon('search',15)}<input value="${esc(st.q||'')}" placeholder="Lọc theo người, hành động, bảng…" aria-label="Lọc nhật ký" data-evt="input" data-call="auditFilter" data-a1="\x01V"></span></div>
+  <div class="audit-list">${list.length?list.map(x=>`<div class="audit-row"><div class="audit-main"><strong>${esc(x.actor)} · ${ACT_VI[x.action]||esc(x.action)} ${COL_VI[x.col]||esc(x.col)}</strong><small>${esc(String(x.at).replace('T',' ').slice(0,16))}${x.recordId?' · '+esc(String(x.recordId).slice(0,20)):''} · ${ROLE_VI[x.role]||'—'}</small>${diffHtml(x)}</div></div>`).join('')
+    :emptyState('book','Chưa có nhật ký','Nhật ký sẽ xuất hiện khi có thao tác lên dữ liệu quan trọng.','')}</div>
+  ${total>40?`<p class="muted-text" style="margin-top:8px">Đang hiện 40 mục gần nhất trên tổng ${total}.</p>`:''}`:''}
   </div>`;
 }
+window.toggleAuditLog=function(){setUi('audit',{open:!ui('audit').open});renderSettings()}
+window.auditFilter=function(v){setUi('audit',{q:String(v||'')});renderSettings()}
 window.saveManagerSettings=function(){
   data.settings.brandName=document.getElementById('setBrandName').value.trim()||'Huy Rooms';
   data.settings.managerName=document.getElementById('setManagerName').value.trim();
@@ -4111,7 +4161,7 @@ document.getElementById('adminApp')?.addEventListener('change',e=>{
    KHÔNG còn dữ liệu nội suy trong chuỗi JavaScript inline.
    Tên hàm nằm trong WHITELIST cố định; data-aN chỉ là THAM SỐ chuỗi.
    ================================================================== */
-const CALL_WHITELIST=new Set(["archiveService", "attachMeterPhoto", "bulkAdjust", "cancelHold", "cancelLease", "closeModal", "copyBookingMsg", "copyInvoiceText", "zaloSendNotice", "zaloToTenant", "runConnectionCheck", "deleteAsset", "deleteNotice", "deleteProperty", "deleteReading", "deleteRoom", "doReverse", "editAsset", "endLeaseService", "leaseAction", "makePrimary", "meterInput", "openBooking", "openCheckin", "openEndLease", "openGallery", "openInvoiceForm", "openInvoicePdf", "openLeaseDetail", "openHoldForm", "openLeaseForm", "openMeterPhotos", "openPropertyForm", "openReceiptPdf", "openReminder", "openRenewForm", "openResidentInvoice", "openResidentMeterPhotos", "openRoomAssets", "openRoomForm", "openServiceForm", "openStaffForm", "openTicketDetail", "openTransferForm", "openUtilityForm", "palRun", "quickRoomMoney", "quickRoomStatus", "recordPayment", "removeOccupant", "resetStaffPass", "restoreAutoBackup", "restoreProperty", "restoreRoom", "rsRemoveFile", "setResidentTab", "signLease", "signLeaseThenDetail", "ticketAction", "togglePropertyRooms", "toggleAdvancedFilters", "toggleRoomSearch", "toggleAmenityFilter", "toggleStaff", "uiSet", "unlockReading"]);
+const CALL_WHITELIST=new Set(["archiveService", "attachMeterPhoto", "bulkAdjust", "cancelHold", "cancelLease", "closeModal", "copyBookingMsg", "copyInvoiceText", "zaloSendNotice", "zaloToTenant", "runConnectionCheck", "deleteAsset", "deleteNotice", "deleteProperty", "deleteReading", "deleteRoom", "doReverse", "editAsset", "endLeaseService", "leaseAction", "makePrimary", "meterInput", "openBooking", "openCheckin", "openEndLease", "openGallery", "openInvoiceForm", "openInvoicePdf", "openLeaseDetail", "openHoldForm", "openLeaseForm", "openMeterPhotos", "openPropertyForm", "openReceiptPdf", "openReminder", "openRenewForm", "openResidentInvoice", "openResidentMeterPhotos", "openRoomAssets", "openRoomForm", "openServiceForm", "openStaffForm", "openTicketDetail", "openTransferForm", "openUtilityForm", "palRun", "quickRoomMoney", "quickRoomStatus", "recordPayment", "removeOccupant", "resetStaffPass", "restoreAutoBackup", "restoreProperty", "restoreRoom", "rsRemoveFile", "setResidentTab", "signLease", "signLeaseThenDetail", "ticketAction", "togglePropertyRooms", "auditFilter", "toggleAuditLog", "toggleAdvancedFilters", "toggleRoomSearch", "toggleAmenityFilter", "toggleStaff", "uiSet", "unlockReading"]);
 function dispatchDataCall(el,evtType){
   const fn=el.dataset.call;
   if(!fn||!CALL_WHITELIST.has(fn))return;
