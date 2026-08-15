@@ -191,15 +191,12 @@ Vì giữ chỗ gắn với **tiền cọc thật**, quyền đặt và hủy gi
 
 Lý do chọn đúng hai vai trò này (không mở cho Kế toán): máy chủ không cho Kế toán ghi bảng Người thuê, nên nếu bày nút ra thì thao tác sẽ bị bỏ qua âm thầm — thà chặn ngay và nói rõ.
 
-## v4.3.2 — Sửa lỗi mất dữ liệu đang gõ + dọn lại trang Cài đặt
+## v4.4 P0 — Hợp nhất giữ chỗ, sổ cọc và khôi phục đồng bộ
 
-### Lỗi "lưu thông tin ngân hàng không được" — đã tái hiện và sửa
-Nguyên nhân: **màn quản trị bị vẽ lại giữa lúc người dùng đang gõ**. Cứ có một đợt đồng bộ về là toàn bộ màn (kể cả trang Cài đặt) được dựng lại, xóa sạch số đang nhập khi chưa kịp bấm Lưu — cùng loại lỗi từng gặp với ô giá phòng.
-Sửa tận gốc cho **toàn bộ ứng dụng**: nếu con trỏ đang nằm trong một ô nhập (kể cả trong popup), việc vẽ lại được **hoãn cho tới khi người dùng rời ô**. Dữ liệu mới từ máy khác vẫn về đủ, chỉ chờ đúng lúc mới hiển thị.
-
-### Trang Cài đặt gọn lại
-- **Nhật ký thao tác thu gọn mặc định**, chỉ còn một nút "Xem nhật ký (n)". Trước đây nó đổ toàn bộ JSON thô ra trang, đẩy các mục khác (trong đó có ô ngân hàng) đi rất xa.
-- Khi mở: danh sách **cuộn riêng trong khung**, tối đa 40 mục gần nhất, có ô lọc.
-- Mỗi dòng viết cho người đọc: hành động dịch sang tiếng Việt ("Trùng sửa 2 máy" thay cho "conflict"), số tiền hiện dạng có dấu ngăn cách, giá trị dài bị rút gọn, không còn chuỗi JSON tràn trang.
-- Vai trò "Hệ thống" hiển thị đúng thay vì "Không xác định".
-- Chuỗi dài tự xuống dòng, không tràn ngang.
+- Thêm collection/sheet `reservations` / `GiuCho` làm nguồn sự thật duy nhất; CRM và hồ sơ khách cùng dùng một luồng.
+- Khóa việc đặt `room.status=reserved` bằng tay. Trạng thái phòng được suy ra từ phiếu chưa xử lý hoặc hợp đồng nháp đã cọc.
+- Tạo phiếu trên máy chủ là giao dịch có khóa: kiểm tra quyền, phòng, khách, trùng phiếu, số tiền; ghi phiếu + `SoCoc` + CRM + phòng cùng lúc.
+- Phiếu quá hạn không tự nhả phòng. Quản lý phải chọn `HOAN` hoặc `GIU`; số dư tiền về 0 rồi phiếu mới đóng.
+- Bổ sung mốc collection cho đồng bộ thường, `baseUpdatedAt` cho xóa, không coi bản bị từ chối là đã lưu.
+- Máy chủ trả bản authoritative/tombstone khi xung đột hoặc từ chối; client hoàn nguyên phiếu, sổ cọc, CRM và phòng, không còn dữ liệu nửa vời.
+- Có bộ test `tests/p0-regression.test.js` cho tạo/hủy, chặn phiếu thứ hai, thiết bị offline và phục hồi sau từ chối.

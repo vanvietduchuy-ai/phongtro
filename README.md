@@ -1,10 +1,70 @@
-# Huy Rooms v3 — Website bán phòng + quản lý nhà trọ
+# Huy Rooms v4.6.6 — Hotfix đồng bộ và trạng thái phòng
 
-Bản v3 giữ nguyên toàn bộ nghiệp vụ của v2 và bổ sung 3 việc:
+V4.6.6 giữ nguyên schema, công thức và kiến trúc Vercel + Apps Script + Google Sheets, đồng thời khóa các lỗi biên có thể làm trạng thái phòng/hợp đồng lệch nhau:
 
-1. **Giao diện thao tác được bằng một tay trên điện thoại.**
-2. **Kết nối Google Sheets qua Apps Script** để dùng thật.
-3. **Đồng bộ nhiều máy**, có phân quyền quản lý / khách / cư dân.
+1. Bản máy chủ cũ trong danh sách xung đột không còn ghi đè ngược bản reconcile mới; `baseStamp` chỉ tiến, không tạo vòng conflict vô hạn.
+2. Không thể lưu trữ căn/phòng còn hợp đồng nháp/hiệu lực, phiếu giữ chỗ hoặc người ở hoạt động.
+3. Không thể lưu trữ riêng người đại diện của hợp đồng đang chạy; nhận/chuyển/trả phòng tiếp tục đi qua action nguyên tử.
+4. Trạng thái thương mại có ưu tiên rõ: đang thuê → `occupied`, đang giữ/còn cọc → `reserved`, sau đó mới đến `maintenance`/`available`.
+5. Hợp đồng nháp chỉ khóa phòng khi **số dư sổ cọc còn giữ > 0**, không dựa vào số tiền đã từng thu trong quá khứ.
+6. Chạy `setup()` một lần sẽ tự sửa idempotent dữ liệu cũ từng bị kẹt: khôi phục liên kết người đại diện, hồ sơ người thuê và trạng thái phòng.
+
+## Nền P3 từ v4.6.5
+
+Bản v4.6.5 giữ nguyên schema, công thức và toàn bộ sửa lỗi P0/P1/P2, đồng thời hoàn thiện P3 cho vận hành dài hạn:
+
+1. Mỗi lần lưu/đồng bộ chỉ render màn hình quản lý đang mở, không còn dựng lại cả 9 màn hình.
+2. Đồng bộ dùng một scheduler duy nhất, không gắn trùng listener sau full pull; mất mạng sẽ backoff có jitter và giới hạn 5 phút.
+3. `setup()` tự tạo trigger sao lưu Google Sheets hằng ngày trong khung 03:00, chạy lặp không tạo trùng; Drive giữ 14 bản gần nhất.
+4. Thêm hồi quy P3 cho render, lỗi mạng, backup/restore, batch read, trần 300 bản ghi/gói và tập thử 120 phòng + 1.200 hóa đơn.
+5. Ngưỡng vận hành và kịch bản phục hồi được ghi rõ trong `NGUONG-VAN-HANH-VA-PHUC-HOI.md`.
+
+## Hoàn thiện P2 từ v4.6.4
+
+Bản v4.6.4 giữ nguyên toàn bộ nghiệp vụ và dữ liệu của v4.6.3, đồng thời xử lý các lỗi P2 còn lại sau khi rà soát thao tác thực tế:
+
+1. Popup cũ và mới dùng cùng lớp nền, cùng kích thước; class `modal-wide` nay mở đúng bề rộng cho hóa đơn hàng loạt, hợp đồng, bàn giao và bảng tài sản.
+2. Hàng có nhiều nút tự xuống dòng, popup không tràn ngang trên điện thoại và nền trang bị khóa cuộn trong lúc popup mở.
+3. Khi form đang có dữ liệu chưa lưu, bấm X, Hủy, vùng ngoài hoặc Escape đều hỏi xác nhận; thao tác đang xử lý không thể bị đóng giữa chừng.
+4. Focus đi vào ô nhập đầu tiên, được giữ bên trong popup bằng Tab/Shift+Tab và trở lại đúng nút đã mở khi đóng.
+5. Sửa lỗi người ở mới có thể bị chèn thành hồ sơ rác khi form “Thêm người ở” bị từ chối vì phòng đã đủ sức chứa; dữ liệu nay chỉ được chèn sau khi toàn bộ kiểm tra đạt.
+6. Số lượng tài sản không còn nhận giá trị 0; thêm hồi quy riêng `tests/p2-modal-data-regression.test.js`.
+
+Bản v4.6.3 giữ nguyên toàn bộ P0/P1/P2 trước đó và xử lý hai lỗi P1 phát hiện khi kiểm tra luồng quản lý thực tế:
+
+1. **Phân quyền hai lớp**: nút/form ngoài quyền được ẩn hoặc khóa theo vai trò; mọi handler ghi dữ liệu vẫn kiểm tra lại quyền để không còn hiện tượng “báo đã lưu rồi dữ liệu biến mất” khi máy chủ từ chối.
+2. **Hạn hóa đơn thống nhất**: hóa đơn lẻ và hóa đơn hàng loạt cùng dùng ngày thu hàng tháng của hợp đồng (1–28), không còn cộng nhầm số ngày vào ngày hiện tại.
+3. Kế toán chỉ thao tác tiền, hóa đơn, sổ cọc, nhắc nợ và dịch vụ; nhân viên chỉ thao tác CRM, sự cố, điện nước và tạo thông báo; các màn hình còn lại chuyển sang chỉ xem.
+4. Action đặc biệt khớp máy chủ: chỉ chủ nhà/quản lý được giữ chỗ, tạo/chuyển/trả phòng và mở khóa kỳ điện nước; chỉ chủ nhà được quản lý nhân sự, đổi mật khẩu chủ và khôi phục dữ liệu.
+5. Thêm hồi quy riêng `tests/p1-permission-regression.test.js` để khóa ma trận quyền và công thức hạn thanh toán.
+
+Bản này tiếp tục giữ nguyên các hoàn thiện P2 của v4.6.2:
+
+1. Dashboard đưa **Việc cần xử lý hôm nay** lên trước biểu đồ; KPI tách thành chỉ số cần chú ý và chỉ số tham khảo.
+2. Nút nhanh desktop ưu tiên đúng việc hằng ngày: tìm kiếm, người ở, ghi điện nước và lập hóa đơn.
+3. Mục CRM được gọi thống nhất là **Khách & lịch hẹn** để người quản lý hiểu ngay chức năng.
+4. Tab cổng cư dân không còn bị thanh đồng bộ/header che khi cuộn trên màn hình hẹp.
+5. Toàn bộ nút đóng modal có tên truy cập; badge, chú thích và mô tả quan trọng được tăng cỡ chữ.
+
+Các sửa lỗi P1 tiếp tục gồm:
+
+1. Đăng nhập bản mở trực tiếp bằng `index.html` hoạt động đúng; cờ quyền cục bộ không thể mở trang quản lý khi đang kết nối máy chủ.
+2. Khách xem được giờ bận thật qua API chỉ trả thời gian, không lộ tên/SĐT/ghi chú; máy chủ vẫn khóa nguyên tử khi gửi lịch.
+3. Chỉ phòng trống hoặc thật sự sắp trống mới xuất hiện/nhận lịch; phòng đang thuê lâu dài bị chặn.
+4. Slug căn trọ được lưu vào Google Sheets; đường dẫn riêng không đổi giữa các thiết bị.
+5. Tìm kiếm có debounce, giữ focus và tự gắn lại nhãn bảng mobile sau khi lọc.
+6. Cổng cư dân xác minh phiên trước khi render và thu hồi đúng phiên máy chủ khi đăng xuất.
+7. Biểu đồ công nợ tuân theo đúng tháng và căn trọ đang chọn.
+
+Nền tảng v4.6 P2 tiếp tục gồm:
+
+1. **Cổng cư dân đầy đủ**: QR thanh toán, PDF hóa đơn, đổi PIN, báo sự cố, timeline xử lý và thông báo.
+2. **CRM đúng 7 bước**: Yêu cầu mới → Đã liên hệ → Đã hẹn → Đã xem → Giữ chỗ → Ký hợp đồng → Không phù hợp.
+3. **Đổi lịch nguyên tử trên máy chủ**, chặn hai khách cùng phòng/ngày/giờ; tìm kiếm, lọc ngày và phân trang lịch hẹn.
+4. **Dashboard đúng số vận hành**: tỷ lệ lấp đầy chỉ tính phòng đang thuê; giữ chỗ tách riêng; có doanh thu, công nợ, HĐ sắp hết, phòng sắp trống và sự cố chưa xử lý.
+5. **Trang phòng tốt hơn**: URL riêng, gallery có điều hướng bàn phím/thumbnail, địa chỉ mở Google Maps, chính sách, ngày trống, Gọi/Zalo.
+6. **Dễ đọc và dễ dùng hơn**: tăng cỡ chữ nhỏ, tương phản, vùng bấm, focus/modal và icon Lucide SVG; dữ liệu mẫu bị khóa khi đã kết nối máy chủ.
+7. Giữ nguyên P0/P1: một nguồn giữ chỗ, sổ cọc chuẩn, hợp đồng/người ở/tài khoản tách riêng và nhận/chuyển/trả phòng nguyên tử.
 
 ## Cài đặt
 
@@ -12,13 +72,15 @@ Bản chính: **Vercel + tên miền riêng**. Bốn bước, không phải sử
 
 Không muốn dùng hosting thì dán thêm `apps-script/Index.html` vào Apps Script — đường dẫn `/exec` khi đó chính là website.
 
+Khi nâng từ trước P1, chạy lại `setup()` một lần để tự thêm các cột còn thiếu; dữ liệu cũ không bị xóa. Nâng lên v4.6.6 không thêm sheet/cột/API, nhưng **cần chạy lại `setup()` một lần** để sửa dữ liệu vòng đời từng bị kẹt và bảo đảm trigger sao lưu; sau đó deploy **New version** của Apps Script và tải lại trang để nhận cache mới.
+
 - Đăng nhập quản lý lần đầu: mật khẩu **123456**, đổi ngay trong Cài đặt.
 - Cư dân đăng nhập bằng số điện thoại + PIN do quản lý cấp.
 - Mở `index.html` bằng trình duyệt cũng chạy được để xem thử (dữ liệu mẫu, mật khẩu `123456`, cư dân `0935123456` / PIN `2580`).
 
 ## Giao diện điện thoại
 
-- **Thanh tab dưới màn hình**: Tổng quan · Phòng · Điện nước · Hóa đơn · Lịch hẹn, có chấm đỏ báo số lịch hẹn mới.
+- **Thanh tab dưới màn hình**: Tổng quan · Phòng · Điện nước · Hóa đơn · Khác; mục Khác chứa **Khách & lịch hẹn** và có badge báo khách mới.
 - **Nút tròn “+”**: thêm căn trọ, phòng, người thuê, ghi chỉ số, lập hóa đơn — không cần vào từng mục.
 - **Bảng biến thành thẻ**: mỗi dòng là một thẻ có nhãn từng cột, hết cảnh vuốt ngang tìm cột.
 - **Form mở dạng tấm kéo từ dưới lên**, ô nhập cỡ 16px nên iPhone không tự phóng to, nút Lưu luôn nằm trong tầm ngón cái.
@@ -28,9 +90,9 @@ Không muốn dùng hosting thì dán thêm `apps-script/Index.html` vào Apps S
 
 - Lưu là đẩy lên Sheets sau ~1 giây; các máy khác lấy về mỗi 20 giây và ngay khi mở lại màn hình.
 - Chấm trạng thái ở góc dưới: xanh (xong) · vàng (đang chạy) · đỏ (lỗi, bấm để thử lại).
-- Mất mạng vẫn thao tác bình thường, có mạng lại tự đẩy lên; ai lưu sau thì giữ dữ liệu người đó.
+- Mất mạng vẫn xem dữ liệu đã tải và nhập các thay đổi thông thường. Nghiệp vụ có tiền hoặc đổi trạng thái nhiều bảng (giữ chỗ, nhận/chuyển/trả phòng) cần máy chủ phản hồi để tránh ghi nửa vời.
 - Ảnh tự nén rồi lưu vào Google Drive nên mọi máy đều xem được.
-- Sửa tay trực tiếp trong Google Sheet cũng đồng bộ ngược về app.
+- Sửa tay các trường mô tả trong Google Sheet vẫn đồng bộ ngược về app. Không sửa tay `id`, trạng thái phòng/hợp đồng, `roomId`, liên kết người ở, hóa đơn, thanh toán hoặc sổ cọc; các nghiệp vụ này phải thực hiện trong app để giữ giao dịch nguyên tử.
 
 ## Phân quyền
 
@@ -52,7 +114,8 @@ api/sheets.js             cầu nối trên Vercel: /api/sheets → Apps Script
 index.html                giao diện 3 phần: khách / cư dân / quản lý
 styles.css                giao diện gốc
 mobile.css                lớp giao diện cho điện thoại + trạng thái đồng bộ
-app.js                    toàn bộ nghiệp vụ
+app.js                    giao diện và nghiệp vụ chính
+p2.js                     quy tắc thuần P2: phễu CRM, trùng lịch, công suất, URL bản đồ
 sync.js                   lớp đồng bộ
 config.js                 mặc định gọi /api/sheets, không cần sửa
 manifest.json / sw.js     cài như ứng dụng, chạy khi mất mạng
@@ -88,7 +151,7 @@ Gửi Zalo tự động vẫn cần Zalo Official Account và một backend riê
 - Hóa đơn duy nhất theo người thuê + phòng + tháng; đổi phòng/tháng trong form sẽ nạp lại toàn bộ số liệu. Thanh toán qua modal (số tiền lần này, ngày thu, phương thức, ghi chú) và ghi vào mảng `payments` chuẩn bị cho giai đoạn sau.
 
 **Khác**
-- Điều hướng mobile: thanh 5 nút (Tổng quan · Phòng · Điện nước · Hóa đơn · Khác); "Khác" mở bottom sheet Người thuê / Lịch hẹn (kèm badge số lịch mới) / Cài đặt / Quay về trang khách. Vùng bấm ≥44px, có aria-label và focus rõ.
+- Điều hướng mobile: thanh 5 nút (Tổng quan · Phòng · Điện nước · Hóa đơn · Khác); "Khác" mở bottom sheet Người thuê / Khách & lịch hẹn (kèm badge số khách mới) / Cài đặt / Quay về trang khách. Vùng bấm ≥44px, có aria-label và focus rõ.
 - Tên thương hiệu + hotline lấy từ Cài đặt; cỡ chữ desktop tăng (nội dung ≥13px, chú thích ≥11px); nút lưu có trạng thái đang xử lý, form không tự đóng khi lưu lỗi.
 - "Khôi phục dữ liệu mẫu" ẩn ở bản dùng thật (chỉ hiện khi `localStorage.huy_rooms_demo = '1'`). Nhập JSON có kiểm tra cấu trúc, xem trước số bản ghi và tự tải bản sao lưu trước khi áp dụng. File sao lưu: `huy-rooms-backup-v4-phase1.json`.
 - Thêm cột schema mới (archived, pinHash/pinSalt/pinUpdatedAt/moveOutDate, payments, brandName): chạy lại `setup()` để tự thêm cột **không mất dữ liệu** (đọc theo tên cột cũ, ghi lại theo cấu trúc mới), chạy nhiều lần vẫn an toàn.
@@ -141,6 +204,7 @@ Chạy `setup` nhiều lần **không tạo dữ liệu trùng**. Bản chạy c
 | `ThanhToan` | payments | **Sổ thanh toán**: mỗi lần thu là một giao dịch (invoiceId, amount, paidAt, method, reference, note, createdBy…). Giao dịch đã ghi **không sửa/xóa** — sai thì tạo **giao dịch đảo** (`kind=reversal`, số âm, `reversalOf`). `amountPaid` và trạng thái hóa đơn luôn tính lại từ sổ này |
 | `SoCoc` | depositLedger | **Sổ cọc** tách khỏi doanh thu: thu / hoàn / trừ cọc theo hợp đồng, có lịch sử đầy đủ |
 | `NhacNo` | reminders | Lịch sử tin nhắn nhắc nợ đã gửi (trước hạn / đến hạn / quá hạn) |
+| `GiuCho` | reservations | **Phiếu giữ chỗ P0**: một nguồn duy nhất cho khách, phòng, khoảng ngày, số tiền, trạng thái và liên kết bút toán `SoCoc` |
 
 Bổ sung cột: `KyDienNuoc` thêm `status (nháp/đã chốt), lockedAt, unlockNote, imageIds (ảnh công tơ)`; `HoaDon` thêm `code, serviceLines, adjustAmount, adjustNote, issuedAt`; `CaiDat` thêm `bankCode, bankAccount, bankAccountName` (VietQR).
 
@@ -157,6 +221,7 @@ Nút 🧾 trong mục Điện nước: preview toàn căn/tháng trước khi ph
 - **Đổi giá dịch vụ có tháng hiệu lực** — hóa đơn các tháng trước giữ nguyên giá cũ.
 - **Sổ thanh toán bất biến**: 2 lần thu một phần = 2 giao dịch; muốn hủy thì tạo giao dịch đảo (ghi lý do), công nợ tự tính lại; hóa đơn đã có tiền thu không xóa được.
 - **Cọc không phải doanh thu**: hóa đơn hàng loạt không gộp cọc; báo cáo loại phần cọc khỏi phải thu/đã thu; sổ cọc theo dõi riêng "đang giữ – đã trừ – đã hoàn".
+- **Giữ chỗ luôn có sổ**: mỗi phiếu `GiuCho` phải có đúng một bút toán thu ban đầu trong `SoCoc`; hủy/hết hạn phải ghi hoàn hoặc trừ hết số dư trước khi mở lại phòng.
 
 ### PDF & VietQR
 Mỗi hóa đơn có nút **PDF** (cả phía quản lý và cư dân) mở bản in thương hiệu kèm mã hóa đơn; khai báo ngân hàng trong Cài đặt thì hóa đơn tự chèn **mã VietQR đúng số tiền còn lại + nội dung = mã hóa đơn**. Mỗi giao dịch thu có **Phiếu thu** in được. (In → chọn "Lưu thành PDF" trên điện thoại/máy tính.)
@@ -219,8 +284,8 @@ Chưa cấu hình thì hệ thống nói thẳng "chưa cấu hình" kèm hướ
 - **Chống trùng lịch thật sự**: mỗi khung giờ của một phòng chỉ nhận một khách (chéo cả SĐT), kiểm tra cả máy chủ lẫn bản chạy máy.
 - Bắt buộc **tích đồng ý chính sách bảo mật**; honeypot và rate limit giữ nguyên. Phòng trống *và* phòng sắp trống đều đặt được lịch xem; bảo trì/đang giữ chỗ thì không.
 
-### CRM khách xem phòng (mục Lịch hẹn)
-- Phễu: **new → contacted → appointment_confirmed → viewed → reserved → lease_draft → converted/lost** (Mới → Đã liên hệ → Hẹn đã chốt → Đã xem → Đang giữ chỗ → Soạn HĐ → Đã ký/Không thành).
+### CRM khách xem phòng (mục Khách & lịch hẹn)
+- Phễu chuẩn P2: **new → contacted → appointment_confirmed → viewed → reserved → converted → lost** (Yêu cầu mới → Đã liên hệ → Đã hẹn → Đã xem → Giữ chỗ → Ký hợp đồng → Không phù hợp). Hợp đồng nháp được thể hiện bằng liên kết `convertedLeaseId`, không tạo thêm một tầng làm lệch báo cáo phễu.
 - Mỗi lead có **nguồn khách** (website/Facebook/Zalo/ghé trực tiếp/giới thiệu) và **lịch sử chăm sóc** — nút 💬 ghi chú mỗi lần gọi/nhắn; đổi trạng thái, đổi lịch (chống trùng) đều tự ghi log.
 - **Giữ chỗ**: ghi tiền giữ + hạn giữ, phòng chuyển "Đã giữ chỗ" và ngừng nhận lịch xem. **Quá hạn chưa ký** → hệ thống cảnh báo, quản lý **xác nhận** mới trả phòng về Đang trống và đóng lead (không tự động âm thầm).
 - **Chuyển lead → hợp đồng không nhập lại gì**: bấm "→ Hợp đồng" là form hợp đồng mở sẵn tên, SĐT, phòng; tiền giữ chỗ tự tính vào cọc đã đóng. Lưu xong lead tự thành "Đã ký HĐ" và liên kết tới hợp đồng.
@@ -233,7 +298,7 @@ Chưa cấu hình thì hệ thống nói thẳng "chưa cấu hình" kèm hướ
 
 ### Dashboard & biểu đồ
 - Bộ lọc **tháng + căn** áp cho toàn bộ chỉ số: tổng phòng (kèm trống/giữ chỗ/bảo trì), tỷ lệ lấp đầy, doanh thu dự kiến – đã thu – công nợ (cọc luôn tách riêng), hợp đồng sắp hết hạn, phòng sắp trống, lịch hẹn mới, sự cố mở quá 3 ngày.
-- 3 biểu đồ vừa đủ, SVG thuần không thư viện: doanh thu 6 tháng (phải thu/đã thu), donut trạng thái phòng, công nợ theo căn. Khối "Việc cần xử lý hôm nay" gom nợ đến hạn, hẹn mới, hợp đồng sắp hết.
+- Khối "Việc cần xử lý hôm nay" nằm ngay sau KPI chính, gom nợ đến hạn, khách mới, hợp đồng sắp hết và sự cố đang mở. Chỉ số tham khảo nằm sau danh sách việc; 3 biểu đồ SVG đặt cuối để không đẩy công việc gấp xuống dưới màn hình.
 
 ### Bảng dữ liệu & tìm kiếm
 - Hóa đơn, người thuê, hợp đồng, lịch sử chỉ số: **tìm kiếm + lọc + sắp xếp + phân trang**; trạng thái bộ lọc **được lưu** (localStorage) — rời trang quay lại vẫn nguyên.

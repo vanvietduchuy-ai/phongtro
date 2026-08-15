@@ -8,7 +8,7 @@
   var CFG_KEY = 'huy_rooms_conn';
   var STATE_KEY = 'huy_rooms_sync_state';
   // v6: đủ mọi collection của giai đoạn 3–6 (trước đây thiếu → tiền/sự cố không lên máy chủ)
-  var COLS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments',
+  var COLS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments', 'reservations',
     'leases', 'leaseOccupants', 'accounts', 'assets', 'handoverItems',
     'serviceDefinitions', 'leaseServices', 'payments', 'depositLedger', 'reminders',
     'maintenanceTickets', 'notifications', 'staffUsers'];
@@ -43,6 +43,7 @@
   var Sync = {
     api: null, cfg: null, state: null, baseline: {},
     timer: null, pushTimer: null, busy: false, again: false,
+    retryCount: 0, _listenersBound: false,
     lastError: '', listeners: [],
     embedded: embedded,
 
@@ -61,6 +62,7 @@
       this.roleVerified = !this.cfg.token || !!this.cfg.staff;
       this.state = readJSON(STATE_KEY, { since: 0, lastOk: 0 });
       this.baseline = readJSON('huy_rooms_baseline', {});
+      this.baseStamp = readJSON('huy_rooms_base_stamps', {});
       return this.cfg;
     },
     saveCfg: function (patch) {
@@ -71,6 +73,7 @@
     saveState: function () {
       writeJSON(STATE_KEY, this.state);
       writeJSON('huy_rooms_baseline', this.baseline);
+      writeJSON('huy_rooms_base_stamps', this.baseStamp || {});
     },
     isOn: function () { return embedded() || !!this.cfg.apiUrl; },
     isAdmin: function () { return !!(this.cfg.token || this.cfg.writeKey); },
@@ -186,7 +189,8 @@
           }
         });
         Object.keys(base).forEach(function (id) {
-          if (!seen[id]) list.push({ id: id, deleted: true, updatedAt: now });
+          if (!seen[id]) list.push({ id: id, deleted: true, updatedAt: now,
+            baseUpdatedAt: (self.baseStamp && self.baseStamp[c] && self.baseStamp[c][id]) || 0 });
         });
         if (list.length) changes[c] = list;
       });
@@ -211,6 +215,13 @@
           var arr = data[c] || (data[c] = []);
           var idx = -1;
           for (var i = 0; i < arr.length; i++) { if (arr[i].id === rec.id) { idx = i; break; } }
+          // Một response sync có thể vừa chứa bản room đã được reconcile ở `changes`,
+          // vừa chứa `serverRecord` cũ hơn trong danh sách conflict/rejected. Chỉ áp
+          // bản authoritative mới hơn mốc máy chủ cuối cùng đã nhận để baseStamp
+          // không bao giờ lùi và tạo vòng conflict vô hạn.
+          var incomingStamp = Number(rec.updatedAt || 0);
+          var appliedStamp = Number(self.baseStamp && self.baseStamp[c] && self.baseStamp[c][rec.id] || 0);
+          if (incomingStamp && appliedStamp && incomingStamp <= appliedStamp) return;
           if (FINANCIAL[c] && idx >= 0 && !rec.deleted) {
             var baseH = self.baseline[c] && self.baseline[c][rec.id];
             var localH = hash(arr[idx]), remoteH = hash(rec);
@@ -222,6 +233,9 @@
           if (rec.deleted) {
             if (idx >= 0) { arr.splice(idx, 1); touched = true; }
             if (self.baseline[c]) delete self.baseline[c][rec.id];
+            if (!self.baseStamp) self.baseStamp = {};
+            if (!self.baseStamp[c]) self.baseStamp[c] = {};
+            if (incomingStamp) self.baseStamp[c][rec.id] = incomingStamp;
             return;
           }
           var same = idx >= 0 && contentHash(arr[idx]) === contentHash(rec);
@@ -259,18 +273,44 @@
     cycle: function (manual) {
       var self = this;
       if (!this.isOn()) return Promise.resolve();
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        this.lastError = 'Thiết bị đang ngoại tuyến';
+        this.retryCount = Math.min(this.retryCount + 1, 5);
+        this.emit();
+        if (manual && this.api && this.api.toast) this.api.toast('Chưa thể đồng bộ khi thiết bị đang ngoại tuyến.');
+        return Promise.resolve();
+      }
       if (this.busy) { this.again = true; return Promise.resolve(); } // xếp hàng, không bỏ sót
       this.busy = true; this.again = false;
       this.emit(manual ? 'Đang đồng bộ…' : '');
       var changes = this.computeChanges();
       return this.request({ action: 'sync', since: this.state.since || 0, changes: changes })
         .then(function (res) {
+          var blocked = {}, needsFullPull = false;
+          function key(col, id) { return String(col || '') + ':' + String(id || ''); }
+          function mark(list) { (list || []).forEach(function (x) { blocked[key(x.collection, x.id)] = x; }); }
+          mark(res.conflicts); mark(res.rejected); mark(res.scopeSkipped);
+          (res.skippedWrite || []).forEach(function (col) {
+            (changes[col] || []).forEach(function (rec) {
+              var k = key(col, rec.id); if (!blocked[k]) { blocked[k] = { collection: col, id: rec.id }; needsFullPull = true; }
+            });
+          });
           Object.keys(changes).forEach(function (c) {
-            if (c === 'settings') { self.baseline.__settings = hash(self.api.getData().settings); return; }
+            if (c === 'settings') {
+              if (!blocked[key('settings', 'app')] && (res.skippedWrite || []).indexOf('settings') < 0) self.baseline.__settings = hash(self.api.getData().settings);
+              return;
+            }
             if (!self.baseline[c]) self.baseline[c] = {};
             changes[c].forEach(function (rec) {
+              if (blocked[key(c, rec.id)]) return; // không coi bản bị từ chối là đã lưu
               if (rec.deleted) delete self.baseline[c][rec.id];
-              else self.baseline[c][rec.id] = hash(rec);
+              else {
+                // `rec` có thêm baseUpdatedAt chỉ để kiểm tra xung đột trên máy chủ.
+                // Baseline phải băm đúng bản đang nằm trong data, nếu không lần sync sau
+                // sẽ tưởng bản ghi vẫn còn thay đổi và đẩy lặp vô hạn.
+                var local = (self.api.getData()[c] || []).filter(function (x) { return x.id === rec.id; })[0];
+                if (local) self.baseline[c][rec.id] = hash(local);
+              }
             });
           });
           var touched = self.applyRemote(res.changes || {});
@@ -278,16 +318,23 @@
             // máy chủ TỪ CHỐI ghi đè: giữ bản máy chủ, báo người dùng, ghi nhật ký
             try { window.dispatchEvent(new CustomEvent('server-conflict', { detail: res.conflicts })); } catch (e) {}
             res.conflicts.forEach(function (cf) {
-              if (cf.serverRecord) self.applyRemote((function () { var o = {}; o[cf.collection] = [cf.serverRecord]; return o; })());
+              if (cf.serverRecord) touched = self.applyRemote((function () { var o = {}; o[cf.collection] = [cf.serverRecord]; return o; })()) || touched;
+              else needsFullPull = true;
             });
           }
           if (res.rejected && res.rejected.length) {
             try { window.dispatchEvent(new CustomEvent('sync-rejected', { detail: res.rejected })); } catch (e) {}
-            // đồng bộ lại bản máy chủ để bản máy không giữ mãi thay đổi bị từ chối
-            self.state.since = 0;
+            res.rejected.forEach(function (x) {
+              if (x.serverRecord) touched = self.applyRemote((function () { var o = {}; o[x.collection] = [x.serverRecord]; return o; })()) || touched;
+              else needsFullPull = true;
+            });
           }
           if (res.scopeSkipped && res.scopeSkipped.length) {
             try { window.dispatchEvent(new CustomEvent('sync-scope-skipped', { detail: res.scopeSkipped })); } catch (e) {}
+            res.scopeSkipped.forEach(function (x) {
+              if (x.serverRecord) touched = self.applyRemote((function () { var o = {}; o[x.collection] = [x.serverRecord]; return o; })()) || touched;
+              else needsFullPull = true;
+            });
           }
           if (res.skippedWrite && res.skippedWrite.length && !self._warnedSkip) {
             self._warnedSkip = true;
@@ -296,31 +343,74 @@
           }
           self.state.since = res.serverTime;
           self.state.lastOk = Date.now();
-          self.lastError = '';
+          self.lastError = ''; self.retryCount = 0;
           self.saveState();
           if (touched) { self.api.saveLocal(); self.api.rerender(); }
           self.busy = false; self.emit(manual ? 'Đã đồng bộ' : '');
+          if (needsFullPull) return self.fullPull(); // dự phòng khi ghép với Apps Script cũ chưa trả bản authoritative
           if (self.again) return self.cycle();
           return res;
         })
         .catch(function (err) {
           self.busy = false; self.again = false;
           self.lastError = err.message || String(err);
+          self.retryCount = Math.min(self.retryCount + 1, 5);
           self.emit();
           if (manual) self.api.toast('Không đồng bộ được: ' + self.lastError);
         });
     },
+    /** Chờ vòng đang chạy xong rồi đẩy hết thay đổi trước action nhiều bảng. */
+    flush: function () {
+      var self = this;
+      if (!this.isOn()) return Promise.resolve();
+      return new Promise(function (resolve, reject) {
+        var started = Date.now();
+        function run() {
+          if (self.busy) {
+            if (Date.now() - started > 30000) { reject(new Error('Đồng bộ đang bận quá lâu')); return; }
+            setTimeout(run, 80); return;
+          }
+          self.cycle(true).then(function (res) {
+            if (self.lastError) reject(new Error(self.lastError)); else resolve(res);
+          }).catch(reject);
+        }
+        run();
+      });
+    },
+    pollDelay: function () {
+      var base = this.isAdmin() ? 20000 : 60000;
+      if (!this.lastError) return base;
+      var delay = Math.min(300000, base * Math.pow(2, Math.min(this.retryCount, 4)));
+      return Math.min(300000, Math.round(delay * (1 + Math.random() * 0.15)));
+    },
+    schedule: function (delay) {
+      var self = this;
+      clearTimeout(this.timer);
+      if (!this.isOn()) return;
+      this.timer = setTimeout(function () {
+        if (document.hidden) { self.schedule(self.pollDelay()); return; }
+        Promise.resolve().then(function () { return self.cycle(); }).catch(function (err) {
+          self.busy = false; self.again = false;
+          self.lastError = (err && err.message) || String(err);
+          self.retryCount = Math.min(self.retryCount + 1, 5);
+          self.emit();
+        }).then(function () { self.schedule(self.pollDelay()); });
+      }, Math.max(0, Number(delay) || 0));
+    },
     start: function () {
       var self = this;
       if (!this.isOn()) { this.emit(); return; }
-      this.cycle();
-      clearInterval(this.timer);
-      this.timer = setInterval(function () {
-        if (document.hidden) return;
-        self.cycle();
-      }, this.isAdmin() ? 20000 : 60000);
-      document.addEventListener('visibilitychange', function () { if (!document.hidden) self.cycle(); });
-      window.addEventListener('online', function () { self.cycle(); });
+      this.schedule(0);
+      if (!this._listenersBound) {
+        this._listenersBound = true;
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) self.schedule(0);
+        });
+        window.addEventListener('online', function () {
+          self.retryCount = 0;
+          self.schedule(0);
+        });
+      }
     },
 
     /** Lấy lại toàn bộ dữ liệu từ máy chủ (dùng ngay sau khi đăng nhập quản lý) */
@@ -328,6 +418,7 @@
       var self = this;
       this.state.since = 0;
       this.baseline = {};
+      this.baseStamp = {};
       return this.request({ action: 'sync', since: 0, changes: {} }).then(function (r) {
         var data = self.api.getData();
         COLS.forEach(function (c) { data[c] = []; });
@@ -339,6 +430,19 @@
         self.start();
         return r;
       });
+    },
+
+    /** Áp ngay gói thay đổi của một action nguyên tử (giữ chỗ/hủy giữ chỗ). */
+    applyActionResult: function (res) {
+      if (!res || !res.changes) return false;
+      var touched = this.applyRemote(res.changes);
+      // Action chỉ trả những bản ghi nó vừa thay đổi, không phải toàn bộ delta.
+      // Không nâng `since` tại đây: làm vậy có thể bỏ sót thay đổi của thiết bị khác
+      // xảy ra giữa lần sync gần nhất và action này. Vòng sync kế tiếp sẽ nhận đủ delta.
+      this.state.lastOk = Date.now(); this.lastError = '';
+      this.saveState();
+      if (touched) { this.api.saveLocal(); this.api.rerender(); }
+      return touched;
     },
 
     /* ---------- kết nối thủ công (bản đặt trên hosting riêng) ---------- */
@@ -353,14 +457,18 @@
         if (opts.mode === 'pull') return self.fullPull().then(function () { return { mode: 'pull', role: res.role }; });
         self.state.since = 0;
         self.baseline = {};
+        self.baseStamp = {};
         return self.cycle(true).then(function () { self.start(); return { mode: 'push', role: res.role }; });
       });
     },
     disconnect: function () {
-      clearInterval(this.timer);
+      clearTimeout(this.timer);
+      clearTimeout(this.pushTimer);
+      this.timer = null; this.pushTimer = null; this.retryCount = 0;
       this.saveCfg({ writeKey: '', token: '' });
       this.state = { since: 0, lastOk: 0 };
       this.baseline = {};
+      this.baseStamp = {};
       this.saveState();
       this.emit();
     },
@@ -384,6 +492,26 @@
         fr.onerror = function () { reject(new Error('Không đọc được ảnh')); };
         fr.readAsDataURL(blob);
       });
+    },
+    uploadDocument: function (file, leaseId) {
+      var self = this;
+      if (!this.isOn() || !this.isAdmin()) return Promise.reject(new Error('Cần kết nối và đăng nhập quản lý để lưu hồ sơ'));
+      return new Promise(function (resolve, reject) {
+        var fr = new FileReader();
+        fr.onload = function () {
+          var b64 = String(fr.result).split(',')[1];
+          self.request({ action: 'uploadDocument', leaseId: leaseId, name: file.name, mime: file.type || '', data: b64 })
+            .then(function (res) { resolve(res.file); }).catch(reject);
+        };
+        fr.onerror = function () { reject(new Error('Không đọc được tệp')); };
+        fr.readAsDataURL(file);
+      });
+    },
+    fetchPrivateFile: function (fileId, leaseId) {
+      return this.request({ action: 'getPrivateFile', fileId: fileId, leaseId: leaseId });
+    },
+    deletePrivateFile: function (fileId, leaseId) {
+      return this.request({ action: 'deletePrivateFile', fileId: fileId, leaseId: leaseId });
     },
     fetchPrivateImage: function (imageId) {
       return this.request({ action: 'getPrivateImage', imageId: imageId });
@@ -451,11 +579,26 @@
     setTenantPin: function (tenantId, pin) {
       return this.request({ action: 'setTenantPin', tenantId: tenantId, pin: pin || '' });
     },
+    createReservation: function (reservation) {
+      return this.request({ action: 'createReservation', reservation: reservation });
+    },
+    cancelReservation: function (payload) {
+      return this.request(Object.assign({ action: 'cancelReservation' }, payload || {}));
+    },
+    rescheduleAppointment: function (payload) {
+      return this.request(Object.assign({ action: 'rescheduleAppointment' }, payload || {}));
+    },
+    leaseTransition: function (payload) {
+      return this.request(Object.assign({ action: 'leaseTransition' }, payload || {}));
+    },
     deleteImage: function (fileId) {
       return this.request({ action: 'deleteImage', fileId: fileId });
     },
     book: function (payload) {
       return this.request(Object.assign({ action: 'book' }, payload));
+    },
+    publicAvailability: function (roomId, date) {
+      return this.request({ action: 'publicAvailability', roomId: roomId, date: date });
     },
     residentLogin: function (phone, pin) {
       return this.request({ action: 'resident', phone: phone, pin: pin });
@@ -471,6 +614,9 @@
     },
     residentLogoutAll: function (phone, sessionKey) {
       return this.request({ action: 'residentLogoutAll', phone: phone, sessionKey: sessionKey });
+    },
+    residentLogout: function (phone, sessionKey) {
+      return this.request({ action: 'residentLogout', phone: phone, sessionKey: sessionKey });
     },
     residentMarkRead: function (phone, sessionKey, ids) {
       return this.request({ action: 'residentMarkRead', phone: phone, sessionKey: sessionKey, ids: ids });

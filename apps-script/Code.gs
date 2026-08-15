@@ -18,7 +18,7 @@ var SCHEMA = {
     sheet: 'CanTro',
     fields: [
       ['id', 's'], ['name', 's'], ['area', 's'], ['address', 's'],
-      ['description', 's'], ['phone', 's'], ['imageIds', 'lines'], ['archived', 'b']
+      ['description', 's'], ['phone', 's'], ['imageIds', 'lines'], ['archived', 'b'], ['slug', 's']
     ]
   },
   rooms: {
@@ -76,6 +76,7 @@ var SCHEMA = {
       ['terminationReason', 's'], ['note', 's'], ['createdAt', 's'],
       ['depositDeduct', 'n'], ['depositRefund', 'n'], ['settlementNote', 's'],
       ['roomHistory', 'json'], ['renewals', 'json'],
+      ['statusHistory', 'json'], ['documentFiles', 'json'],
       ['monthlyDiscount', 'n'], ['monthlyDiscountNote', 's'],
       ['depositDiscount', 'n'], ['depositDiscountNote', 's']
     ]
@@ -137,7 +138,8 @@ var SCHEMA = {
     sheet: 'SoCoc',
     fields: [
       ['id', 's'], ['leaseId', 's'], ['type', 's'], ['amount', 'n'], ['at', 's'],
-      ['method', 's'], ['note', 's'], ['createdBy', 's'], ['createdAt', 's']
+      ['method', 's'], ['note', 's'], ['createdBy', 's'], ['createdAt', 's'],
+      ['reservationId', 's'], ['roomId', 's'], ['tenantId', 's'], ['appointmentId', 's'], ['reference', 's']
     ]
   },
   reminders: {
@@ -186,6 +188,16 @@ var SCHEMA = {
       ['convertedLeaseId', 's']
     ]
   },
+  reservations: {
+    sheet: 'GiuCho',
+    fields: [
+      ['id', 's'], ['roomId', 's'], ['sourceType', 's'], ['sourceId', 's'],
+      ['appointmentId', 's'], ['tenantId', 's'], ['customerName', 's'], ['customerPhone', 's'],
+      ['fromDate', 's'], ['untilDate', 's'], ['amount', 'n'], ['paymentMethod', 's'],
+      ['paymentReference', 's'], ['note', 's'], ['status', 's'], ['depositEntryId', 's'],
+      ['leaseId', 's'], ['cancelledAt', 's'], ['cancelReason', 's'], ['createdBy', 's'], ['createdAt', 's']
+    ]
+  },
   settings: {
     sheet: 'CaiDat',
     fields: [
@@ -199,7 +211,7 @@ var SCHEMA = {
 
 var META = ['updatedAt', 'deleted'];
 var PUBLIC_COLLECTIONS = ['properties', 'rooms'];
-var ALL_COLLECTIONS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments', 'settings',
+var ALL_COLLECTIONS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments', 'reservations', 'settings',
   'leases', 'leaseOccupants', 'accounts', 'assets', 'handoverItems',
   'serviceDefinitions', 'leaseServices', 'payments', 'depositLedger', 'reminders',
   'maintenanceTickets', 'notifications', 'staffUsers', 'auditLog'];
@@ -219,6 +231,7 @@ var ENUMS = {
   invoices: { status: ['unpaid', 'partial', 'paid', 'overdue'] },
   payments: { kind: ['payment', 'reversal'], method: ['cash', 'bank', 'momo', 'other', ''] },
   depositLedger: { type: ['collect', 'refund', 'deduct'] },
+  reservations: { status: ['active', 'cancelled', 'expired', 'converted'], sourceType: ['appointment', 'tenant'], paymentMethod: ['cash', 'bank', 'momo', 'other'] },
   appointments: { status: ['new', 'contacted', 'appointment_confirmed', 'viewed', 'reserved', 'lease_draft', 'converted', 'lost', 'confirmed', 'done', 'cancelled'], source: ['website', 'facebook', 'zalo', 'walkin', 'referral', 'other', ''] },
   maintenanceTickets: { status: ['new', 'received', 'in_progress', 'waiting', 'done', 'cancelled'], priority: ['low', 'normal', 'high', 'urgent', ''] },
   staffUsers: { role: ['owner', 'manager', 'accountant', 'staff'] },
@@ -258,10 +271,11 @@ function propertyIdOfRecord(col, rec, maps) {
     case 'accounts': return viaRoom(maps.tenRoom[maps.accOcc[rec.id] || rec.occupantId || ''] || '');
     case 'utilityReadings': return viaRoom(rec.roomId || '');
     case 'appointments': return viaRoom(rec.roomId || '');
+    case 'reservations': return viaRoom(rec.roomId || '');
     case 'maintenanceTickets': return viaRoom(rec.roomId || '') || viaLease(rec.leaseId || '');
     case 'invoices': return viaRoom(rec.roomId || '') || viaLease(rec.leaseId || '');
     case 'payments': return viaRoom(maps.invRoom[rec.invoiceId || ''] || '') || viaLease(maps.invLease[rec.invoiceId || ''] || '');
-    case 'depositLedger': return viaLease(rec.leaseId || '');
+    case 'depositLedger': return viaRoom(rec.roomId || '') || viaLease(rec.leaseId || '');
     case 'leaseOccupants': return viaLease(rec.leaseId || '');
     case 'reminders': return viaRoom(maps.invRoom[rec.invoiceId || ''] || '');
     case 'notifications': return rec.tenantId ? viaRoom(maps.tenRoom[rec.tenantId] || '') : '';
@@ -292,7 +306,8 @@ var MANAGER_BLOCK = { staffUsers: 1 };
 var AUDIT_COLS = {
   invoices: ['total', 'amountPaid', 'status', 'code', 'adjustAmount'],
   payments: ['amount', 'kind', 'reversedAt', 'reversalOf'],
-  depositLedger: ['type', 'amount', 'leaseId'],
+  depositLedger: ['type', 'amount', 'leaseId', 'reservationId', 'roomId'],
+  reservations: ['roomId', 'customerName', 'fromDate', 'untilDate', 'amount', 'status', 'leaseId'],
   leases: ['status', 'rentAmount', 'depositPaid', 'roomId', 'endDate'],
   rooms: ['status', 'price', 'deposit', 'archived'],
   tenants: ['name', 'phone', 'active', 'roomId'],
@@ -363,6 +378,7 @@ var MAX_RECORDS_PER_COLLECTION = 300;   // mỗi lần đồng bộ
 var MAX_STRING = 2000;                  // độ dài chuỗi tối đa cho 1 ô
 var MAX_LIST_ITEMS = 40;
 var MAX_IMAGE_BASE64 = 8 * 1024 * 1024; // ~6MB ảnh sau nén
+var MAX_DOCUMENT_BASE64 = 8 * 1024 * 1024; // tối đa khoảng 6MB/file sau mã hóa
 
 /* ================= CÀI ĐẶT LẦN ĐẦU / MIGRATION ================= */
 
@@ -376,10 +392,13 @@ function setup() {
   props.setProperty('SPREADSHEET_ID', ss.getId());
 
   ALL_COLLECTIONS.forEach(function (col) { migrateSheet(ss, col); });
+  migratePropertySlugs();
   migratePins();
+  migrateLeads();
+  migrateReservations();
   migrateLeases();
   migrateBilling();
-  migrateLeads();
+  repairLifecycleIntegrity();
 
   if (!props.getProperty('ADMIN_PASSWORD')) props.setProperty('ADMIN_PASSWORD', '123456');
   if (!props.getProperty('IMAGE_FOLDER_ID')) {
@@ -387,6 +406,7 @@ function setup() {
     folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     props.setProperty('IMAGE_FOLDER_ID', folder.getId());
   }
+  ensureBackupTrigger();
 
   Logger.log('Đã cài đặt xong.');
   Logger.log('Bảng dữ liệu: ' + ss.getUrl());
@@ -424,6 +444,28 @@ function migrateSheet(ss, col) {
   }
   sh.getRange(1, 1, 1, wantHeader.length).setFontWeight('bold').setBackground('#efe7dd');
   sh.setFrozenRows(1);
+}
+
+function slugifyVNServer(value) {
+  return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+}
+
+/** Bổ sung slug ổn định cho căn cũ ngay khi chạy setup; chạy lại không đổi slug đã có. */
+function migratePropertySlugs() {
+  var properties = readSince('properties', 0, true).filter(function (p) { return !p.deleted; });
+  var rooms = readSince('rooms', 0, true).filter(function (r) { return !r.deleted; });
+  var taken = {};
+  properties.forEach(function (p) { if (p.slug) taken[p.slug] = 1; });
+  rooms.forEach(function (r) { if (r.slug) taken[r.slug] = 1; });
+  var changed = 0;
+  properties.forEach(function (p) {
+    if (p.slug) return;
+    var base = slugifyVNServer(p.name) || ('can-' + p.id), slug = base, n = 1;
+    while (taken[slug]) slug = base + '-' + (++n);
+    taken[slug] = 1; writeCell('properties', p._row, 'slug', slug); changed++;
+  });
+  Logger.log('Đã bổ sung slug cho ' + changed + ' căn trọ.');
 }
 
 /** Chuyển mọi PIN còn ở dạng chữ rõ sang dạng băm rồi xóa PIN rõ. */
@@ -548,9 +590,11 @@ function publicError(err) {
 function fail(msg) { return { ok: false, error: msg }; }
 
 var ACTIONS = ['login', 'ping', 'sync', 'resident', 'upload', 'deleteImage',
-  'setPassword', 'setTenantPin', 'book', 'logout', 'logoutAll', 'sessions',
+  'setPassword', 'setTenantPin', 'book', 'publicAvailability', 'logout', 'logoutAll', 'sessions',
   'residentPing', 'residentTicket', 'residentChangePin', 'residentLogoutAll', 'residentMarkRead',
-  'sendZalo', 'setStaffPass', 'unlockReading', 'getPrivateImage', 'residentLogout', 'residentImage'];
+  'sendZalo', 'setStaffPass', 'unlockReading', 'getPrivateImage', 'residentLogout', 'residentImage',
+  'createReservation', 'cancelReservation', 'rescheduleAppointment', 'leaseTransition',
+  'uploadDocument', 'getPrivateFile', 'deletePrivateFile'];
 
 function route(req) {
   if (!req || ACTIONS.indexOf(req.action) < 0) {
@@ -560,6 +604,7 @@ function route(req) {
   }
   if (req.action === 'login') return handleLogin(req);
   if (req.action === 'book') return handleBook(req);          // khách được phép
+  if (req.action === 'publicAvailability') return handlePublicAvailability(req); // chỉ trả giờ bận, không lộ khách
   if (req.action === 'resident') return handleResident(req);  // cư dân được phép
   if (req.action === 'residentPing') return handleResidentPing(req);
   if (req.action === 'residentTicket') return handleResidentTicket(req);
@@ -591,6 +636,18 @@ function route(req) {
     case 'upload':
       if (!ctx.authenticated) return fail('Cần quyền quản lý');
       return handleUpload(req, ctx);
+    case 'uploadDocument':
+      if (!ctx.authenticated) return fail('Cần quyền quản lý');
+      if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được tải hồ sơ hợp đồng');
+      return handleUploadDocument(req, ctx);
+    case 'getPrivateFile':
+      if (!ctx.authenticated) return fail('Cần quyền quản lý');
+      if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được xem hồ sơ hợp đồng');
+      return handleGetPrivateFile(req, ctx);
+    case 'deletePrivateFile':
+      if (!ctx.authenticated) return fail('Cần quyền quản lý');
+      if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được xóa hồ sơ hợp đồng');
+      return handleDeletePrivateFile(req, ctx);
     case 'deleteImage':
       if (!ctx.authenticated) return fail('Cần quyền quản lý');
       if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được xóa ảnh');
@@ -606,6 +663,22 @@ function route(req) {
       if (!ctx.authenticated) return fail('Cần quyền quản lý');
       if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý đặt được PIN cư dân');
       return handleSetTenantPin(req, ctx);
+    case 'createReservation':
+      if (!ctx.authenticated) return fail('Cần quyền quản lý');
+      if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được nhận tiền giữ chỗ');
+      return handleCreateReservation(req, ctx);
+    case 'cancelReservation':
+      if (!ctx.authenticated) return fail('Cần quyền quản lý');
+      if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được xử lý tiền giữ chỗ');
+      return handleCancelReservation(req, ctx);
+    case 'rescheduleAppointment':
+      if (!ctx.authenticated) return fail('Cần quyền quản lý');
+      if (['owner', 'manager', 'staff'].indexOf(ctx.role) < 0) return forbidden('Vai trò của bạn không được đổi lịch hẹn');
+      return handleRescheduleAppointment(req, ctx);
+    case 'leaseTransition':
+      if (!ctx.authenticated) return fail('Cần quyền quản lý');
+      if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được nhận, chuyển hoặc trả phòng');
+      return handleLeaseTransition(req, ctx);
     case 'unlockReading':
       if (!ctx.authenticated) return fail('Cần quyền quản lý');
       if (ctx.role !== 'owner' && ctx.role !== 'manager') return forbidden('Chỉ chủ nhà/quản lý được mở khóa kỳ đã chốt');
@@ -624,8 +697,19 @@ function route(req) {
 }
 
 /* ================= SAO LƯU ================= */
+/** Tạo đúng một trigger sao lưu hằng ngày. Chạy setup() nhiều lần không tạo trùng. */
+function ensureBackupTrigger() {
+  var exists = ScriptApp.getProjectTriggers().some(function (trigger) {
+    return trigger.getHandlerFunction() === 'backupSpreadsheet';
+  });
+  if (exists) return 'EXISTS';
+  ScriptApp.newTrigger('backupSpreadsheet').timeBased().everyDays(1).atHour(3).create();
+  Logger.log('Đã tạo trigger sao lưu hằng ngày trong khung 03:00.');
+  return 'CREATED';
+}
+
 /** Sao lưu toàn bộ spreadsheet thành bản copy trong Drive, giữ 14 bản gần nhất.
- * Chạy tay trong Apps Script, hoặc vào Triggers → thêm trigger hằng ngày cho hàm này. */
+ * setup() tự cài trigger; vẫn có thể chạy tay hàm này khi cần chốt bản trước thao tác lớn. */
 function backupSpreadsheet() {
   var ss = getSS();
   var file = DriveApp.getFileById(ss.getId());
@@ -642,6 +726,7 @@ function backupSpreadsheet() {
   files.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
   for (var i = 14; i < files.length; i++) files[i].setTrashed(true);
   Logger.log('Đã sao lưu: ' + name + ' (đang giữ ' + Math.min(files.length, 14) + ' bản)');
+  return name;
 }
 
 /* ================= TÀI KHOẢN QUẢN LÝ / TOKEN ================= */
@@ -781,6 +866,410 @@ function nextStamp() {
   return t;
 }
 
+/* ================= GIỮ CHỖ P0: GIAO DỊCH NGUYÊN TỬ ================= */
+function recordsNow(col) { return readSince(col, 0, true).filter(function (r) { return !r.deleted; }); }
+function cleanServerRecord(col, rec, stamp) {
+  var out = {}, fields = SCHEMA[col].fields;
+  fields.forEach(function (f) { out[f[0]] = rec[f[0]] === undefined ? (f[1] === 'n' ? 0 : f[1] === 'b' ? false : (f[1] === 'json' || f[1] === 'csv' || f[1] === 'lines') ? [] : '') : rec[f[0]]; });
+  out.updatedAt = stamp;
+  return out;
+}
+function clientSafeRecord(col, rec, stamp) {
+  if (!rec) return null;
+  var out = cleanServerRecord(col, rec, stamp);
+  if (PRIVATE_FIELDS[col]) {
+    if (col === 'tenants') out.hasPin = !!(rec.pinHash || rec.pin);
+    if (col === 'accounts') out.hasPin = !!rec.pinHash;
+    PRIVATE_FIELDS[col].forEach(function (k) { delete out[k]; });
+  }
+  return out;
+}
+function writeRecordAtStamp(col, rec, stamp) {
+  var conf = SCHEMA[col], sh = sheetOf(col), width = conf.fields.length + META.length;
+  sanitizeRecord(rec, conf.fields);
+  var last = sh.getLastRow(), rowNumber = 0;
+  if (last > 1) {
+    var ids = sh.getRange(2, 1, last - 1, 1).getValues();
+    for (var i = 0; i < ids.length; i++) if (String(ids[i][0]) === String(rec.id)) { rowNumber = i + 2; break; }
+  }
+  var row = toRow(rec, conf.fields).concat([stamp, false]);
+  if (rowNumber) sh.getRange(rowNumber, 1, 1, width).setValues([row]);
+  else sh.getRange(last + 1, 1, 1, width).setValues([row]);
+  touchColStamp(col, stamp);
+  return cleanServerRecord(col, rec, stamp);
+}
+function validISODate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')); }
+function rangesOverlapServer(aFrom, aUntil, bFrom, bUntil) { return String(aFrom) <= String(bUntil) && String(bFrom) <= String(aUntil); }
+function reservationBalanceServer(reservationId) {
+  return recordsNow('depositLedger').filter(function (x) { return x.reservationId === reservationId; })
+    .reduce(function (sum, x) { return sum + (x.type === 'collect' ? 1 : -1) * Number(x.amount || 0); }, 0);
+}
+// Phiếu quá hạn vẫn là phiếu chưa xử lý: tiếp tục khóa phòng cho tới khi
+// quản lý ghi rõ hoàn tiền hay khách bỏ cọc.
+function activeReservationServer(r) { return !!(r && r.status === 'active'); }
+function reconcileRoomServer(roomId, stamp) {
+  var room = recordsNow('rooms').filter(function (r) { return r.id === roomId; })[0];
+  if (!room) return null;
+  var live = recordsNow('leases').some(function (l) { return l.roomId === roomId && (l.status === 'active' || l.status === 'ending'); });
+  var occupiedLegacy = recordsNow('tenants').some(function (t) { return t.roomId === roomId && t.active; });
+  var held = recordsNow('reservations').some(function (r) { return r.roomId === roomId && activeReservationServer(r); });
+  var draft = recordsNow('leases').some(function (l) { return l.roomId === roomId && l.status === 'draft' && leaseDepositTotalsServer(l.id).held > 0; });
+  var target = live || occupiedLegacy ? 'occupied' : held || draft ? 'reserved' : room.status === 'maintenance' ? 'maintenance' : 'available';
+  if (room.status === target) return null;
+  room.status = target;
+  return writeRecordAtStamp('rooms', room, stamp);
+}
+function handleCreateReservation(req, ctx) {
+  var lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    var input = req.reservation || {}, stamp = nextStamp();
+    var id = String(input.id || ''), depId = String(input.depositEntryId || '');
+    if (!isSafeId(id) || !isSafeId(depId)) return fail('Mã phiếu giữ chỗ không hợp lệ');
+    if (recordsNow('reservations').some(function (r) { return r.id === id; })) return fail('Phiếu giữ chỗ đã tồn tại');
+    if (recordsNow('depositLedger').some(function (d) { return d.id === depId; })) return fail('Mã bút toán tiền giữ chỗ đã tồn tại');
+    var rooms = recordsNow('rooms'), room = rooms.filter(function (r) { return r.id === input.roomId; })[0];
+    if (!room || room.archived) return fail('Phòng không tồn tại hoặc đã lưu trữ');
+    if (!inScope(ctx, room.propertyId || '')) return forbidden('Phòng ngoài phạm vi căn được giao');
+    if (room.status === 'maintenance') return fail('Phòng đang bảo trì');
+    if (room.status === 'occupied' || recordsNow('leases').some(function (l) { return l.roomId === room.id && (l.status === 'active' || l.status === 'ending'); })) return fail('Phòng đang có người thuê');
+    if (recordsNow('leases').some(function (l) { return l.roomId === room.id && l.status === 'draft' && leaseDepositTotalsServer(l.id).held > 0; })) return fail('Phòng đang được khóa bởi hợp đồng nháp đã cọc');
+    var sourceType = String(input.sourceType || ''), sourceId = String(input.sourceId || '');
+    if (['appointment', 'tenant'].indexOf(sourceType) < 0 || !isSafeId(sourceId)) return fail('Nguồn khách giữ chỗ không hợp lệ');
+    var source, customerName = '', customerPhone = '';
+    if (sourceType === 'appointment') {
+      source = recordsNow('appointments').filter(function (a) { return a.id === sourceId; })[0];
+      if (!source || source.roomId !== room.id) return fail('Khách CRM hoặc phòng không còn hợp lệ');
+      customerName = source.customerName; customerPhone = source.customerPhone;
+    } else {
+      source = recordsNow('tenants').filter(function (t) { return t.id === sourceId; })[0];
+      if (!source) return fail('Không tìm thấy hồ sơ khách');
+      if (recordsNow('leases').some(function (l) { return l.primaryTenantId === source.id && (l.status === 'active' || l.status === 'ending'); })) return fail('Người này đang có hợp đồng hiệu lực');
+      customerName = source.name; customerPhone = source.phone;
+    }
+    if (recordsNow('reservations').some(function (r) { return r.sourceType === sourceType && r.sourceId === sourceId && activeReservationServer(r); })) {
+      return fail('Khách này còn một phiếu giữ chỗ chưa xử lý');
+    }
+    var fromDate = String(input.fromDate || ''), untilDate = String(input.untilDate || ''), amount = Number(input.amount || 0);
+    if (!validISODate(fromDate) || !validISODate(untilDate) || untilDate < fromDate) return fail('Khoảng ngày giữ chỗ không hợp lệ');
+    if (!(amount > 0) || amount > 500000000) return fail('Tiền giữ chỗ không hợp lệ');
+    var overlap = recordsNow('reservations').filter(function (r) { return r.roomId === room.id && activeReservationServer(r); })[0];
+    if (overlap) return fail('Phòng còn phiếu giữ chỗ của ' + (overlap.customerName || 'khách khác') + ' chưa xử lý (hạn ' + overlap.untilDate + ')');
+    var method = String(input.paymentMethod || 'cash');
+    if (['cash', 'bank', 'momo', 'other'].indexOf(method) < 0) return fail('Phương thức thanh toán không hợp lệ');
+    var actor = ctx.staffName || 'Chủ nhà';
+    var reservation = { id: id, roomId: room.id, sourceType: sourceType, sourceId: sourceId,
+      appointmentId: sourceType === 'appointment' ? sourceId : '', tenantId: sourceType === 'tenant' ? sourceId : '',
+      customerName: customerName, customerPhone: customerPhone, fromDate: fromDate, untilDate: untilDate,
+      amount: amount, paymentMethod: method, paymentReference: String(input.paymentReference || '').slice(0, 80),
+      note: String(input.note || '').slice(0, 500), status: 'active', depositEntryId: depId, leaseId: '',
+      cancelledAt: '', cancelReason: '', createdBy: actor, createdAt: new Date().toISOString() };
+    var dep = { id: depId, leaseId: '', type: 'collect', amount: amount,
+      at: Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd'), method: method,
+      note: 'Thu tiền giữ chỗ' + (reservation.note ? ' — ' + reservation.note : ''), createdBy: actor, createdAt: new Date().toISOString(),
+      reservationId: id, roomId: room.id, tenantId: reservation.tenantId, appointmentId: reservation.appointmentId,
+      reference: reservation.paymentReference };
+    var out = { reservations: [writeRecordAtStamp('reservations', reservation, stamp)],
+      depositLedger: [writeRecordAtStamp('depositLedger', dep, stamp)] };
+    if (sourceType === 'appointment') {
+      source.status = 'reserved'; source.reserveAmount = amount; source.reserveUntil = untilDate;
+      source.careLog = Array.isArray(source.careLog) ? source.careLog : [];
+      source.careLog.push({ at: new Date().toISOString(), by: actor, channel: 'reserve', note: 'Giữ chỗ ' + amount + 'đ đến hết ' + untilDate });
+      out.appointments = [writeRecordAtStamp('appointments', source, stamp)];
+    }
+    room.status = 'reserved'; out.rooms = [writeRecordAtStamp('rooms', room, stamp)];
+    writeAudit(actor, ctx.role, 'create', 'reservations', id, null, auditSnap('reservations', reservation));
+    writeAudit(actor, ctx.role, 'create', 'depositLedger', depId, null, auditSnap('depositLedger', dep));
+    return { ok: true, serverTime: stamp, changes: out };
+  } finally { lock.releaseLock(); }
+}
+function handleCancelReservation(req, ctx) {
+  var lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    var id = String(req.reservationId || ''), stamp = nextStamp();
+    var res = recordsNow('reservations').filter(function (r) { return r.id === id; })[0];
+    if (!res) return fail('Không tìm thấy phiếu giữ chỗ');
+    var room = recordsNow('rooms').filter(function (r) { return r.id === res.roomId; })[0];
+    if (!room || !inScope(ctx, room.propertyId || '')) return forbidden('Phiếu giữ chỗ ngoài phạm vi căn được giao');
+    if (res.status !== 'active') return fail('Phiếu giữ chỗ đã được xử lý trước đó');
+    var resolution = String(req.resolution || '');
+    if (resolution !== 'refund' && resolution !== 'forfeit') return fail('Phải chọn hoàn tiền hoặc giữ tiền bỏ cọc');
+    var balance = Math.max(0, reservationBalanceServer(id)), actor = ctx.staffName || 'Chủ nhà';
+    var out = {}, dep;
+    if (balance > 0) {
+      dep = { id: 'dep' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), leaseId: '',
+        type: resolution === 'refund' ? 'refund' : 'deduct', amount: balance,
+        at: Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd'), method: resolution === 'refund' ? (res.paymentMethod || 'cash') : '',
+        note: resolution === 'refund' ? 'Hoàn tiền khi đóng giữ chỗ' : 'Khách bỏ cọc', createdBy: actor, createdAt: new Date().toISOString(),
+        reservationId: id, roomId: res.roomId, tenantId: res.tenantId, appointmentId: res.appointmentId, reference: '' };
+      out.depositLedger = [writeRecordAtStamp('depositLedger', dep, stamp)];
+    }
+    var todayVN = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+    res.status = req.status === 'expired' && res.untilDate < todayVN ? 'expired' : 'cancelled';
+    res.cancelledAt = new Date().toISOString(); res.cancelReason = String(req.reason || '').slice(0, 500);
+    out.reservations = [writeRecordAtStamp('reservations', res, stamp)];
+    if (res.appointmentId) {
+      var appt = recordsNow('appointments').filter(function (a) { return a.id === res.appointmentId; })[0];
+      if (appt) {
+        appt.status = 'lost'; appt.careLog = Array.isArray(appt.careLog) ? appt.careLog : [];
+        appt.careLog.push({ at: new Date().toISOString(), by: actor, channel: 'release', note: res.status === 'expired' ? 'Giữ chỗ hết hạn — đã xử lý tiền' : 'Hủy giữ chỗ — đã xử lý tiền' });
+        out.appointments = [writeRecordAtStamp('appointments', appt, stamp)];
+      }
+    }
+    var roomOut = reconcileRoomServer(res.roomId, stamp); if (roomOut) out.rooms = [roomOut];
+    writeAudit(actor, ctx.role, 'update', 'reservations', id, { status: 'active' }, { status: res.status, resolution: resolution });
+    if (dep) writeAudit(actor, ctx.role, 'create', 'depositLedger', dep.id, null, auditSnap('depositLedger', dep));
+    return { ok: true, serverTime: stamp, changes: out };
+  } finally { lock.releaseLock(); }
+}
+
+/* ================= P2: ĐỔI LỊCH HẸN NGUYÊN TỬ ================= */
+function handleRescheduleAppointment(req, ctx) {
+  var id = String(req.appointmentId || ''), date = String(req.date || ''), time = String(req.time || '');
+  if (!isSafeId(id)) return fail('Mã lịch hẹn không hợp lệ');
+  if (!validISODate(date)) return fail('Ngày hẹn không hợp lệ');
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return fail('Giờ hẹn không hợp lệ');
+  var lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    var appt = serverRecordById('appointments', id);
+    if (!appt) return fail('Không tìm thấy lịch hẹn');
+    var room = serverRecordById('rooms', appt.roomId);
+    if (!room || !inScope(ctx, room.propertyId || '')) return forbidden('Lịch hẹn ngoài phạm vi căn được giao');
+    if (['converted', 'lost', 'cancelled', 'reserved'].indexOf(appt.status) >= 0) return fail('Lịch hẹn đã sang bước khác nên không thể đổi giờ xem');
+    var todayVN = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+    if (date < todayVN) return fail('Ngày hẹn không được ở quá khứ');
+    var settings = recordsNow('settings')[0] || {};
+    var workStart = /^\d{2}:\d{2}$/.test(String(settings.workStart || '')) ? String(settings.workStart) : '08:00';
+    var workEnd = /^\d{2}:\d{2}$/.test(String(settings.workEnd || '')) ? String(settings.workEnd) : '20:00';
+    if (time < workStart || time > workEnd) return fail('Giờ hẹn phải nằm trong khung ' + workStart + '–' + workEnd);
+    var closed = { converted: 1, lost: 1, cancelled: 1 };
+    var clash = recordsNow('appointments').some(function (other) {
+      return other.id !== id && !closed[other.status] && other.roomId === appt.roomId && other.date === date && other.time === time;
+    });
+    if (clash) return fail('Khung giờ này đã có khách khác hẹn xem phòng');
+    var before = auditSnap('appointments', appt), oldDate = appt.date, oldTime = appt.time;
+    appt.date = date; appt.time = time;
+    if (appt.status === 'new' || appt.status === 'contacted') appt.status = 'appointment_confirmed';
+    appt.careLog = Array.isArray(appt.careLog) ? appt.careLog : [];
+    appt.careLog.push({ at: new Date().toISOString(), by: ctx.staffName || 'Quản lý', channel: 'reschedule',
+      note: 'Đổi lịch: ' + oldDate + ' ' + oldTime + ' → ' + date + ' ' + time });
+    var stamp = nextStamp(), saved = writeRecordAtStamp('appointments', appt, stamp);
+    writeAudit(ctx.staffName || 'Quản lý', ctx.role, 'update', 'appointments', id, before, auditSnap('appointments', appt));
+    return { ok: true, serverTime: stamp, changes: { appointments: [saved] } };
+  } finally { lock.releaseLock(); }
+}
+
+/* ================= P1: VÒNG ĐỜI HỢP ĐỒNG NGUYÊN TỬ ================= */
+function serverRecordById(col, id) {
+  return recordsNow(col).filter(function (r) { return String(r.id) === String(id); })[0] || null;
+}
+function writeLifecycleRecord(col, rec, stamp) {
+  var old = serverRecordById(col, rec.id);
+  (PRIVATE_FIELDS[col] || []).forEach(function (k) {
+    if (old && rec[k] === undefined) rec[k] = old[k];
+  });
+  return writeRecordAtStamp(col, rec, stamp);
+}
+function leaseDepositTotalsServer(leaseId) {
+  var linked = {};
+  recordsNow('reservations').forEach(function (r) { if (r.leaseId === leaseId) linked[r.id] = 1; });
+  var t = { collect: 0, refund: 0, deduct: 0 };
+  recordsNow('depositLedger').forEach(function (x) {
+    if (x.leaseId !== leaseId && !(x.reservationId && linked[x.reservationId])) return;
+    if (t[x.type] !== undefined) t[x.type] += Number(x.amount || 0);
+  });
+  t.held = t.collect - t.refund - t.deduct;
+  return t;
+}
+/** Số cọc còn giữ có tính cả bút toán mới trong cùng gói sync, không đếm trùng ID đã có. */
+function leaseHeldWithIncomingServer(leaseId, incoming) {
+  var held = leaseDepositTotalsServer(leaseId).held, existing = {};
+  recordsNow('depositLedger').forEach(function (x) { existing[x.id] = 1; });
+  ((incoming && incoming.depositLedger) || []).forEach(function (x) {
+    if (!x || x.deleted || existing[x.id] || x.leaseId !== leaseId) return;
+    held += (x.type === 'collect' ? 1 : -1) * Number(x.amount || 0);
+    existing[x.id] = 1;
+  });
+  return held;
+}
+function pushLeaseStatusServer(lease, type, at, actor, detail) {
+  lease.statusHistory = Array.isArray(lease.statusHistory) ? lease.statusHistory : [];
+  lease.statusHistory.push({ type: type, at: at, by: actor || 'Chủ nhà', detail: String(detail || '').slice(0, 500) });
+  if (lease.statusHistory.length > 80) lease.statusHistory = lease.statusHistory.slice(-80);
+}
+function validLifecycleDate(value) { return validISODate(value); }
+function generatedId(prefix) { return prefix + '_' + Utilities.getUuid().replace(/-/g, ''); }
+function cleanHandoverPayload(list, leaseId, phase, stamp) {
+  if (!Array.isArray(list)) return [];
+  return list.slice(0, 60).map(function (h) {
+    return {
+      id: generatedId('ho'), leaseId: leaseId, assetId: isSafeId(h.assetId) ? h.assetId : '', phase: phase,
+      name: String(h.name || '').slice(0, 200), quantity: Math.max(0, Number(h.quantity || 0)),
+      condition: String(h.condition || '').slice(0, 500), note: String(h.note || '').slice(0, 500),
+      imageIds: Array.isArray(h.imageIds) ? h.imageIds.slice(0, 20) : [], createdAt: new Date(stamp).toISOString()
+    };
+  });
+}
+function roomAvailableForLeaseServer(roomId, leaseId) {
+  var room = serverRecordById('rooms', roomId);
+  if (!room || room.archived || room.status === 'maintenance') return { ok: false, error: 'Phòng không tồn tại, đã lưu trữ hoặc đang bảo trì' };
+  var occupied = recordsNow('leases').some(function (l) {
+    return l.id !== leaseId && l.roomId === roomId && (l.status === 'active' || l.status === 'ending');
+  });
+  if (occupied) return { ok: false, error: 'Phòng đang có hợp đồng hiệu lực khác' };
+  var leaseOccupantIds = {};
+  currentLeaseOccupantsServer(leaseId).forEach(function (x) { leaseOccupantIds[x.occupantId] = 1; });
+  var legacyOccupied = recordsNow('tenants').some(function (t) { return t.active && t.roomId === roomId && !leaseOccupantIds[t.id]; });
+  if (legacyOccupied) return { ok: false, error: 'Phòng còn hồ sơ người ở hoạt động chưa được kết thúc' };
+  var draft = recordsNow('leases').some(function (l) {
+    return l.id !== leaseId && l.roomId === roomId && l.status === 'draft' && leaseDepositTotalsServer(l.id).held > 0;
+  });
+  if (draft) return { ok: false, error: 'Phòng đang được khóa bởi hợp đồng nháp đã nhận cọc' };
+  var held = recordsNow('reservations').some(function (r) {
+    return r.roomId === roomId && activeReservationServer(r) && r.leaseId !== leaseId;
+  });
+  if (held) return { ok: false, error: 'Phòng còn phiếu giữ chỗ chưa xử lý' };
+  return { ok: true, room: room };
+}
+function currentLeaseOccupantsServer(leaseId) {
+  return recordsNow('leaseOccupants').filter(function (x) { return x.leaseId === leaseId && !x.leftAt; });
+}
+
+/**
+ * Nhận phòng, chuyển phòng và trả phòng đều đụng nhiều sheet. Action này giữ
+ * ScriptLock suốt giao dịch để không tạo trạng thái nửa vời giữa Hợp đồng,
+ * Người ở, Phòng, Bàn giao và Sổ cọc.
+ */
+function handleLeaseTransition(req, ctx) {
+  var operation = String(req.operation || '');
+  if (['checkin', 'transfer', 'checkout', 'cancel'].indexOf(operation) < 0) return fail('Nghiệp vụ hợp đồng không hợp lệ');
+  var leaseId = String(req.leaseId || '');
+  if (!isSafeId(leaseId)) return fail('Mã hợp đồng không hợp lệ');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    var lease = serverRecordById('leases', leaseId);
+    if (!lease) return fail('Không tìm thấy hợp đồng trên máy chủ. Hãy đồng bộ hợp đồng nháp trước.');
+    var maps = buildScopeMaps();
+    if (!inScope(ctx, propertyIdOfRecord('leases', lease, maps))) return forbidden('Hợp đồng nằm ngoài căn được phân quyền');
+    var actor = ctx.staffName || 'Chủ nhà', stamp = nextStamp(), nowIso = new Date(stamp).toISOString();
+    var out = { leases: [], rooms: [], tenants: [], leaseOccupants: [], handoverItems: [], depositLedger: [] };
+    var date = String(req.date || '');
+    if (!validLifecycleDate(date)) return fail('Ngày hiệu lực không hợp lệ');
+    var todayVN = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+    if (date > todayVN) return fail('Ngày hiệu lực không được ở tương lai');
+    var occupants = currentLeaseOccupantsServer(leaseId);
+    var primaryCount = occupants.filter(function (x) { return x.role === 'primary' && x.occupantId === lease.primaryTenantId; }).length;
+
+    if (operation === 'cancel') {
+      if (lease.status !== 'draft') return fail('Chỉ hủy được hợp đồng nháp');
+      if (leaseDepositTotalsServer(leaseId).held > 0) return fail('Còn tiền cọc đang giữ. Hãy hoàn hoặc trừ hết trong Sổ cọc trước khi hủy.');
+      var cancelBefore = auditSnap('leases', lease);
+      lease.status = 'cancelled'; lease.terminationReason = String(req.reason || 'Hủy hợp đồng nháp').slice(0, 500);
+      pushLeaseStatusServer(lease, 'cancel', date, actor, lease.terminationReason);
+      out.leases.push(writeLifecycleRecord('leases', lease, stamp));
+      var cancelRoom = reconcileRoomServer(lease.roomId, stamp); if (cancelRoom) out.rooms.push(cancelRoom);
+      writeAudit(actor, ctx.role, 'update', 'leases', lease.id, cancelBefore, auditSnap('leases', lease));
+      return { ok: true, serverTime: stamp, changes: out };
+    }
+
+    if (!occupants.length || primaryCount !== 1) return fail('Hợp đồng phải có đúng một người đại diện thanh toán đang ở');
+
+    if (operation === 'checkin') {
+      if (lease.status !== 'draft') return fail('Hợp đồng không còn ở trạng thái nháp');
+      if (lease.startDate && date < lease.startDate) return fail('Ngày nhận phòng không được trước ngày bắt đầu hợp đồng');
+      var roomCheck = roomAvailableForLeaseServer(lease.roomId, lease.id);
+      if (!roomCheck.ok) return fail(roomCheck.error);
+      if (Number(roomCheck.room.capacity || 0) > 0 && occupants.length > Number(roomCheck.room.capacity)) return fail('Số người ở vượt sức chứa của phòng');
+      var beforeIn = auditSnap('leases', lease);
+      lease.status = 'active'; lease.moveInAt = date; if (!lease.signedAt) lease.signedAt = date;
+      pushLeaseStatusServer(lease, 'checkin', date, actor, 'Nhận phòng ' + roomCheck.room.name);
+      out.leases.push(writeLifecycleRecord('leases', lease, stamp));
+      occupants.forEach(function (lo) {
+        if (!lo.joinedAt) lo.joinedAt = date;
+        out.leaseOccupants.push(writeLifecycleRecord('leaseOccupants', lo, stamp));
+        var tenant = serverRecordById('tenants', lo.occupantId);
+        if (tenant) {
+          tenant.roomId = lease.roomId; tenant.active = true; tenant.moveOutDate = '';
+          if (!tenant.moveInDate) tenant.moveInDate = date;
+          if (tenant.id === lease.primaryTenantId) { tenant.depositRequired = lease.depositRequired; tenant.depositPaid = leaseDepositTotalsServer(lease.id).collect; }
+          out.tenants.push(writeLifecycleRecord('tenants', tenant, stamp));
+        }
+      });
+      cleanHandoverPayload(req.handover, lease.id, 'checkin', stamp).forEach(function (h) { out.handoverItems.push(writeLifecycleRecord('handoverItems', h, stamp)); });
+      var inRoom = reconcileRoomServer(lease.roomId, stamp); if (inRoom) out.rooms.push(inRoom);
+      writeAudit(actor, ctx.role, 'update', 'leases', lease.id, beforeIn, auditSnap('leases', lease));
+      return { ok: true, serverTime: stamp, changes: out };
+    }
+
+    if (lease.status !== 'active' && lease.status !== 'ending') return fail('Hợp đồng không còn hiệu lực');
+    if (lease.moveInAt && date < lease.moveInAt) return fail('Ngày hiệu lực không được trước ngày nhận phòng');
+
+    if (operation === 'transfer') {
+      var newRoomId = String(req.newRoomId || '');
+      if (!isSafeId(newRoomId) || newRoomId === lease.roomId) return fail('Phòng chuyển đến không hợp lệ');
+      var targetCheck = roomAvailableForLeaseServer(newRoomId, lease.id);
+      if (!targetCheck.ok) return fail(targetCheck.error);
+      if (!inScope(ctx, targetCheck.room.propertyId || '')) return forbidden('Phòng chuyển đến nằm ngoài căn được phân quyền');
+      if (Number(targetCheck.room.capacity || 0) > 0 && occupants.length > Number(targetCheck.room.capacity)) return fail('Số người ở vượt sức chứa của phòng mới');
+      var oldRoomId = lease.roomId, oldRoom = serverRecordById('rooms', oldRoomId), beforeMove = auditSnap('leases', lease);
+      lease.roomHistory = Array.isArray(lease.roomHistory) ? lease.roomHistory : [];
+      lease.renewals = Array.isArray(lease.renewals) ? lease.renewals : [];
+      var lastFrom = lease.roomHistory.length ? lease.roomHistory[lease.roomHistory.length - 1].to : (lease.moveInAt || lease.startDate || '');
+      lease.roomHistory.push({ roomId: oldRoomId, from: lastFrom, to: date });
+      lease.roomId = newRoomId; lease.propertyId = targetCheck.room.propertyId;
+      if (!req.keepRent) {
+        var oldRent = Number(lease.rentAmount || 0), newRent = Math.max(0, Number(req.newRent || targetCheck.room.price || 0));
+        lease.renewals.push({ type: 'rent-change', at: date, oldRent: oldRent, newRent: newRent }); lease.rentAmount = newRent;
+      }
+      pushLeaseStatusServer(lease, 'transfer', date, actor, (oldRoom ? oldRoom.name : oldRoomId) + ' → ' + targetCheck.room.name);
+      out.leases.push(writeLifecycleRecord('leases', lease, stamp));
+      occupants.forEach(function (lo) {
+        var tenant = serverRecordById('tenants', lo.occupantId);
+        if (tenant) { tenant.roomId = newRoomId; out.tenants.push(writeLifecycleRecord('tenants', tenant, stamp)); }
+      });
+      cleanHandoverPayload(req.handoverOut, lease.id, 'transfer-out', stamp).forEach(function (h) { out.handoverItems.push(writeLifecycleRecord('handoverItems', h, stamp)); });
+      cleanHandoverPayload(req.handoverIn, lease.id, 'transfer-in', stamp).forEach(function (h) { out.handoverItems.push(writeLifecycleRecord('handoverItems', h, stamp)); });
+      var oldOut = reconcileRoomServer(oldRoomId, stamp); if (oldOut) out.rooms.push(oldOut);
+      var newOut = reconcileRoomServer(newRoomId, stamp); if (newOut) out.rooms.push(newOut);
+      writeAudit(actor, ctx.role, 'update', 'leases', lease.id, beforeMove, auditSnap('leases', lease));
+      return { ok: true, serverTime: stamp, changes: out };
+    }
+
+    var totals = leaseDepositTotalsServer(lease.id), held = Math.max(0, totals.held);
+    var deduct = Math.max(0, Number(req.deduct || 0));
+    if (deduct > held) return fail('Số tiền trừ vượt quá cọc đang giữ');
+    if (deduct > 0 && !String(req.note || '').trim()) return fail('Trừ cọc cần ghi rõ lý do đối chiếu');
+    var refund = held - deduct, beforeOut = auditSnap('leases', lease);
+    lease.status = 'ended'; lease.moveOutAt = date; lease.terminationReason = String(req.reason || '').slice(0, 500);
+    lease.depositDeduct = deduct; lease.depositRefund = refund; lease.settlementNote = String(req.note || '').slice(0, 1000);
+    pushLeaseStatusServer(lease, 'checkout', date, actor, 'Trừ cọc ' + deduct + '; hoàn ' + refund);
+    out.leases.push(writeLifecycleRecord('leases', lease, stamp));
+    if (deduct > 0) {
+      var depDeduct = { id: generatedId('dep'), leaseId: lease.id, type: 'deduct', amount: deduct, at: date, method: '', note: lease.settlementNote || 'Trừ cọc khi thanh lý', createdBy: actor, createdAt: nowIso, reservationId: '', roomId: lease.roomId, tenantId: lease.primaryTenantId, appointmentId: '', reference: '' };
+      out.depositLedger.push(writeLifecycleRecord('depositLedger', depDeduct, stamp));
+    }
+    if (refund > 0) {
+      var depRefund = { id: generatedId('dep'), leaseId: lease.id, type: 'refund', amount: refund, at: date, method: String(req.refundMethod || 'cash'), note: 'Hoàn cọc khi thanh lý', createdBy: actor, createdAt: nowIso, reservationId: '', roomId: lease.roomId, tenantId: lease.primaryTenantId, appointmentId: '', reference: String(req.reference || '').slice(0, 200) };
+      out.depositLedger.push(writeLifecycleRecord('depositLedger', depRefund, stamp));
+    }
+    cleanHandoverPayload(req.handover, lease.id, 'checkout', stamp).forEach(function (h) { out.handoverItems.push(writeLifecycleRecord('handoverItems', h, stamp)); });
+    occupants.forEach(function (lo) {
+      lo.leftAt = date; out.leaseOccupants.push(writeLifecycleRecord('leaseOccupants', lo, stamp));
+      var tenant = serverRecordById('tenants', lo.occupantId);
+      if (!tenant) return;
+      var otherLo = recordsNow('leaseOccupants').filter(function (x) { return x.occupantId === tenant.id && !x.leftAt && x.leaseId !== lease.id; })[0];
+      var otherLease = otherLo ? serverRecordById('leases', otherLo.leaseId) : null;
+      if (otherLease && (otherLease.status === 'active' || otherLease.status === 'ending')) { tenant.active = true; tenant.roomId = otherLease.roomId; }
+      else { tenant.active = false; tenant.roomId = ''; tenant.moveOutDate = date; }
+      out.tenants.push(writeLifecycleRecord('tenants', tenant, stamp));
+    });
+    var checkoutRoom = reconcileRoomServer(lease.roomId, stamp); if (checkoutRoom) out.rooms.push(checkoutRoom);
+    writeAudit(actor, ctx.role, 'update', 'leases', lease.id, beforeOut, auditSnap('leases', lease));
+    if (deduct > 0) writeAudit(actor, ctx.role, 'create', 'depositLedger', out.depositLedger[0].id, null, auditSnap('depositLedger', out.depositLedger[0]));
+    return { ok: true, serverTime: stamp, changes: out };
+  } finally { lock.releaseLock(); }
+}
+
 function handleSync(req, role, ctx) {
   var lock = LockService.getScriptLock();
   lock.waitLock(25000);
@@ -790,6 +1279,27 @@ function handleSync(req, role, ctx) {
     var staff = staffOf(req);
     var scoped = ctx && ctx.authenticated && ctx.role !== 'owner' && ctx.propertyIds && ctx.propertyIds.length > 0;
     var maps = scoped ? buildScopeMaps() : null;
+    // Chụp trạng thái CRM trước khi áp thay đổi. Nếu phiếu giữ chỗ phụ thuộc
+    // bị từ chối/xung đột, CRM sẽ được hoàn nguyên thay vì bị kẹt ở "Đang giữ chỗ".
+    var appointmentBefore = {}, incomingAppointments = {}, leaseRoomBefore = {};
+    recordsNow('appointments').forEach(function (a0) { appointmentBefore[a0.id] = a0; });
+    recordsNow('leases').forEach(function (l0) { leaseRoomBefore[l0.id] = l0.roomId || ''; });
+    (incoming.appointments || []).forEach(function (a1) { if (a1 && a1.id && !a1.deleted) incomingAppointments[a1.id] = a1; });
+    var reservationRollback = {};
+    (incoming.reservations || []).forEach(function (r0) {
+      if (!r0 || r0.deleted || !r0.id || r0.sourceType !== 'appointment' || !r0.sourceId) return;
+      var previous = appointmentBefore[r0.sourceId];
+      if (previous) {
+        reservationRollback[r0.id] = previous;
+      } else if (incomingAppointments[r0.sourceId]) {
+        var fallback = JSON.parse(JSON.stringify(incomingAppointments[r0.sourceId]));
+        // Lead mới chưa từng lên máy chủ: giữ lại lead nhưng bỏ dấu hiệu thu tiền thất bại.
+        if (fallback.status === 'reserved') fallback.status = 'viewed';
+        fallback.reserveAmount = 0; fallback.reserveUntil = '';
+        fallback.careLog = (Array.isArray(fallback.careLog) ? fallback.careLog : []).filter(function (c) { return c.channel !== 'reserve'; });
+        reservationRollback[r0.id] = fallback;
+      }
+    });
     // Khách không được ghi gì qua sync (đặt lịch dùng action 'book' riêng)
     var writable = role === 'admin' ? ALL_COLLECTIONS : [];
     var skippedWrite = [];
@@ -797,12 +1307,47 @@ function handleSync(req, role, ctx) {
     writable.forEach(function (col) {
       var list = incoming[col];
       if (!list || !list.length) return;
-      if (!canWriteCol(staff, col)) { skippedWrite.push(col); return; }  // phân quyền theo vai trò
+      if (!canWriteCol(staff, col)) {
+        skippedWrite.push(col);
+        var existing = {}; readSince(col, 0, true).forEach(function (r) { if (!r.deleted) existing[r.id] = r; });
+        list.forEach(function (rec) {
+          var old = existing[rec.id];
+          syncResults.rejected.push({ collection: col, id: rec.id, reason: 'Vai trò hiện tại không có quyền sửa dữ liệu này',
+            serverRecord: old ? clientSafeRecord(col, old, Number(old.updatedAt || 0)) : { id: rec.id, deleted: true, updatedAt: stamp } });
+        });
+        return;
+      }  // phân quyền theo vai trò
       if (list.length > MAX_RECORDS_PER_COLLECTION) {
         throw new Error('HR:Quá nhiều bản ghi trong một lần đồng bộ (' + col + ')');
       }
-      applyChanges(col, list, stamp, role, staff, { ctx: ctx, maps: maps, scoped: scoped, results: syncResults });
+      applyChanges(col, list, stamp, role, staff, { ctx: ctx, maps: maps, scoped: scoped, results: syncResults, incoming: incoming });
     });
+    var blockedReservations = {};
+    ['rejected', 'conflicts', 'scopeSkipped'].forEach(function (kind) {
+      (syncResults[kind] || []).forEach(function (x) { if (x.collection === 'reservations') blockedReservations[x.id] = 1; });
+    });
+    Object.keys(blockedReservations).forEach(function (reservationId) {
+      var previousAppointment = reservationRollback[reservationId];
+      if (previousAppointment) writeRecordAtStamp('appointments', previousAppointment, stamp);
+    });
+    // Dù thiết bị offline không gửi kèm thay đổi Phong, trạng thái phòng vẫn được suy ra lại từ phiếu đã được máy chủ chấp nhận.
+    var reservationRooms = {};
+    (incoming.reservations || []).forEach(function (r) { if (r && r.roomId) reservationRooms[r.roomId] = 1; });
+    Object.keys(reservationRooms).forEach(function (roomId) { reconcileRoomServer(roomId, stamp); });
+    // P1: mọi thay đổi hợp đồng/sổ cọc/phòng đều được suy ra lại trạng thái
+    // phòng ở cuối giao dịch, không tin một ô status rời rạc từ client.
+    var lifecycleRooms = {};
+    (incoming.rooms || []).forEach(function (r2) { if (r2 && r2.id) lifecycleRooms[r2.id] = 1; });
+    (incoming.leases || []).forEach(function (l2) {
+      if (l2 && l2.roomId) lifecycleRooms[l2.roomId] = 1;
+      if (l2 && leaseRoomBefore[l2.id]) lifecycleRooms[leaseRoomBefore[l2.id]] = 1;
+    });
+    (incoming.depositLedger || []).forEach(function (d2) {
+      var dl = d2 && d2.leaseId ? serverRecordById('leases', d2.leaseId) : null;
+      if (dl && dl.roomId) lifecycleRooms[dl.roomId] = 1;
+      if (d2 && d2.roomId) lifecycleRooms[d2.roomId] = 1;
+    });
+    Object.keys(lifecycleRooms).forEach(function (roomId2) { reconcileRoomServer(roomId2, stamp); });
 
     var since = Number(req.since || 0);
     var readable = role === 'admin' ? ALL_COLLECTIONS.slice() : PUBLIC_COLLECTIONS;
@@ -811,10 +1356,24 @@ function handleSync(req, role, ctx) {
     }
     var out = {};
     readable.forEach(function (col) {
-      var rows = readSince(col, since);
+      // Trang khách luôn nhận snapshot phòng đầy đủ để ngày "sắp trống" suy ra từ
+      // hợp đồng không bị bỏ sót khi chỉ hợp đồng thay đổi mà bản ghi phòng không đổi.
+      var rows = (role !== 'admin' && col === 'rooms') ? readSince(col, 0) : readSince(col, since);
       // Khách vãng lai: KHÔNG trả ghi chú nội bộ của phòng
       if (role !== 'admin' && col === 'rooms') {
-        rows = rows.map(function (r) { var c = {}; for (var k in r) c[k] = r[k]; c.note = ''; return c; });
+        var todayPublic = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+        var leaseEndByRoom = {};
+        recordsNow('leases').forEach(function (l0) {
+          if ((l0.status !== 'active' && l0.status !== 'ending') || !/^\d{4}-\d{2}-\d{2}$/.test(String(l0.endDate || ''))) return;
+          var days = Math.ceil((new Date(l0.endDate + 'T00:00:00').getTime() - new Date(todayPublic + 'T00:00:00').getTime()) / 86400000);
+          if (days < 0 || days > 45) return;
+          if (!leaseEndByRoom[l0.roomId] || l0.endDate < leaseEndByRoom[l0.roomId]) leaseEndByRoom[l0.roomId] = l0.endDate;
+        });
+        rows = rows.map(function (r) {
+          var c = {}; for (var k in r) c[k] = r[k]; c.note = '';
+          if (!c.deleted && c.status === 'occupied' && !c.availableFrom && leaseEndByRoom[c.id]) c.availableFrom = leaseEndByRoom[c.id];
+          return c;
+        });
       }
       // Phạm vi căn: nhân viên được giao căn nào chỉ nhận dữ liệu căn đó (kể cả bản ghi xóa mềm không xác định được thì vẫn trả để dọn cache)
       if (scoped && rows.length) {
@@ -883,7 +1442,6 @@ function applyChanges(col, list, stamp, role, staff, opt) {
   var auditKeys = AUDIT_COLS[col];
   var actor = staff ? staff.name : 'Chủ nhà', actorRole = staff ? staff.role : 'owner';
   function rowToRec(r) { return fromRow(r, SCHEMA[col].fields); }
-  function reject(id, reason) { results.rejected.push({ collection: col, id: id, reason: reason }); }
   var conf = SCHEMA[col], sh = sheetOf(col);
   var width = conf.fields.length + META.length;
   var last = sh.getLastRow();
@@ -894,7 +1452,16 @@ function applyChanges(col, list, stamp, role, staff, opt) {
   var names = conf.fields.map(function (f) { return f[0]; });
   var protectedIdx = (PRIVATE_FIELDS[col] || []).map(function (k) { return names.indexOf(k); });
 
-  var appends = [];
+  var appends = [], changed = false, currentServerRec = null, currentServerStamp = 0, currentServerDeleted = false;
+  function authoritative(id) {
+    return currentServerRec && !currentServerDeleted ? clientSafeRecord(col, currentServerRec, currentServerStamp) : { id: id, deleted: true, updatedAt: stamp };
+  }
+  function reject(id, reason) { results.rejected.push({ collection: col, id: id, reason: reason, serverRecord: authoritative(id) }); }
+  function wasBlocked(collection, id) {
+    return ['rejected', 'conflicts', 'scopeSkipped'].some(function (kind) {
+      return (results[kind] || []).some(function (x) { return x.collection === collection && x.id === id; });
+    });
+  }
   list.forEach(function (rec) {
     if (!rec || !rec.id) return;
     if (!isSafeId(rec.id)) return; // id lạ (dấu nháy, thẻ, khoảng trắng) → loại thẳng
@@ -903,15 +1470,56 @@ function applyChanges(col, list, stamp, role, staff, opt) {
     var serverRec = i !== undefined ? rowToRec(values[i]) : null;
     var serverStamp = i !== undefined ? Number(values[i][conf.fields.length] || 0) : 0;
     var serverDeleted = i !== undefined && (values[i][conf.fields.length + 1] === true || String(values[i][conf.fields.length + 1]).toUpperCase() === 'TRUE');
+    currentServerRec = serverRec; currentServerStamp = serverStamp; currentServerDeleted = serverDeleted;
 
     // ---- Phạm vi căn: chặn ghi record ngoài căn được giao (cả bản cũ lẫn bản định ghi) ----
     if (opt.scoped) {
       var pOld = serverRec ? propertyIdOfRecord(col, serverRec, opt.maps) : '';
       var pNew = propertyIdOfRecord(col, rec, opt.maps);
       if ((pOld && !inScope(opt.ctx, pOld)) || (pNew && !inScope(opt.ctx, pNew))) {
-        results.scopeSkipped.push({ collection: col, id: id });
+        results.scopeSkipped.push({ collection: col, id: id, serverRecord: authoritative(id) });
         return;
       }
+    }
+
+    // Không cho lưu trữ/xóa căn hoặc phòng khi còn vòng đời thương mại đang mở.
+    // Checkout/cancel là action nguyên tử riêng và không đi qua applyChanges.
+    if (col === 'rooms' && (rec.deleted || rec.archived === true || rec.archived === 'true')) {
+      var roomBlocked = recordsNow('leases').some(function (lr0) {
+        return lr0.roomId === id && ['draft', 'active', 'ending'].indexOf(lr0.status) >= 0;
+      }) || recordsNow('reservations').some(function (rr0) {
+        return rr0.roomId === id && activeReservationServer(rr0);
+      }) || recordsNow('tenants').some(function (tr0) { return tr0.roomId === id && tr0.active; });
+      if (roomBlocked) { reject(id, 'Phòng còn hợp đồng, giữ chỗ hoặc người ở hoạt động; hãy xử lý vòng đời trước khi lưu trữ'); return; }
+    }
+    if (col === 'properties' && (rec.deleted || rec.archived === true || rec.archived === 'true')) {
+      var propertyRooms = {};
+      recordsNow('rooms').forEach(function (pr0) { if (pr0.propertyId === id) propertyRooms[pr0.id] = 1; });
+      var propertyBlocked = recordsNow('leases').some(function (pl0) {
+        return propertyRooms[pl0.roomId] && ['draft', 'active', 'ending'].indexOf(pl0.status) >= 0;
+      }) || recordsNow('reservations').some(function (ps0) {
+        return propertyRooms[ps0.roomId] && activeReservationServer(ps0);
+      }) || recordsNow('tenants').some(function (pt0) { return propertyRooms[pt0.roomId] && pt0.active; });
+      if (propertyBlocked) { reject(id, 'Căn trọ còn hợp đồng, giữ chỗ hoặc người ở hoạt động; hãy xử lý trước khi lưu trữ'); return; }
+    }
+    // Bản client cũ từng cho đóng hồ sơ người đại diện riêng lẻ, tạo trạng thái
+    // lease active nhưng tenant inactive. Máy chủ chặn nửa giao dịch này.
+    if (col === 'tenants' && serverRec && !serverDeleted && (rec.deleted || (serverRec.active && (rec.active === false || rec.active === 'false')))) {
+      var primaryLive = recordsNow('leases').some(function (tl0) {
+        return tl0.primaryTenantId === id && ['draft', 'active', 'ending'].indexOf(tl0.status) >= 0;
+      });
+      if (primaryLive) { reject(id, 'Người đại diện còn hợp đồng đang mở; hãy hủy hợp đồng nháp hoặc dùng Trả phòng/Thanh lý'); return; }
+    }
+    if (col === 'leaseOccupants' && serverRec && !serverDeleted && (rec.deleted || rec.leftAt)) {
+      var ownerLease = recordsNow('leases').filter(function (ol0) { return ol0.id === serverRec.leaseId; })[0];
+      if (ownerLease && ['draft', 'active', 'ending'].indexOf(ownerLease.status) >= 0 &&
+          (serverRec.role === 'primary' || ownerLease.primaryTenantId === serverRec.occupantId)) {
+        reject(id, 'Không thể cho người đại diện rời hợp đồng đang mở qua đồng bộ rời rạc; hãy đổi đại diện, hủy nháp hoặc thanh lý'); return;
+      }
+    }
+    if (col === 'leases' && rec.deleted && serverRec && !serverDeleted &&
+        (serverRec.status === 'active' || serverRec.status === 'ending')) {
+      reject(id, 'Hợp đồng hiệu lực không được xóa; hãy dùng Trả phòng/Thanh lý'); return;
     }
 
     // ---- TÀI CHÍNH: payments & sổ cọc là sổ APPEND-ONLY ----
@@ -931,6 +1539,20 @@ function applyChanges(col, list, stamp, role, staff, opt) {
     }
     if (col === 'depositLedger' && i === undefined && !rec.deleted) {
       if (Number(rec.amount || 0) <= 0) { reject(id, 'Số tiền sổ cọc phải > 0'); return; }
+      if (rec.reservationId) {
+        var linkedRes = recordsNow('reservations').filter(function (r0) { return r0.id === rec.reservationId; })[0];
+        var incomingRes = ((opt.incoming && opt.incoming.reservations) || []).filter(function (r1) {
+          return r1.id === rec.reservationId && isSafeId(r1.id) && !r1.deleted;
+        })[0];
+        // Phiếu bị từ chối/xung đột thì bút toán phụ thuộc cũng phải bị từ chối,
+        // kể cả khi ID vô tình trùng với một phiếu cũ trên máy chủ.
+        if (wasBlocked('reservations', rec.reservationId)) { reject(id, 'Phiếu giữ chỗ liên quan không được máy chủ chấp nhận'); return; }
+        linkedRes = linkedRes || incomingRes;
+        if (!linkedRes) { reject(id, 'Bút toán giữ chỗ không có phiếu giữ chỗ tương ứng'); return; }
+        if (rec.type === 'collect' && (rec.id !== linkedRes.depositEntryId || Number(rec.amount) !== Number(linkedRes.amount))) {
+          reject(id, 'Phiếu giữ chỗ chỉ có một bút toán thu và phải khớp số tiền trên phiếu'); return;
+        }
+      }
     }
     // Hóa đơn đã có tiền/đã thanh toán: cấm xóa
     if (col === 'invoices' && rec.deleted && serverRec && !serverDeleted &&
@@ -970,12 +1592,163 @@ function applyChanges(col, list, stamp, role, staff, opt) {
         }
       }
     }
-    // v4.3: GIỮ CHỖ phải có TIỀN CỌC thật và khoảng ngày hợp lệ — chặn ngay ở máy chủ
+    // P1: hợp đồng là hồ sơ chuẩn, không cho tạo hai hợp đồng sống trên cùng phòng
+    // và không cho đổi trạng thái/phòng qua sync rời rạc (phải dùng action nguyên tử).
+    if (col === 'leases' && !rec.deleted) {
+      var leaseRoom = recordsNow('rooms').filter(function (rr2) { return rr2.id === rec.roomId && !rr2.archived; })[0];
+      if (!leaseRoom) { reject(id, 'Phòng của hợp đồng không tồn tại hoặc đã lưu trữ'); return; }
+      if (leaseRoom.status === 'maintenance') { reject(id, 'Không thể lập hợp đồng cho phòng đang bảo trì'); return; }
+      if (Number(rec.rentAmount || 0) < 0 || Number(rec.depositRequired || 0) < 0 || Number(rec.depositPaid || 0) < 0) {
+        reject(id, 'Giá thuê hoặc tiền cọc không hợp lệ'); return;
+      }
+      if (!validISODate(rec.startDate) || (rec.endDate && (!validISODate(rec.endDate) || rec.endDate < rec.startDate))) {
+        reject(id, 'Thời hạn hợp đồng không hợp lệ'); return;
+      }
+      var tenantExists = recordsNow('tenants').some(function (tt3) { return tt3.id === rec.primaryTenantId; }) ||
+        ((opt.incoming && opt.incoming.tenants) || []).some(function (tt4) { return !tt4.deleted && tt4.id === rec.primaryTenantId; });
+      if (!tenantExists) { reject(id, 'Người đại diện thanh toán không tồn tại'); return; }
+      if (serverRec && !serverDeleted) {
+        if (serverRec.roomId !== rec.roomId && (serverRec.status === 'active' || serverRec.status === 'ending')) {
+          reject(id, 'Chuyển phòng phải dùng nghiệp vụ Chuyển phòng để cập nhật đồng bộ lịch sử và người ở'); return;
+        }
+        if (serverRec.status !== rec.status &&
+            ['active', 'ended', 'cancelled'].indexOf(rec.status) >= 0) {
+          reject(id, 'Đổi trạng thái hợp đồng phải dùng nút Nhận phòng, Trả phòng hoặc Hủy hợp đồng'); return;
+        }
+      } else if (rec.status !== 'draft') {
+        reject(id, 'Hợp đồng mới phải bắt đầu ở trạng thái nháp'); return;
+      }
+      if (rec.status === 'draft') {
+        var otherLeaseOnRoom = recordsNow('leases').some(function (ld0) {
+          return ld0.id !== id && ld0.roomId === rec.roomId && ['draft', 'active', 'ending'].indexOf(ld0.status) >= 0;
+        }) || ((opt.incoming && opt.incoming.leases) || []).some(function (ld1) {
+          return !ld1.deleted && ld1.id !== id && ld1.roomId === rec.roomId && ['draft', 'active', 'ending'].indexOf(ld1.status) >= 0;
+        });
+        if (otherLeaseOnRoom) { reject(id, 'Phòng đã có hợp đồng nháp hoặc đang hiệu lực khác'); return; }
+        var activeHoldOnRoom = recordsNow('reservations').some(function (rh) { return rh.roomId === rec.roomId && activeReservationServer(rh); });
+        if (activeHoldOnRoom) { reject(id, 'Phòng còn phiếu giữ chỗ chưa chuyển thành hợp đồng'); return; }
+      }
+      if (rec.status === 'active' || rec.status === 'ending') {
+        var duplicateLive = recordsNow('leases').some(function (ll0) {
+          return ll0.id !== id && ll0.roomId === rec.roomId && (ll0.status === 'active' || ll0.status === 'ending');
+        }) || ((opt.incoming && opt.incoming.leases) || []).some(function (ll1) {
+          return !ll1.deleted && ll1.id !== id && ll1.roomId === rec.roomId && (ll1.status === 'active' || ll1.status === 'ending');
+        });
+        if (duplicateLive) { reject(id, 'Phòng đã có hợp đồng hiệu lực khác'); return; }
+      }
+    }
+    // Một hợp đồng chỉ có đúng một đại diện thanh toán đang ở; một người không
+    // được đồng thời ở hai hợp đồng đang hiệu lực.
+    if (col === 'leaseOccupants' && !rec.deleted) {
+      var linkedLease = recordsNow('leases').filter(function (lx) { return lx.id === rec.leaseId; })[0] ||
+        ((opt.incoming && opt.incoming.leases) || []).filter(function (lx2) { return !lx2.deleted && lx2.id === rec.leaseId; })[0];
+      var linkedTenant = recordsNow('tenants').some(function (tx) { return tx.id === rec.occupantId; }) ||
+        ((opt.incoming && opt.incoming.tenants) || []).some(function (tx2) { return !tx2.deleted && tx2.id === rec.occupantId; });
+      if (!linkedLease || !linkedTenant) { reject(id, 'Người ở phải gắn với hợp đồng và hồ sơ người hợp lệ'); return; }
+      if (!rec.leftAt && rec.role === 'primary' && linkedLease.primaryTenantId !== rec.occupantId) {
+        reject(id, 'Người đại diện trong danh sách người ở không khớp hợp đồng'); return;
+      }
+      if (!rec.leftAt && (linkedLease.status === 'active' || linkedLease.status === 'ending')) {
+        var otherCurrent = recordsNow('leaseOccupants').some(function (ox) {
+          if (ox.id === id || ox.occupantId !== rec.occupantId || ox.leftAt) return false;
+          var ol = serverRecordById('leases', ox.leaseId);
+          return ol && ol.id !== rec.leaseId && (ol.status === 'active' || ol.status === 'ending');
+        });
+        if (otherCurrent) { reject(id, 'Người này đang ở trong một hợp đồng hiệu lực khác'); return; }
+      }
+    }
+    // v4.4 P0: phòng reserved chỉ có thể do phiếu GiuCho hoặc hợp đồng nháp đã cọc tạo ra.
+    if (col === 'rooms' && !rec.deleted && rec.status === 'reserved') {
+      var heldServer = recordsNow('reservations').some(function (rs) { return rs.roomId === rec.id && activeReservationServer(rs); });
+      var heldIncoming = ((opt.incoming && opt.incoming.reservations) || []).some(function (rs2) {
+        return !rs2.deleted && rs2.roomId === rec.id && rs2.status === 'active';
+      });
+      var draftServer = recordsNow('leases').some(function (l0) { return l0.roomId === rec.id && l0.status === 'draft' && leaseHeldWithIncomingServer(l0.id, opt.incoming) > 0; });
+      var draftIncoming = ((opt.incoming && opt.incoming.leases) || []).some(function (l1) { return !l1.deleted && l1.roomId === rec.id && l1.status === 'draft' && leaseHeldWithIncomingServer(l1.id, opt.incoming) > 0; });
+      if (!heldServer && !heldIncoming && !draftServer && !draftIncoming) { reject(id, 'Không thể đặt “Đã giữ chỗ” bằng tay — hãy tạo phiếu giữ chỗ có tiền cọc'); return; }
+    }
+    // Phiếu giữ chỗ là nguồn duy nhất: khóa xóa, khóa đổi phòng/tiền/khách, chặn trùng thời gian.
+    if (col === 'reservations') {
+      if (rec.deleted) { reject(id, 'Phiếu giữ chỗ không được xóa; hãy đóng phiếu và xử lý tiền'); return; }
+      if (!validISODate(rec.fromDate) || !validISODate(rec.untilDate) || String(rec.untilDate) < String(rec.fromDate)) { reject(id, 'Khoảng ngày giữ chỗ không hợp lệ'); return; }
+      if (!(Number(rec.amount) > 0) || Number(rec.amount) > 500000000) { reject(id, 'Tiền giữ chỗ không hợp lệ'); return; }
+      var roomRes = recordsNow('rooms').filter(function (rr) { return rr.id === rec.roomId && !rr.archived; })[0];
+      if (!roomRes) { reject(id, 'Phòng giữ chỗ không tồn tại'); return; }
+      if (roomRes.status === 'maintenance' || roomRes.status === 'occupied') { reject(id, 'Phòng không còn trống để giữ chỗ'); return; }
+      if (i === undefined) {
+        var draftLock = recordsNow('leases').some(function (l2) { return l2.roomId === rec.roomId && l2.status === 'draft' && leaseHeldWithIncomingServer(l2.id, opt.incoming) > 0; }) ||
+          ((opt.incoming && opt.incoming.leases) || []).some(function (l3) { return !l3.deleted && l3.roomId === rec.roomId && l3.status === 'draft' && leaseHeldWithIncomingServer(l3.id, opt.incoming) > 0; });
+        if (draftLock) { reject(id, 'Phòng đang được khóa bởi hợp đồng nháp đã cọc'); return; }
+      }
+      if (rec.sourceType === 'appointment') {
+        var apptOk = recordsNow('appointments').some(function (aa) { return aa.id === rec.sourceId && aa.roomId === rec.roomId; }) ||
+          ((opt.incoming && opt.incoming.appointments) || []).some(function (aa2) { return aa2.id === rec.sourceId && aa2.roomId === rec.roomId && !aa2.deleted; });
+        if (!apptOk) { reject(id, 'Khách CRM hoặc phòng không hợp lệ'); return; }
+      } else if (rec.sourceType === 'tenant') {
+        var tenOk = recordsNow('tenants').some(function (tt) { return tt.id === rec.sourceId; }) ||
+          ((opt.incoming && opt.incoming.tenants) || []).some(function (tt2) { return tt2.id === rec.sourceId && !tt2.deleted; });
+        if (!tenOk) { reject(id, 'Không tìm thấy hồ sơ khách giữ chỗ'); return; }
+        if (i === undefined) {
+          var tenantLive = recordsNow('leases').some(function (l4) { return l4.primaryTenantId === rec.sourceId && (l4.status === 'active' || l4.status === 'ending'); }) ||
+            ((opt.incoming && opt.incoming.leases) || []).some(function (l5) { return !l5.deleted && l5.primaryTenantId === rec.sourceId && (l5.status === 'active' || l5.status === 'ending'); });
+          if (tenantLive) { reject(id, 'Khách này đang có hợp đồng hiệu lực'); return; }
+        }
+      }
+      for (var ri = 0; ri < values.length; ri++) {
+        if (ri === i) continue;
+        var rv = values[ri], rvDeleted = rv[conf.fields.length + 1] === true || String(rv[conf.fields.length + 1]).toUpperCase() === 'TRUE';
+        if (rvDeleted) continue;
+        var otherRes = rowToRec(rv);
+        if (otherRes.sourceType === rec.sourceType && otherRes.sourceId === rec.sourceId && activeReservationServer(otherRes) && rec.status === 'active') {
+          reject(id, 'Khách này còn một phiếu giữ chỗ khác chưa xử lý'); return;
+        }
+        if (otherRes.roomId === rec.roomId && activeReservationServer(otherRes) && rec.status === 'active') {
+          reject(id, 'Phòng còn một phiếu giữ chỗ khác chưa xử lý'); return;
+        }
+      }
+      if (serverRec && !serverDeleted) {
+        if (serverRec.roomId !== rec.roomId || serverRec.sourceType !== rec.sourceType || serverRec.sourceId !== rec.sourceId || Number(serverRec.amount) !== Number(rec.amount)) {
+          reject(id, 'Không được đổi phòng, khách hoặc số tiền của phiếu đã ghi sổ'); return;
+        }
+        if (serverRec.status !== rec.status) {
+          if (serverRec.status !== 'active' || ['cancelled', 'expired', 'converted'].indexOf(rec.status) < 0) { reject(id, 'Chuyển trạng thái phiếu giữ chỗ không hợp lệ'); return; }
+          if (rec.status === 'converted') {
+            var leaseOk = rec.leaseId && (recordsNow('leases').some(function (lc0) { return lc0.id === rec.leaseId && lc0.roomId === rec.roomId && lc0.status !== 'cancelled'; }) ||
+              ((opt.incoming && opt.incoming.leases) || []).some(function (lc1) { return !lc1.deleted && lc1.id === rec.leaseId && lc1.roomId === rec.roomId && lc1.status !== 'cancelled'; }));
+            if (!leaseOk) { reject(id, 'Phiếu chuyển hợp đồng phải gắn với hợp đồng cùng phòng'); return; }
+          }
+          if (rec.status === 'cancelled' || rec.status === 'expired') {
+            var balance0 = Math.max(0, reservationBalanceServer(id));
+            var existingDepositIds = {}, settleIds = {};
+            recordsNow('depositLedger').forEach(function (dd0) { existingDepositIds[dd0.id] = 1; });
+            var settle = ((opt.incoming && opt.incoming.depositLedger) || []).filter(function (dd) {
+              if (!dd || dd.deleted || !isSafeId(dd.id) || existingDepositIds[dd.id] || settleIds[dd.id]) return false;
+              if (dd.reservationId !== id || (dd.type !== 'refund' && dd.type !== 'deduct') || !(Number(dd.amount) > 0)) return false;
+              settleIds[dd.id] = 1; return true;
+            }).reduce(function (s, dd2) { return s + Number(dd2.amount || 0); }, 0);
+            if (settle < balance0) { reject(id, 'Phải xử lý toàn bộ tiền đang giữ trước khi đóng phiếu'); return; }
+          }
+        }
+      } else {
+        if (rec.status !== 'active') { reject(id, 'Phiếu mới phải bắt đầu ở trạng thái đang giữ'); return; }
+        if (!isSafeId(rec.depositEntryId)) { reject(id, 'Mã bút toán thu giữ chỗ không hợp lệ'); return; }
+        var oldDepositWithId = recordsNow('depositLedger').filter(function (d0) { return d0.id === rec.depositEntryId; })[0];
+        var collect = !!(oldDepositWithId && oldDepositWithId.reservationId === id && oldDepositWithId.type === 'collect' && Number(oldDepositWithId.amount) === Number(rec.amount));
+        if (!collect && !oldDepositWithId) collect = ((opt.incoming && opt.incoming.depositLedger) || []).some(function (d1) {
+          return d1.id === rec.depositEntryId && isSafeId(d1.id) && d1.reservationId === id && d1.type === 'collect' && Number(d1.amount) === Number(rec.amount) && !d1.deleted;
+        });
+        if (!collect) { reject(id, 'Phiếu giữ chỗ phải có bút toán thu tiền tương ứng trong sổ cọc'); return; }
+      }
+    }
+    // Trường giữ chỗ cũ trên NguoiThue chỉ được chấp nhận khi đã có phiếu canonical tương ứng.
     if (col === 'tenants' && !rec.deleted && rec.holdRoomId) {
       if (!(Number(rec.holdAmount) > 0)) { reject(id, 'Giữ chỗ phải có tiền cọc lớn hơn 0'); return; }
       if (!rec.holdFrom || !rec.holdUntil || String(rec.holdUntil) < String(rec.holdFrom)) {
         reject(id, 'Khoảng ngày giữ chỗ không hợp lệ'); return;
       }
+      var canonical = recordsNow('reservations').some(function (rr0) { return rr0.tenantId === rec.id && rr0.roomId === rec.holdRoomId; }) ||
+        ((opt.incoming && opt.incoming.reservations) || []).some(function (rr1) { return rr1.tenantId === rec.id && rr1.roomId === rec.holdRoomId && !rr1.deleted; });
+      if (!canonical) { reject(id, 'Giữ chỗ phải thực hiện bằng phiếu Giữ chỗ, không ghi trực tiếp vào người thuê'); return; }
     }
     // Enum lạ → từ chối (chống nhét chuỗi tùy ý vào trạng thái/vai trò)
     if (!rec.deleted) {
@@ -989,12 +1762,12 @@ function applyChanges(col, list, stamp, role, staff, opt) {
       if (i !== undefined && !serverDeleted && serverStamp !== base) {
         var sOut = auditSnap(col, serverRec) || {}; sOut.id = id;
         results.conflicts.push({ collection: col, id: id, expectedUpdatedAt: base, serverUpdatedAt: serverStamp,
-          serverRecord: serverRec });
+          serverRecord: clientSafeRecord(col, serverRec, serverStamp) });
         return; // KHÔNG ghi đè
       }
       if (i !== undefined && !serverDeleted && base === 0) {
         // client tưởng là bản ghi mới nhưng id đã tồn tại → không cho chiếm id
-        results.conflicts.push({ collection: col, id: id, expectedUpdatedAt: 0, serverUpdatedAt: serverStamp, serverRecord: serverRec });
+        results.conflicts.push({ collection: col, id: id, expectedUpdatedAt: 0, serverUpdatedAt: serverStamp, serverRecord: clientSafeRecord(col, serverRec, serverStamp) });
         return;
       }
     }
@@ -1005,6 +1778,7 @@ function applyChanges(col, list, stamp, role, staff, opt) {
       sh.getRange(i + 2, conf.fields.length + 1, 1, 2).setValues([[stamp, true]]);
       values[i][conf.fields.length] = stamp;
       values[i][conf.fields.length + 1] = true;
+      changed = true;
       return;
     }
 
@@ -1016,6 +1790,7 @@ function applyChanges(col, list, stamp, role, staff, opt) {
       index[id] = values.length;
       values.push(row);
       appends.push(row);
+      changed = true;
       if (auditKeys) writeAudit(actor, actorRole, 'create', col, id, null, auditSnap(col, rec));
     } else {
       // Ghi đè: giữ nguyên các cột riêng tư đang có trên máy chủ
@@ -1028,12 +1803,14 @@ function applyChanges(col, list, stamp, role, staff, opt) {
       }
       sh.getRange(i + 2, 1, 1, width).setValues([row]);
       values[i] = row;
+      changed = true;
     }
   });
 
   if (appends.length) {
     sh.getRange(sh.getLastRow() + 1, 1, appends.length, appends[0].length).setValues(appends);
   }
+  if (changed) touchColStamp(col, stamp);
 }
 
 /**
@@ -1214,6 +1991,43 @@ function migrateLeases() {
 }
 
 /**
+ * v4.6.6: tự sửa trạng thái nửa vời do bản cũ cho lưu trữ người đại diện
+ * trong khi hợp đồng vẫn active/ending. Chạy nhiều lần không tạo liên kết trùng.
+ */
+function repairLifecycleIntegrity() {
+  var leases = recordsNow('leases').filter(function (l) { return l.status === 'active' || l.status === 'ending'; });
+  var tenants = recordsNow('tenants'), occupants = recordsNow('leaseOccupants');
+  var tenantById = {}; tenants.forEach(function (t) { tenantById[t.id] = t; });
+  var repaired = 0;
+  leases.forEach(function (lease) {
+    var tenant = tenantById[lease.primaryTenantId];
+    if (!tenant) return;
+    var links = occupants.filter(function (x) { return x.leaseId === lease.id; });
+    var primary = links.filter(function (x) { return x.occupantId === lease.primaryTenantId; })[0];
+    var stamp = nextStamp();
+    if (!primary) {
+      primary = { id: generatedId('lor'), leaseId: lease.id, occupantId: lease.primaryTenantId, role: 'primary',
+        joinedAt: lease.moveInAt || lease.startDate || '', leftAt: '', note: 'Tự sửa liên kết đại diện', createdAt: new Date().toISOString() };
+      appendRecord('leaseOccupants', primary); occupants.push(primary); repaired++;
+    } else if (primary.leftAt || primary.role !== 'primary') {
+      primary.leftAt = ''; primary.role = 'primary';
+      writeRecordAtStamp('leaseOccupants', primary, stamp); repaired++;
+    }
+    links.forEach(function (x) {
+      if (x.id === primary.id || x.leftAt || x.role !== 'primary') return;
+      x.role = 'member'; writeRecordAtStamp('leaseOccupants', x, stamp); repaired++;
+    });
+    if (!tenant.active || tenant.roomId !== lease.roomId || tenant.moveOutDate) {
+      tenant.active = true; tenant.roomId = lease.roomId; tenant.moveOutDate = '';
+      writeRecordAtStamp('tenants', tenant, stamp); repaired++;
+    }
+    reconcileRoomServer(lease.roomId, stamp);
+  });
+  Logger.log('repairLifecycleIntegrity: sửa ' + repaired + ' bản ghi.');
+  return repaired;
+}
+
+/**
  * v4 giai đoạn 3 — chuyển sang sổ giao dịch:
  *  - từng lần thu trong cột payments (json) của hóa đơn → 1 dòng sổ ThanhToan,
  *  - tiền cọc trên hợp đồng → sổ cọc SoCoc (thu cọc, và trừ/hoàn nếu đã thanh lý).
@@ -1228,11 +2042,87 @@ function migrateLeads() {
   var rows = readSince('appointments', 0, true).filter(function (a) { return !a.deleted; });
   rows.forEach(function (a) {
     if (map[a.status]) {
-      sh.getRange(a._row, names.indexOf('status') + 1).setValue(map[a.status]);
-      sh.getRange(a._row, conf.fields.length + 1).setValue(nextStamp());
+      writeCell('appointments', a._row, 'status', map[a.status]);
     }
   });
   Logger.log('migrateLeads xong.');
+}
+/** v4.4 P0: chuyển hai kiểu giữ chỗ cũ sang sheet GiuCho + bút toán SoCoc.
+ * Không xóa trường cũ; chúng chỉ còn là dữ liệu tham chiếu. */
+function migrateReservations() {
+  var reservations = recordsNow('reservations'), resBySource = {}, depByReservation = {};
+  reservations.forEach(function (r) { resBySource[r.sourceType + ':' + r.sourceId] = r; });
+  recordsNow('depositLedger').forEach(function (d) { if (d.reservationId && d.type === 'collect') depByReservation[d.reservationId] = d; });
+  var leases = recordsNow('leases'), liveTenant = {};
+  leases.forEach(function (l) { if (l.status === 'active' || l.status === 'ending') liveTenant[l.primaryTenantId] = 1; });
+  var todayVN = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+  recordsNow('appointments').forEach(function (a) {
+    if (!(Number(a.reserveAmount) > 0) || !a.reserveUntil) return;
+    var res = resBySource['appointment:' + a.id], converted = a.convertedLeaseId || '', id;
+    if (!res) {
+      id = 'res_mig_appt_' + a.id;
+      res = { id: id, roomId: a.roomId, sourceType: 'appointment', sourceId: a.id, appointmentId: a.id, tenantId: '',
+        customerName: a.customerName || '', customerPhone: a.customerPhone || '', fromDate: String(a.createdAt || a.date || todayVN).slice(0, 10),
+        untilDate: a.reserveUntil, amount: Number(a.reserveAmount), paymentMethod: 'cash', paymentReference: '', note: 'Chuyển từ CRM cũ',
+        status: converted ? 'converted' : 'active', depositEntryId: 'dep_' + id, leaseId: converted,
+        cancelledAt: '', cancelReason: '', createdBy: 'migration', createdAt: a.createdAt || new Date().toISOString() };
+      appendRecord('reservations', res); resBySource['appointment:' + a.id] = res;
+    } else {
+      id = res.id; converted = res.leaseId || converted;
+    }
+    if (!depByReservation[id]) {
+      appendRecord('depositLedger', { id: res.depositEntryId || ('dep_' + id), leaseId: converted, type: 'collect', amount: res.amount, at: res.fromDate,
+        method: 'cash', note: 'Chuyển từ tiền giữ chỗ CRM cũ', createdBy: 'migration', createdAt: new Date().toISOString(),
+        reservationId: id, roomId: res.roomId, tenantId: '', appointmentId: a.id, reference: '' });
+      depByReservation[id] = 1;
+    }
+  });
+  recordsNow('tenants').forEach(function (t) {
+    if (!t.holdRoomId || !(Number(t.holdAmount) > 0) || !t.holdUntil || liveTenant[t.id]) return;
+    var old = resBySource['tenant:' + t.id], id = old ? old.id : 'res_mig_ten_' + t.id;
+    if (!old) {
+      old = { id: id, roomId: t.holdRoomId, sourceType: 'tenant', sourceId: t.id, appointmentId: '', tenantId: t.id,
+        customerName: t.name || '', customerPhone: t.phone || '', fromDate: t.holdFrom || todayVN, untilDate: t.holdUntil,
+        amount: Number(t.holdAmount), paymentMethod: 'cash', paymentReference: '', note: t.holdNote || 'Chuyển từ người thuê cũ',
+        status: 'active', depositEntryId: 'dep_' + id, leaseId: '', cancelledAt: '', cancelReason: '', createdBy: 'migration', createdAt: new Date().toISOString() };
+      appendRecord('reservations', old); resBySource['tenant:' + t.id] = old;
+    }
+    if (!depByReservation[id]) {
+      appendRecord('depositLedger', { id: old.depositEntryId || ('dep_' + id), leaseId: old.leaseId || '', type: 'collect', amount: old.amount, at: old.fromDate,
+        method: 'cash', note: 'Chuyển từ tiền giữ chỗ người thuê cũ', createdBy: 'migration', createdAt: new Date().toISOString(),
+        reservationId: id, roomId: old.roomId, tenantId: t.id, appointmentId: '', reference: '' });
+      depByReservation[id] = 1;
+    }
+    if (t.active) writeCell('tenants', t._row, 'active', false);
+  });
+  // Khóa bất biến P0 cho cả phiếu đã có sẵn: mỗi phiếu phải trỏ đúng một
+  // bút toán thu. Đoạn này cũng sửa được bản P0 cũ từng thiếu ledger khi đã chuyển HĐ.
+  var ledgerNow = recordsNow('depositLedger'), ledgerById = {}, collectByReservation = {};
+  ledgerNow.forEach(function (d0) { ledgerById[d0.id] = d0; if (d0.reservationId && d0.type === 'collect') collectByReservation[d0.reservationId] = d0; });
+  recordsNow('reservations').forEach(function (r0) {
+    if (!(Number(r0.amount) > 0)) return;
+    var existingCollect = collectByReservation[r0.id], wantedId = r0.depositEntryId || ('dep_' + r0.id);
+    if (!existingCollect) {
+      if (ledgerById[wantedId] && ledgerById[wantedId].reservationId !== r0.id) wantedId = 'dep_resfix_' + r0.id;
+      appendRecord('depositLedger', { id: wantedId, leaseId: r0.leaseId || '', type: 'collect', amount: Number(r0.amount), at: r0.fromDate || todayVN,
+        method: r0.paymentMethod || 'cash', note: 'Khôi phục bút toán thu giữ chỗ', createdBy: 'migration', createdAt: r0.createdAt || new Date().toISOString(),
+        reservationId: r0.id, roomId: r0.roomId, tenantId: r0.tenantId || '', appointmentId: r0.appointmentId || '', reference: r0.paymentReference || '' });
+      existingCollect = { id: wantedId }; ledgerById[wantedId] = existingCollect; collectByReservation[r0.id] = existingCollect;
+    }
+    if (r0.depositEntryId !== existingCollect.id) writeCell('reservations', r0._row, 'depositEntryId', existingCollect.id);
+  });
+  // Đồng bộ trạng thái phòng theo nguồn thật: GiuCho hoặc HĐ nháp có cọc.
+  // Nhờ vậy cả bản cũ ghi phiếu giữ nhưng quên đổi room.status cũng được sửa.
+  var allReservations = recordsNow('reservations');
+  recordsNow('rooms').forEach(function (room) {
+    var held = allReservations.some(function (r) { return r.roomId === room.id && activeReservationServer(r); });
+    var draft = leases.some(function (l) { return l.roomId === room.id && l.status === 'draft' && leaseDepositTotalsServer(l.id).held > 0; });
+    var occupied = leases.some(function (l) { return l.roomId === room.id && (l.status === 'active' || l.status === 'ending'); }) ||
+      recordsNow('tenants').some(function (t) { return t.roomId === room.id && t.active; });
+    var target = occupied ? 'occupied' : (held || draft ? 'reserved' : (room.status === 'maintenance' ? 'maintenance' : 'available'));
+    if (room.status !== target) writeCell('rooms', room._row, 'status', target);
+  });
+  Logger.log('migrateReservations xong.');
 }
 function migrateBilling() {
   var pays = readSince('payments', 0, true).filter(function (p) { return !p.deleted; });
@@ -1294,6 +2184,47 @@ function normalizeVNPhone(v) {
   return p;
 }
 
+/** Phòng chỉ nhận lịch xem khi đang trống hoặc có căn cứ rõ ràng là sắp trống. */
+function roomViewingAvailabilityServer(room, todayStr) {
+  if (!room || room.deleted || room.archived) return { ok: false, error: 'Phòng này không còn trên hệ thống' };
+  if (room.status === 'available') return { ok: true };
+  if (room.status !== 'occupied') return { ok: false, error: 'Phòng này hiện chưa nhận đặt lịch xem' };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(room.availableFrom || '')) && String(room.availableFrom) >= todayStr) return { ok: true };
+  var liveLease = readSince('leases', 0, true).filter(function (l) {
+    return !l.deleted && l.roomId === room.id && (l.status === 'active' || l.status === 'ending');
+  }).sort(function (a, b) { return String(a.endDate || '').localeCompare(String(b.endDate || '')); })[0];
+  if (liveLease && /^\d{4}-\d{2}-\d{2}$/.test(String(liveLease.endDate || ''))) {
+    var left = Math.ceil((new Date(liveLease.endDate + 'T00:00:00').getTime() - new Date(todayStr + 'T00:00:00').getTime()) / 86400000);
+    if (left >= 0 && left <= 45) return { ok: true };
+  }
+  return { ok: false, error: 'Phòng đang có người thuê và chưa đến thời điểm nhận lịch xem' };
+}
+
+/** API công khai chỉ trả danh sách giờ bận; tuyệt đối không trả tên/SĐT/ghi chú của khách. */
+function handlePublicAvailability(req) {
+  try {
+    var roomId = String(req.roomId || '').slice(0, 80);
+    var date = String(req.date || '').trim();
+    if (!isSafeId(roomId)) return fail('Mã phòng không hợp lệ');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail('Ngày xem phòng chưa hợp lệ');
+    var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    if (date < todayStr) return fail('Ngày xem phòng không được ở quá khứ');
+    var room = readSince('rooms', 0, true).filter(function (r) { return !r.deleted && r.id === roomId; })[0];
+    var available = roomViewingAvailabilityServer(room, todayStr);
+    if (!available.ok) return fail(available.error);
+    var dead = { cancelled: 1, lost: 1 };
+    var seen = {}, busy = [];
+    readSince('appointments', 0, true).forEach(function (a) {
+      if (a.deleted || dead[a.status] || a.roomId !== roomId || a.date !== date) return;
+      if (/^([01]\d|2[0-3]):[0-5]\d$/.test(String(a.time || '')) && !seen[a.time]) { seen[a.time] = 1; busy.push(a.time); }
+    });
+    busy.sort();
+    return { ok: true, busyTimes: busy };
+  } catch (err) {
+    return fail(publicError(err));
+  }
+}
+
 function handleBook(req) {
   try {
     // Honeypot: bot điền vào ô ẩn → trả lời "thành công" nhưng không lưu gì
@@ -1330,11 +2261,8 @@ function handleBook(req) {
     try {
       var rooms = readSince('rooms', 0).filter(function (r) { return !r.deleted && r.id === roomId; });
       var room = rooms[0];
-      if (!room || room.archived) return fail('Phòng này không còn trên hệ thống');
-      // Phòng trống & phòng sắp trống (đang thuê) đều xem được; bảo trì / đang giữ chỗ thì không
-      if (room.status === 'maintenance' || room.status === 'reserved') {
-        return fail('Phòng này hiện chưa nhận đặt lịch xem');
-      }
+      var available = roomViewingAvailabilityServer(room, todayStr);
+      if (!available.ok) return fail(available.error);
 
       var dead = { cancelled: 1, lost: 1 };
       var appts = readSince('appointments', 0).filter(function (a) { return !a.deleted && !dead[a.status]; });
@@ -1486,8 +2414,10 @@ function handleResident(req) {
       return !h.deleted && h.leaseId === myLease.id;
     }) : [];
     var roomAssets = readSince('assets', 0).filter(function (as) { return !as.deleted && as.roomId === roomId; });
+    var linkedReservationIds = {};
+    if (myLease) readSince('reservations', 0).forEach(function (r0) { if (!r0.deleted && r0.leaseId === myLease.id) linkedReservationIds[r0.id] = 1; });
     var depRows = myLease ? readSince('depositLedger', 0).filter(function (d3) {
-      return !d3.deleted && d3.leaseId === myLease.id;
+      return !d3.deleted && (d3.leaseId === myLease.id || linkedReservationIds[d3.reservationId]);
     }) : [];
 
     // v4.1: phiên RIÊNG cho từng thiết bị — token ngẫu nhiên, máy chủ chỉ giữ hash, hết hạn 12h
@@ -1556,16 +2486,16 @@ function pickFields(rec, keys) {
 function toResidentTenantDTO(t) { return pickFields(t, ['id', 'name', 'phone', 'moveInDate', 'active', 'depositRequired', 'depositPaid', 'hasPin']); }
 function toResidentRoomDTO(r) { return pickFields(r, ['id', 'name', 'type', 'price', 'deposit', 'area', 'capacity', 'status', 'electricRate', 'waterMode', 'waterRate', 'waterFixed', 'amenities', 'imageIds', 'slug', 'policies']); }
 function toResidentPropertyDTO(p) { return pickFields(p, ['id', 'name', 'area', 'address', 'phone', 'imageIds', 'slug']); }
-function toResidentLeaseDTO(l) { return pickFields(l, ['id', 'roomId', 'startDate', 'endDate', 'billingDay', 'rentAmount', 'depositRequired', 'depositPaid', 'status', 'signedAt']); }
+function toResidentLeaseDTO(l) { return pickFields(l, ['id', 'roomId', 'startDate', 'endDate', 'billingDay', 'rentAmount', 'depositRequired', 'depositPaid', 'status', 'signedAt', 'moveInAt']); }
 function toResidentCoOccupantDTO(t) { return pickFields(t, ['id', 'name', 'role', 'joinedAt']); }
-function toResidentInvoiceDTO(i) { return pickFields(i, ['id', 'code', 'month', 'items', 'total', 'amountPaid', 'status', 'adjustAmount', 'adjustNote', 'depositAmount', 'dueDate', 'createdAt', 'roomId', 'leaseId', 'tenantId', 'readingId']); }
+function toResidentInvoiceDTO(i) { return pickFields(i, ['id', 'code', 'month', 'rent', 'electric', 'water', 'other', 'serviceLines', 'discountAmount', 'discountNote', 'total', 'amountPaid', 'status', 'adjustAmount', 'adjustNote', 'depositAmount', 'dueDate', 'createdAt', 'issuedAt', 'roomId', 'leaseId', 'tenantId', 'readingId']); }
 function toResidentReadingDTO(u) { return pickFields(u, ['id', 'roomId', 'month', 'electricStart', 'electricEnd', 'electricRate', 'electricUnits', 'electricAmount', 'waterMode', 'waterStart', 'waterEnd', 'waterRate', 'waterFixed', 'waterUnits', 'waterAmount', 'otherFee', 'status', 'imageIds']); }
-function toResidentPaymentDTO(p) { return pickFields(p, ['id', 'invoiceId', 'kind', 'amount', 'paidAt', 'method', 'reference', 'reversalOf']); }
+function toResidentPaymentDTO(p) { return pickFields(p, ['id', 'invoiceId', 'kind', 'amount', 'paidAt', 'method', 'reference', 'reversalOf', 'reversedAt', 'createdAt']); }
 function toResidentTicketDTO(k) { return pickFields(k, ['id', 'roomId', 'title', 'category', 'description', 'priority', 'status', 'imageIds', 'statusHistory', 'createdAt', 'resolution']); }
 function toResidentNotificationDTO(n) { return pickFields(n, ['id', 'tenantId', 'kind', 'title', 'body', 'refId', 'createdAt', 'readAt']); }
-function toResidentHandoverDTO(h) { return pickFields(h, ['id', 'leaseId', 'name', 'qty', 'condition', 'residentNote']); }
-function toResidentAssetDTO(a) { return pickFields(a, ['id', 'roomId', 'name', 'qty', 'condition', 'residentNote']); }
-function toResidentDepositDTO(d) { return pickFields(d, ['id', 'leaseId', 'type', 'amount', 'at', 'method']); }
+function toResidentHandoverDTO(h) { return pickFields(h, ['id', 'leaseId', 'phase', 'name', 'quantity', 'condition', 'note', 'imageIds']); }
+function toResidentAssetDTO(a) { return pickFields(a, ['id', 'roomId', 'name', 'quantity', 'condition', 'note', 'imageIds']); }
+function toResidentDepositDTO(d) { return pickFields(d, ['id', 'leaseId', 'type', 'amount', 'at', 'method', 'note']); }
 
 /* ===== PHIÊN CƯ DÂN THEO THIẾT BỊ (v4.1) =====
  * Token ngẫu nhiên cấp lúc đăng nhập, máy chủ CHỈ lưu hash.
@@ -1995,6 +2925,80 @@ function handleUpload(req, ctx) {
     scope: isPrivate ? 'private' : 'public',
     url: isPrivate ? '' : 'https://lh3.googleusercontent.com/d/' + file.getId() + '=w1600'
   };
+}
+
+/* Hồ sơ hợp đồng: PDF hoặc ảnh, luôn lưu riêng tư và chỉ trả qua API có xác thực. */
+function documentSignature(bytes) {
+  var img = imageSignature(bytes); if (img) return img;
+  if (bytes && bytes.length >= 5 && (bytes[0] & 255) === 0x25 && (bytes[1] & 255) === 0x50 &&
+      (bytes[2] & 255) === 0x44 && (bytes[3] & 255) === 0x46 && (bytes[4] & 255) === 0x2D) {
+    return { mime: 'application/pdf', ext: '.pdf' };
+  }
+  return null;
+}
+function documentFolder() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('DOCUMENT_FOLDER_ID');
+  if (id) return DriveApp.getFolderById(id);
+  var folder = DriveApp.createFolder('Huy Rooms - Ho so hop dong (private)');
+  props.setProperty('DOCUMENT_FOLDER_ID', folder.getId());
+  return folder;
+}
+function fileInFolder(file, folderId) {
+  var parents = file.getParents();
+  while (parents.hasNext()) if (parents.next().getId() === folderId) return true;
+  return false;
+}
+function safeDocumentName(name, ext) {
+  var out = String(name || ('ho-so-' + Date.now() + ext)).replace(/[\\/:*?"<>|]/g, '-').slice(0, 120);
+  if (out.toLowerCase().slice(-ext.length) !== ext) out += ext;
+  return out;
+}
+function authorizedLeaseDocument(req, ctx, requireLinkedFile) {
+  var lease = serverRecordById('leases', String(req.leaseId || ''));
+  if (!lease) return { ok: false, error: 'Không tìm thấy hợp đồng của hồ sơ' };
+  var maps = buildScopeMaps();
+  if (!inScope(ctx, propertyIdOfRecord('leases', lease, maps))) return { ok: false, error: 'Hợp đồng nằm ngoài căn được phân quyền' };
+  if (requireLinkedFile) {
+    var linked = (Array.isArray(lease.documentFiles) ? lease.documentFiles : []).some(function (x) { return x && x.id === String(req.fileId || ''); });
+    if (!linked) return { ok: false, error: 'Tệp không được gắn với hợp đồng này' };
+  }
+  return { ok: true, lease: lease };
+}
+function handleUploadDocument(req, ctx) {
+  var auth = authorizedLeaseDocument(req, ctx, false); if (!auth.ok) return fail(auth.error);
+  if (!req.data || String(req.data).length > MAX_DOCUMENT_BASE64) return fail('Tệp quá lớn. Hãy chọn PDF/ảnh dưới 6MB.');
+  var bytes;
+  try { bytes = Utilities.base64Decode(req.data); } catch (e) { return fail('Dữ liệu tệp không đọc được.'); }
+  var sig = documentSignature(bytes);
+  if (!sig) return fail('Chỉ nhận PDF hoặc ảnh JPEG/PNG/WebP/GIF.');
+  var name = safeDocumentName(req.name, sig.ext);
+  var file = documentFolder().createFile(Utilities.newBlob(bytes, sig.mime, name));
+  return { ok: true, file: { id: file.getId(), name: name, mime: sig.mime, size: bytes.length, uploadedAt: new Date().toISOString() } };
+}
+function handleGetPrivateFile(req, ctx) {
+  var auth = authorizedLeaseDocument(req, ctx, true); if (!auth.ok) return fail(auth.error);
+  var id = String(req.fileId || '');
+  if (!/^[A-Za-z0-9_-]{10,80}$/.test(id)) return fail('Mã tệp không hợp lệ');
+  var folderId = PropertiesService.getScriptProperties().getProperty('DOCUMENT_FOLDER_ID');
+  if (!folderId) return fail('Chưa có hồ sơ hợp đồng');
+  try {
+    var file = DriveApp.getFileById(id);
+    if (!fileInFolder(file, folderId)) return fail('Tệp không thuộc kho hồ sơ hợp đồng');
+    var blob = file.getBlob();
+    return { ok: true, id: id, name: file.getName(), mime: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) };
+  } catch (err) { return fail('Không tìm thấy hoặc không đọc được hồ sơ'); }
+}
+function handleDeletePrivateFile(req, ctx) {
+  var auth = authorizedLeaseDocument(req, ctx, true); if (!auth.ok) return fail(auth.error);
+  var id = String(req.fileId || '');
+  if (!/^[A-Za-z0-9_-]{10,80}$/.test(id)) return fail('Mã tệp không hợp lệ');
+  var folderId = PropertiesService.getScriptProperties().getProperty('DOCUMENT_FOLDER_ID');
+  if (!folderId) return fail('Chưa có kho hồ sơ hợp đồng');
+  try {
+    var file = DriveApp.getFileById(id);
+    if (!fileInFolder(file, folderId)) return fail('Tệp không thuộc kho hồ sơ hợp đồng');
+    file.setTrashed(true); return { ok: true };
+  } catch (err) { return fail('Không tìm thấy hoặc không xóa được hồ sơ'); }
 }
 
 /** Lấy ảnh PRIVATE: chỉ quản trị đã đăng nhập, đúng phạm vi căn (nếu ảnh gắn sự cố/chỉ số). */
