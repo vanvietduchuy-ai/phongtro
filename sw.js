@@ -1,7 +1,7 @@
-/* Service worker v4.6.6 room sync hotfix: network-first, fallback index.html CHỈ cho điều hướng,
+/* Service worker v4.7.0 Supabase Realtime: network-first, fallback index.html CHỈ cho điều hướng,
  * không cache API/sync, chỉ cache response hợp lệ, dọn cache cũ khi lên phiên bản. */
-const CACHE = 'huy-rooms-v4.6.6-room-sync-hotfix';
-const SHELL = ['./', './index.html', './styles.css', './mobile.css', './config.js', './sync.js', './p2.js', './app.js'];
+const CACHE = 'huy-rooms-v4.6.7-fast-sync-v4.7.0-supabase-realtime';
+const SHELL = ['./', './index.html', './styles.css', './mobile.css', './config.js', './sync.js', './realtime.js', './p2.js', './app.js'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });

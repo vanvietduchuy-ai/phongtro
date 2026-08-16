@@ -251,7 +251,7 @@
   <div class="modal hidden" id="loginModal">
     <div class="modal-backdrop" data-close-modal="loginModal"></div>
     <div class="modal-card small"><button class="modal-close" data-close-modal="loginModal" aria-label="Đóng">×</button>
-      <div class="modal-icon">✦</div><h3>Đăng nhập quản lý</h3><p class="muted-text" id="adminLoginHint">Chưa kết nối Google Sheets — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.</p>
+      <div class="modal-icon">✦</div><h3>Đăng nhập quản lý</h3><p class="muted-text" id="adminLoginHint">Chưa kết nối máy chủ — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.</p>
       <form id="loginForm" class="stack-form"><label>Tài khoản nhân viên <small style="color:var(--muted)">(bỏ trống nếu là chủ nhà)</small><input id="adminUser" type="text" autocomplete="username" placeholder="vd: kimchi.ketoan" /></label><label id="adminPasswordLabel">Mật khẩu<input id="adminPassword" type="password" required placeholder="Nhập mật khẩu" autocomplete="current-password" /></label><button class="btn btn-primary full" type="submit">Đăng nhập</button></form>
     </div>
   </div>
@@ -768,6 +768,7 @@
 
   <script src="config.js"></script>
   <script src="sync.js"></script>
+  <script src="realtime.js"></script>
   <script src="p2.js"></script>
   <script src="app.js"></script>
 </body>

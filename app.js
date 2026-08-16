@@ -4038,14 +4038,14 @@ function renderSettings(){
       ${isOwner?'<button class="btn btn-primary" id="changePassBtn" onclick="changeAdminPassword()">Lưu mật khẩu mới</button>':''}
       <button class="btn btn-light" onclick="Sync.cycle(true)">Đồng bộ ngay</button>${deviceBtns}
     </div>`:`
-    <h3>Kết nối Google Sheets</h3>
-    <p class="muted-text">Để nguyên <b>/api/sheets</b> nếu chạy trên Vercel (đường dẫn Apps Script khai ở biến môi trường APPS_SCRIPT_URL). Hosting khác thì dán đường dẫn /exec đầy đủ.</p>
+    <h3>Kết nối Supabase</h3>
+    <p class="muted-text">Bản Vercel dùng <b>/api/supabase</b>. URL và key Supabase được khai trong Environment Variables, không dán secret key vào đây.</p>
     <label>Đường dẫn máy chủ</label>
-    <input id="cfgApiUrl" placeholder="/api/sheets" value="${esc(cfg.apiUrl||'')}">
+    <input id="cfgApiUrl" placeholder="/api/supabase" value="${esc(cfg.apiUrl||'')}">
     <label>Mật khẩu quản lý (để trống nếu chỉ xem)</label>
     <input id="cfgWriteKey" type="password" placeholder="Mật khẩu quản lý" autocomplete="current-password">
     <div class="conn-actions">
-      <button class="btn btn-primary" id="connPullBtn" onclick="connectSheets('pull')">Kết nối & lấy dữ liệu từ Sheets</button>
+      <button class="btn btn-primary" id="connPullBtn" onclick="connectSheets('pull')">Kết nối & lấy dữ liệu máy chủ</button>
       ${!Sync.isAdmin()||ownerManagerOnly()?'<button class="btn btn-light" id="connPushBtn" onclick="connectSheets(\'push\')">Kết nối & đẩy dữ liệu máy này lên</button>':''}
       <button class="btn btn-light" onclick="Sync.cycle(true)">Đồng bộ ngay</button>
     </div>
@@ -4087,7 +4087,7 @@ function renderSettings(){
     ${editSettings?'<button class="btn btn-primary" style="margin-top:12px" onclick="saveManagerSettings()">Lưu thông tin</button>':'<p class="muted-text">Vai trò hiện tại chỉ được xem thông tin cài đặt.</p>'}
   </div>
   <div class="settings-card"><h3>Nhắc thanh toán qua Zalo</h3><p>Mỗi hóa đơn có nút "Nhắc Zalo": hệ thống soạn sẵn tiền phòng, điện, nước, cọc, số còn lại và hạn thanh toán để anh sao chép gửi khách.</p><div class="code-note">Gửi Zalo tự động cần Zalo Official Account + backend riêng. Không đặt access token Zalo trong file web công khai.</div></div>
-  <div class="settings-card"><h3>Sao lưu dữ liệu</h3><p>Tải căn trọ, phòng, người thuê, điện nước, hóa đơn và lịch hẹn về máy dạng JSON.</p><button class="btn btn-light" onclick="exportData()">Tải file sao lưu</button><p class="muted-text" style="margin:10px 0 0">Bản có máy chủ tự sao lưu Google Sheets vào Drive mỗi ngày trong khung 03:00, giữ 14 bản gần nhất sau khi chạy setup().</p></div>
+  <div class="settings-card"><h3>Sao lưu dữ liệu</h3><p>Tải căn trọ, phòng, người thuê, điện nước, hóa đơn và lịch hẹn về máy dạng JSON.</p><button class="btn btn-light" onclick="exportData()">Tải file sao lưu</button><p class="muted-text" style="margin:10px 0 0">Để có bản đầy đủ kể cả hash server-only, dùng scripts/export-supabase.mjs trước thay đổi lớn.</p></div>
   <div class="settings-card"><h3>Khôi phục dữ liệu</h3><p>Nhập lại file JSON đã sao lưu. Hệ thống kiểm tra cấu trúc, cho xem số bản ghi và tự tải một bản sao lưu dữ liệu hiện tại trước khi áp dụng.</p>${isOwner?'<input type="file" id="importFile" accept="application/json" style="margin:8px 0 12px"><button class="btn btn-light" onclick="importData()">Nhập dữ liệu</button>':'<p class="muted-text">Chỉ chủ nhà được khôi phục dữ liệu.</p>'}
   <div style="margin-top:12px"><small style="color:var(--muted)">BẢN TỰ LƯU TRÊN MÁY NÀY (mỗi ngày một bản, giữ 7 ngày)</small>
   ${autoBackups().length?autoBackups().slice().reverse().map(b=>`<div class="tk-row"><div class="tk-main"><strong>${esc(b.date)}</strong><small>Tự lưu lúc ${esc(String(b.at).slice(11,16))}</small></div>${isOwner?`<button class="icon-btn" data-evt="click" data-call="restoreAutoBackup" data-a1="${esc(b.date)}">Khôi phục</button>`:''}</div>`).join(''):'<p class="muted-text" style="margin:6px 0 0">Chưa có — bản đầu tiên tự tạo sau ~20 giây dùng ứng dụng.</p>'}
@@ -4095,7 +4095,7 @@ function renderSettings(){
   <div class="settings-card"><h3>Xuất danh sách phòng CSV</h3><p>Mở bằng Excel để kiểm tra giá, tình trạng phòng và đơn giá điện nước.</p><button class="btn btn-light" onclick="exportRoomsCSV()">Xuất CSV</button></div>
   ${DEMO_MODE?`<div class="settings-card"><h3>Khôi phục dữ liệu mẫu (chỉ chạy cục bộ)</h3><p>Tính năng này bị khóa tuyệt đối khi đã kết nối máy chủ, để dữ liệu mẫu không thể ghi đè dữ liệu vận hành.</p><button class="btn btn-danger" onclick="resetDemo()" ${Sync.isOn()?'disabled':''}>${Sync.isOn()?'Đang khóa vì đã kết nối':'Khôi phục bản demo'}</button></div>`:''}
   <div class="settings-card" style="grid-column:1/-1"><h3>${icon('shield',17)} Kiểm tra kết nối</h3>
-  <p>Bấm để biết chính xác đang hỏng ở khâu nào: đường dẫn, quyền truy cập deployment, hay bản Apps Script đã cũ.</p>
+  <p>Bấm để kiểm tra đường dẫn API, đăng nhập và các action Supabase chính.</p>
   <button class="btn btn-light" data-evt="click" data-call="runConnectionCheck">Kiểm tra ngay</button>
   <div id="connCheckResult" class="conn-check hidden"></div></div>
   ${currentRole()==='owner'?staffCardHtml():''}
@@ -4217,9 +4217,9 @@ window.connectSheets=async function(mode){
   if(mode==='push'&&Sync.isAdmin()&&!requireOwnerManager())return;
   const apiUrl=document.getElementById('cfgApiUrl').value.trim();
   const pass=document.getElementById('cfgWriteKey').value.trim();
-  if(!apiUrl){showToast('Chưa nhập đường dẫn Apps Script');return}
-  if(mode==='push'&&!confirm('Đẩy toàn bộ dữ liệu trên máy này lên Google Sheets? Dữ liệu trùng mã trên Sheets sẽ bị ghi đè.'))return;
-  if(mode==='pull'&&!confirm('Lấy dữ liệu từ Google Sheets? Dữ liệu đang lưu trên máy này sẽ được thay bằng dữ liệu trên Sheets.'))return;
+  if(!apiUrl){showToast('Chưa nhập đường dẫn API Supabase');return}
+  if(mode==='push'&&!confirm('Đẩy dữ liệu trên máy này lên Supabase? Bản ghi có revision mới hơn trên máy chủ sẽ được bảo vệ bằng conflict.'))return;
+  if(mode==='pull'&&!confirm('Lấy dữ liệu từ Supabase? Dữ liệu đang lưu trên máy này sẽ được thay bằng bản máy chủ.'))return;
   const btn=document.getElementById(mode==='pull'?'connPullBtn':'connPushBtn');
   setBtnBusy(btn,true,'Đang kết nối…');
   try{
@@ -4227,7 +4227,7 @@ window.connectSheets=async function(mode){
     if(pass)await Sync.adminLogin(pass);
     const res=await Sync.connect({apiUrl,mode});
     renderAdmin();renderPublic();
-    showToast(res.mode==='pull'?'Đã lấy dữ liệu từ Google Sheets':'Đã đẩy dữ liệu lên Google Sheets');
+    showToast(res.mode==='pull'?'Đã lấy dữ liệu từ Supabase':'Đã đẩy dữ liệu lên Supabase');
   }catch(err){showToast('Kết nối lỗi: '+(err.message||err))}
   finally{setBtnBusy(btn,false)}
 }
@@ -4367,7 +4367,7 @@ window.runConnectionCheck=async function(){
   const lines=[];
   const add=(okFlag,label,hint)=>lines.push(`<div class="cc-row ${okFlag?'cc-ok':'cc-bad'}"><strong>${okFlag?'✓':'✗'} ${esc(label)}</strong>${hint?`<small>${esc(hint)}</small>`:''}</div>`);
   if(!Sync.cfg.apiUrl){
-    add(false,'Chưa khai báo đường dẫn máy chủ','Vào Cài đặt → Kết nối, dán đường dẫn /api/sheets hoặc URL Apps Script.');
+    add(false,'Chưa khai báo đường dẫn máy chủ','Vào Cài đặt → Kết nối, dùng đường dẫn /api/supabase.');
   }else{
     add(true,'Đã khai báo đường dẫn: '+Sync.cfg.apiUrl,'');
     try{
@@ -4379,8 +4379,8 @@ window.runConnectionCheck=async function(){
         add(true,'Chức năng đặt lịch nhận yêu cầu','');
       }catch(e2){
         const m=String(e2.message||e2);
-        if(/không nhận ra yêu cầu|unknownAction/i.test(m))
-          add(false,'Bản Apps Script đang chạy là bản CŨ',m);
+        if(/không nhận ra yêu cầu|unknownAction|Action chưa được hỗ trợ/i.test(m))
+          add(false,'API Supabase chưa đúng phiên bản',m);
         else if(/Phòng này không còn|không hợp lệ/i.test(m))
           add(true,'Chức năng đặt lịch hoạt động','(Máy chủ từ chối phòng kiểm tra là đúng — đường truyền tốt.)');
         else add(false,'Đặt lịch bị từ chối',m);
@@ -4388,8 +4388,8 @@ window.runConnectionCheck=async function(){
     }catch(e){
       const m=String(e.message||e);
       if(/Who has access|đòi đăng nhập/i.test(m))add(false,'Deployment chưa mở quyền truy cập',m);
-      else if(/uỷ quyền|authorization/i.test(m))add(false,'Apps Script chưa được cấp quyền',m);
-      else if(/không nhận ra yêu cầu/i.test(m))add(false,'Bản Apps Script đang chạy là bản CŨ',m);
+      else if(/uỷ quyền|authorization/i.test(m))add(false,'Supabase chưa cấp đúng quyền/RLS',m);
+      else if(/không nhận ra yêu cầu|Action chưa được hỗ trợ/i.test(m))add(false,'API Supabase chưa đúng phiên bản',m);
       else add(false,'Không gọi được máy chủ',m);
     }
   }
@@ -4884,11 +4884,11 @@ function updateLoginHint(){
   const hint=document.getElementById('adminLoginHint'),field=document.getElementById('adminPassword'),label=document.getElementById('adminPasswordLabel');
   if(!hint)return;
   if(Sync.isOn()){
-    hint.innerHTML='Nhập <strong>mật khẩu quản lý</strong>. Lần đầu là <strong>123456</strong> — vào Cài đặt đổi ngay (tối thiểu 10 ký tự, nên có cả chữ và số).';
+    hint.innerHTML='Nhập <strong>mật khẩu quản lý</strong> đã khai bằng HUY_ADMIN_PASSWORD. Có thể đổi trong Cài đặt sau lần đăng nhập đầu.';
     field.placeholder='Nhập mật khẩu quản lý';
     label.childNodes[0].nodeValue='Mật khẩu quản lý';
   }else{
-    hint.innerHTML='Chưa kết nối Google Sheets — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.';
+    hint.innerHTML='Chưa kết nối máy chủ — dùng mật khẩu <strong>123456</strong> để mở bản chạy cục bộ.';
   }
 }
 Sync.attach({
@@ -4906,7 +4906,7 @@ Sync.attach({
 });
 Sync.onStatus(updateSyncPill);
 document.getElementById('syncPill').addEventListener('click',()=>{
-  if(!Sync.isOn()){showToast('Vào Quản lý → Cài đặt để kết nối Google Sheets');return}
+  if(!Sync.isOn()){showToast('Vào Quản lý → Cài đặt để kết nối Supabase');return}
   Sync.cycle(true);
 });
 setInterval(()=>updateSyncPill(),30000);
@@ -4918,7 +4918,7 @@ if(Sync.isOn()&&!Sync.isAdmin()&&!(Sync.state.since>0)&&looksLikeDemo()){
 saveLocal();
 updateLoginHint();
 updateSyncPill();
-renderPublic();renderAdmin();
+renderPublic();
 residentSession=loadResidentSession();
 if(residentSession)showResident();
 Sync.start();

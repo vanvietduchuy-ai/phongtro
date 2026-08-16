@@ -1,11 +1,13 @@
 /* ============================================================
-   Chỉ dùng khi đặt website trên hosting riêng (Vercel, Netlify…).
-   Chạy thẳng trên Apps Script thì file này không có tác dụng gì.
+   Cấu hình backend cho bản Vercel. Khi chạy thẳng trên Apps Script,
+   google.script.run vẫn được ưu tiên nên file này không đổi chế độ rollback.
 
-   - Để nguyên như dưới nếu deploy lên Vercel: web gọi /api/sheets,
-     đường dẫn Apps Script khai trong biến môi trường APPS_SCRIPT_URL.
+   - Bản v4.7 dùng Supabase làm nguồn chính qua API Vercel cùng tên miền.
+     URL và key Supabase chỉ đặt trong biến môi trường Vercel.
    - Hosting khác (không có serverless): thay bằng đường dẫn /exec đầy đủ.
    ============================================================ */
 window.HUY_CONFIG = {
-  apiUrl: location.protocol.indexOf('http') === 0 ? '/api/sheets' : ''
+  apiUrl: location.protocol.indexOf('http') === 0 ? '/api/supabase' : '',
+  backendId: 'supabase-v1',
+  forceApi: true
 };

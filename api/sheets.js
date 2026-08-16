@@ -33,13 +33,18 @@ module.exports = async (req, res) => {
   }
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 18000);
+    const started = Date.now();
     const upstream = await fetch(target, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body,
-      redirect: 'follow'
-    });
+      redirect: 'follow',
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
     const text = await upstream.text();
+    res.setHeader('Server-Timing', `apps-script;dur=${Date.now() - started}`);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     if (text.trim().charAt(0) !== '{') {
       // Chẩn đoán rõ nguyên nhân thay vì gộp chung một câu chung chung
@@ -63,6 +68,9 @@ module.exports = async (req, res) => {
     }
     return res.status(200).send(text);
   } catch (err) {
-    return res.status(502).json({ ok: false, error: 'Không gọi được Apps Script: ' + err.message });
+    const message = err && err.name === 'AbortError'
+      ? 'Apps Script phản hồi quá chậm (quá 18 giây). Hệ thống sẽ tự thử lại.'
+      : 'Không gọi được Apps Script: ' + err.message;
+    return res.status(502).json({ ok: false, error: message });
   }
 };

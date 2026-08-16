@@ -399,6 +399,7 @@ function setup() {
   migrateLeases();
   migrateBilling();
   repairLifecycleIntegrity();
+  initializeCollectionStamps();
 
   if (!props.getProperty('ADMIN_PASSWORD')) props.setProperty('ADMIN_PASSWORD', '123456');
   if (!props.getProperty('IMAGE_FOLDER_ID')) {
@@ -613,9 +614,13 @@ function route(req) {
   if (req.action === 'residentLogout') return handleResidentLogout(req);
   if (req.action === 'residentImage') return handleResidentImage(req);
   if (req.action === 'residentMarkRead') return handleResidentMarkRead(req);
+  // Trang khách không có token/key chỉ cần snapshot công khai. Đi thẳng vào
+  // đường đọc nhẹ, không nạp token và không khóa các nghiệp vụ quản lý.
+  if (req.action === 'sync' && !req.token && !req.key) return handlePublicSync(req);
 
   var role = roleOf(req);
   if (role === 'expired') return { ok: false, code: 'auth', error: 'Phiên đăng nhập đã hết hạn, đăng nhập lại' };
+  if (req.action === 'sync' && role === 'guest') return handlePublicSync(req);
   var ctx = authContext(req);
 
   switch (req.action) {
@@ -623,7 +628,7 @@ function route(req) {
       // v4.1: trả lại hồ sơ vai trò để client khôi phục sau reload
       return { ok: true, role: role, serverTime: Date.now(),
         staff: ctx.authenticated ? { role: ctx.role, name: ctx.staffName, id: ctx.staffId, propertyIds: ctx.propertyIds } : null };
-    case 'sync': return handleSync(req, role, ctx);
+    case 'sync': return hasIncomingChanges(req.changes) ? handleSync(req, role, ctx) : handleAdminPull(req, ctx);
     case 'logout': return handleLogout(req);
     case 'logoutAll':
       if (!ctx.authenticated) return fail('Cần quyền quản lý');
@@ -1270,20 +1275,117 @@ function handleLeaseTransition(req, ctx) {
   } finally { lock.releaseLock(); }
 }
 
+function hasIncomingChanges(changes) {
+  if (!changes || typeof changes !== 'object') return false;
+  return Object.keys(changes).some(function (col) {
+    return Array.isArray(changes[col]) ? changes[col].length > 0 : !!changes[col];
+  });
+}
+
+function currentServerStamp() {
+  try { return Number(PropertiesService.getScriptProperties().getProperty('LAST_STAMP') || 0); }
+  catch (e) { return 0; }
+}
+
+function maxCollectionStamp(cols) {
+  return (cols || []).reduce(function (max, col) { return Math.max(max, Number(colStamp(col) || 0)); }, 0);
+}
+
+/** Snapshot công khai đã loại ghi chú nội bộ và bổ sung ngày sắp trống. */
+function publicSyncSnapshot(stamp) {
+  var properties = readSince('properties', 0);
+  var rooms = readSince('rooms', 0);
+  var leases = recordsNow('leases');
+  var todayPublic = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var leaseEndByRoom = {};
+  leases.forEach(function (lease) {
+    if ((lease.status !== 'active' && lease.status !== 'ending') || !/^\d{4}-\d{2}-\d{2}$/.test(String(lease.endDate || ''))) return;
+    var days = Math.ceil((new Date(lease.endDate + 'T00:00:00').getTime() - new Date(todayPublic + 'T00:00:00').getTime()) / 86400000);
+    if (days < 0 || days > 45) return;
+    if (!leaseEndByRoom[lease.roomId] || lease.endDate < leaseEndByRoom[lease.roomId]) leaseEndByRoom[lease.roomId] = lease.endDate;
+  });
+  rooms = rooms.map(function (room) {
+    if (room.deleted) return room;
+    var clean = {}; for (var k in room) clean[k] = room[k];
+    clean.note = '';
+    if (clean.status === 'occupied' && !clean.availableFrom && leaseEndByRoom[clean.id]) clean.availableFrom = leaseEndByRoom[clean.id];
+    return clean;
+  });
+  return { ok: true, role: 'guest', serverTime: stamp, changes: { properties: properties, rooms: rooms } };
+}
+
+/**
+ * v4.6.7: phần lớn lượt kiểm tra của khách không có dữ liệu mới. Chỉ đọc ba
+ * collection stamp trong Script Properties; khi stamp đổi mới khóa ngắn để lấy
+ * snapshot nhất quán sau khi action nhiều bảng đã hoàn tất.
+ */
+function handlePublicSync(req) {
+  var since = Math.max(0, Number(req.since || 0));
+  var publicStamp = maxCollectionStamp(['properties', 'rooms', 'leases']);
+  if (since > 0 && publicStamp > 0 && publicStamp <= since) {
+    return { ok: true, role: 'guest', serverTime: Math.max(since, publicStamp), changes: {} };
+  }
+  var lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    publicStamp = maxCollectionStamp(['properties', 'rooms', 'leases']);
+    if (since > 0 && publicStamp > 0 && publicStamp <= since) {
+      return { ok: true, role: 'guest', serverTime: Math.max(since, publicStamp), changes: {} };
+    }
+    var stamp = Math.max(publicStamp, currentServerStamp());
+    var cache = CacheService.getScriptCache(), cacheKey = 'public_sync_v467_' + stamp;
+    try {
+      var cached = cache.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch (cacheReadError) {}
+    var response = publicSyncSnapshot(stamp);
+    try { cache.put(cacheKey, JSON.stringify(response), 120); } catch (cacheWriteError) {}
+    return response;
+  } finally { lock.releaseLock(); }
+}
+
+/** Pull quản trị không ghi timestamp, không đọc CRM/hợp đồng toàn bảng vô ích. */
+function handleAdminPull(req, ctx) {
+  var lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    var since = Math.max(0, Number(req.since || 0));
+    var readable = ALL_COLLECTIONS.slice();
+    if (ctx && ['accountant', 'staff'].indexOf(ctx.role) >= 0) {
+      readable = readable.filter(function (col) { return col !== 'auditLog' && col !== 'staffUsers'; });
+    }
+    var out = {}, scoped = ctx && ctx.authenticated && ctx.role !== 'owner' && ctx.propertyIds && ctx.propertyIds.length > 0;
+    readable.forEach(function (col) {
+      var rows = readSince(col, since);
+      if (rows.length) out[col] = rows;
+    });
+    if (scoped && Object.keys(out).length) {
+      var maps = buildScopeMaps();
+      Object.keys(out).forEach(function (col) {
+        out[col] = out[col].filter(function (rec) { return rec.deleted || inScope(ctx, propertyIdOfRecord(col, rec, maps)); });
+        if (!out[col].length) delete out[col];
+      });
+    }
+    return { ok: true, role: 'admin', serverTime: Math.max(since, currentServerStamp()), changes: out };
+  } finally { lock.releaseLock(); }
+}
+
 function handleSync(req, role, ctx) {
   var lock = LockService.getScriptLock();
   lock.waitLock(25000);
   try {
     var stamp = nextStamp();
     var incoming = req.changes || {};
-    var staff = staffOf(req);
+    var staff = ctx && ctx.authenticated ? { role: ctx.role, name: ctx.staffName, userId: ctx.staffId, props: ctx.propertyIds || [] } : null;
     var scoped = ctx && ctx.authenticated && ctx.role !== 'owner' && ctx.propertyIds && ctx.propertyIds.length > 0;
     var maps = scoped ? buildScopeMaps() : null;
     // Chụp trạng thái CRM trước khi áp thay đổi. Nếu phiếu giữ chỗ phụ thuộc
     // bị từ chối/xung đột, CRM sẽ được hoàn nguyên thay vì bị kẹt ở "Đang giữ chỗ".
     var appointmentBefore = {}, incomingAppointments = {}, leaseRoomBefore = {};
-    recordsNow('appointments').forEach(function (a0) { appointmentBefore[a0.id] = a0; });
-    recordsNow('leases').forEach(function (l0) { leaseRoomBefore[l0.id] = l0.roomId || ''; });
+    if ((incoming.reservations || []).some(function (r0) { return r0 && !r0.deleted && r0.sourceType === 'appointment'; })) {
+      recordsNow('appointments').forEach(function (a0) { appointmentBefore[a0.id] = a0; });
+    }
+    if ((incoming.leases || []).length) {
+      recordsNow('leases').forEach(function (l0) { leaseRoomBefore[l0.id] = l0.roomId || ''; });
+    }
     (incoming.appointments || []).forEach(function (a1) { if (a1 && a1.id && !a1.deleted) incomingAppointments[a1.id] = a1; });
     var reservationRollback = {};
     (incoming.reservations || []).forEach(function (r0) {
@@ -1835,6 +1937,19 @@ function colStamp(col) {
     } catch (e) {}
   }
   return _stampCache[col] || 0;
+}
+
+/** Khởi tạo lại index stamp sau nâng cấp để pull rỗng không phải đọc toàn bộ sheet. */
+function initializeCollectionStamps() {
+  var ss = getSS();
+  ALL_COLLECTIONS.forEach(function (col) {
+    var conf = SCHEMA[col], sh = ss.getSheetByName(conf.sheet);
+    if (!sh || sh.getLastRow() < 2) return;
+    var values = sh.getRange(2, conf.fields.length + 1, sh.getLastRow() - 1, 1).getValues();
+    var max = values.reduce(function (m, row) { return Math.max(m, Number(row[0] || 0)); }, 0);
+    if (max > 0) touchColStamp(col, max);
+  });
+  Logger.log('initializeCollectionStamps xong.');
 }
 
 function readSince(col, since, raw) {

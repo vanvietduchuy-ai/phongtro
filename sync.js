@@ -1,12 +1,13 @@
 /* ============================================================
-   sync.js — Đồng bộ Huy Rooms với Google Sheets
+   sync.js — Đồng bộ Huy Rooms với Supabase (Apps Script là chế độ rollback)
    Tự nhận biết 2 chế độ:
    1. Nhúng trong Apps Script (google.script.run) — không cần cấu hình gì.
-   2. Đặt trên hosting riêng — gọi tới đường dẫn /exec khai trong config.js.
+   2. Đặt trên Vercel — gọi /api/supabase và nhận tín hiệu Realtime.
    ============================================================ */
 (function () {
   var CFG_KEY = 'huy_rooms_conn';
   var STATE_KEY = 'huy_rooms_sync_state';
+  var SIGNAL_KEY = 'huy_rooms_sync_signal_v467';
   // v6: đủ mọi collection của giai đoạn 3–6 (trước đây thiếu → tiền/sự cố không lên máy chủ)
   var COLS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments', 'reservations',
     'leases', 'leaseOccupants', 'accounts', 'assets', 'handoverItems',
@@ -43,7 +44,7 @@
   var Sync = {
     api: null, cfg: null, state: null, baseline: {},
     timer: null, pushTimer: null, busy: false, again: false,
-    retryCount: 0, _listenersBound: false,
+    retryCount: 0, _listenersBound: false, _peerChannel: null,
     lastError: '', listeners: [],
     embedded: embedded,
 
@@ -51,18 +52,21 @@
     loadCfg: function () {
       var base = window.HUY_CONFIG || {};
       var saved = readJSON(CFG_KEY, {});
+      var backendChanged = !!(base.backendId && saved.backendId !== base.backendId);
       this.cfg = {
-        apiUrl: saved.apiUrl || base.apiUrl || '',
-        readKey: saved.readKey || base.readKey || '',
-        writeKey: saved.writeKey || '',
-        token: saved.token || '',
-        staff: saved.staff || null   // v4.1: vai trò nhân viên SỐNG QUA reload
+        apiUrl: base.forceApi ? (base.apiUrl || '') : (saved.apiUrl || base.apiUrl || ''),
+        backendId: base.backendId || saved.backendId || '',
+        readKey: backendChanged ? '' : (saved.readKey || base.readKey || ''),
+        writeKey: backendChanged ? '' : (saved.writeKey || ''),
+        token: backendChanged ? '' : (saved.token || ''),
+        staff: backendChanged ? null : (saved.staff || null)   // token backend cũ tuyệt đối không được tái sử dụng
       };
       // token nhân viên mà thiếu hồ sơ vai trò → KHÔNG đoán là owner; xác minh với máy chủ
       this.roleVerified = !this.cfg.token || !!this.cfg.staff;
-      this.state = readJSON(STATE_KEY, { since: 0, lastOk: 0 });
-      this.baseline = readJSON('huy_rooms_baseline', {});
-      this.baseStamp = readJSON('huy_rooms_base_stamps', {});
+      this.state = backendChanged ? { since: 0, lastOk: 0 } : readJSON(STATE_KEY, { since: 0, lastOk: 0 });
+      this.baseline = backendChanged ? {} : readJSON('huy_rooms_baseline', {});
+      this.baseStamp = backendChanged ? {} : readJSON('huy_rooms_base_stamps', {});
+      if (backendChanged) { writeJSON(CFG_KEY, this.cfg); this.saveState(); }
       return this.cfg;
     },
     saveCfg: function (patch) {
@@ -109,18 +113,26 @@
             .api(body);
         });
       } else if (!this.cfg.apiUrl) {
-        return Promise.reject(new Error('Chưa cấu hình đường dẫn Apps Script'));
+        return Promise.reject(new Error('Chưa cấu hình đường dẫn máy chủ'));
       } else {
         var sameOrigin = this.cfg.apiUrl.charAt(0) === '/';
+        var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var requestTimer = controller ? setTimeout(function () { controller.abort(); }, 20000) : null;
         call = fetch(this.cfg.apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: body
+          body: body,
+          cache: 'no-store',
+          signal: controller ? controller.signal : undefined
         }).then(function (r) { return r.json(); })
           .catch(function (e) {
-            if (sameOrigin) throw e;          // qua cầu nối /api/sheets thì không cần dự phòng
+            if (sameOrigin) {
+              if (e && e.name === 'AbortError') throw new Error('Máy chủ phản hồi quá chậm (quá 20 giây)');
+              throw e;
+            }
             return self.jsonp(payload);       // gọi thẳng Apps Script, dự phòng khi trình duyệt chặn POST
           });
+        if (requestTimer) call = call.finally(function () { clearTimeout(requestTimer); });
       }
 
       return call.then(function (res) {
@@ -267,8 +279,13 @@
       if (!this.isOn()) return;
       var self = this;
       clearTimeout(this.pushTimer);
-      this.pushTimer = setTimeout(function () { self.cycle(); }, 900);
+      this.pushTimer = setTimeout(function () { self.cycle(); }, 250);
       this.emit();
+    },
+    signalPeers: function () {
+      var stamp = String(Date.now());
+      try { localStorage.setItem(SIGNAL_KEY, stamp); } catch (e) {}
+      try { if (this._peerChannel) this._peerChannel.postMessage(stamp); } catch (e2) {}
     },
     cycle: function (manual) {
       var self = this;
@@ -282,8 +299,11 @@
       }
       if (this.busy) { this.again = true; return Promise.resolve(); } // xếp hàng, không bỏ sót
       this.busy = true; this.again = false;
-      this.emit(manual ? 'Đang đồng bộ…' : '');
       var changes = this.computeChanges();
+      var pushed = Object.keys(changes).some(function (col) { return (changes[col] || []).length > 0; });
+      // Pull nền rỗng chạy im lặng để chấm trạng thái không nhấp nháy mỗi 6 giây.
+      // Chỉ hiện “Đang đồng bộ” khi người dùng bấm tay hoặc có dữ liệu cần đẩy.
+      if (manual || pushed) this.emit('Đang đồng bộ…');
       return this.request({ action: 'sync', since: this.state.since || 0, changes: changes })
         .then(function (res) {
           var blocked = {}, needsFullPull = false;
@@ -345,6 +365,7 @@
           self.state.lastOk = Date.now();
           self.lastError = ''; self.retryCount = 0;
           self.saveState();
+          if (pushed) self.signalPeers();
           if (touched) { self.api.saveLocal(); self.api.rerender(); }
           self.busy = false; self.emit(manual ? 'Đã đồng bộ' : '');
           if (needsFullPull) return self.fullPull(); // dự phòng khi ghép với Apps Script cũ chưa trả bản authoritative
@@ -378,9 +399,14 @@
       });
     },
     pollDelay: function () {
-      var base = this.isAdmin() ? 20000 : 60000;
+      // Realtime là đường chính. Poll chỉ để bù khi tab ngủ/mất một event;
+      // nếu WebSocket rớt thì tự hạ xuống 2.5–4 giây thay vì chờ 6–8 giây.
+      var realtimeLive = window.HuyRealtime && window.HuyRealtime.isLive();
+      var base = realtimeLive ? 30000 : (this.isAdmin() ? 6000 : 8000);
       if (!this.lastError) return base;
-      var delay = Math.min(300000, base * Math.pow(2, Math.min(this.retryCount, 4)));
+      // Khi server thật sự báo lỗi, giữ ngưỡng backoff P3 cũ để tránh bão retry.
+      var errorBase = this.isAdmin() ? 6000 : 8000;
+      var delay = Math.min(300000, errorBase * Math.pow(2, Math.min(this.retryCount, 4)));
       return Math.min(300000, Math.round(delay * (1 + Math.random() * 0.15)));
     },
     schedule: function (delay) {
@@ -388,7 +414,7 @@
       clearTimeout(this.timer);
       if (!this.isOn()) return;
       this.timer = setTimeout(function () {
-        if (document.hidden) { self.schedule(self.pollDelay()); return; }
+        if (document.hidden) { self.timer = null; return; }
         Promise.resolve().then(function () { return self.cycle(); }).catch(function (err) {
           self.busy = false; self.again = false;
           self.lastError = (err && err.message) || String(err);
@@ -401,15 +427,27 @@
       var self = this;
       if (!this.isOn()) { this.emit(); return; }
       this.schedule(0);
+      if (!embedded() && window.HuyRealtime && !window.HuyRealtime.sync) window.HuyRealtime.start(this);
       if (!this._listenersBound) {
         this._listenersBound = true;
         document.addEventListener('visibilitychange', function () {
           if (!document.hidden) self.schedule(0);
         });
+        window.addEventListener('focus', function () { self.schedule(0); });
+        window.addEventListener('pageshow', function () { self.schedule(0); });
         window.addEventListener('online', function () {
           self.retryCount = 0;
           self.schedule(0);
         });
+        window.addEventListener('storage', function (e) {
+          if (e && e.key === SIGNAL_KEY) self.schedule(0);
+        });
+        if (typeof BroadcastChannel !== 'undefined') {
+          try {
+            this._peerChannel = new BroadcastChannel('huy-rooms-sync');
+            this._peerChannel.onmessage = function () { self.schedule(0); };
+          } catch (e) {}
+        }
       }
     },
 
@@ -441,6 +479,7 @@
       // xảy ra giữa lần sync gần nhất và action này. Vòng sync kế tiếp sẽ nhận đủ delta.
       this.state.lastOk = Date.now(); this.lastError = '';
       this.saveState();
+      this.signalPeers();
       if (touched) { this.api.saveLocal(); this.api.rerender(); }
       return touched;
     },

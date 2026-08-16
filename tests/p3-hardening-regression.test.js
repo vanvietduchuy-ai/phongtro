@@ -57,11 +57,11 @@ function testSyncRecoveryPolicy() {
   sync.lastError = 'mất mạng';
   sync.retryCount = 1;
   const firstRetry = sync.pollDelay();
-  assert(firstRetry >= 40000 && firstRetry <= 46000, 'admin retry lần đầu phải backoff từ 40 giây và có jitter');
+  assert(firstRetry >= 12000 && firstRetry <= 13800, 'admin retry lần đầu phải backoff từ 12 giây và có jitter');
   sync.retryCount = 5;
   assert(sync.pollDelay() <= 300000, 'backoff không được vượt 5 phút');
   sync.lastError = '';
-  assert.strictEqual(sync.pollDelay(), 20000, 'khi khỏe, admin tiếp tục đồng bộ mỗi 20 giây');
+  assert.strictEqual(sync.pollDelay(), 6000, 'khi khỏe, admin tiếp tục đồng bộ mỗi 6 giây');
 }
 
 function testAutomaticBackupTriggerIsIdempotent() {
@@ -143,7 +143,7 @@ function testBuildAndStaticUiIntegrity() {
   literalCalls.forEach(call => assert(whitelist.has(call), `data-call ${call} phải có trong whitelist`));
 
   const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
-  assert(sw.includes("huy-rooms-v4.6.6-room-sync-hotfix"), 'service worker phải dùng cache hotfix mới');
+  assert(sw.includes("huy-rooms-v4.6.7-fast-sync"), 'service worker phải dùng cache fast-sync mới');
 }
 
 testOnlyActiveAdminViewRenders();

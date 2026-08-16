@@ -1,5 +1,7 @@
 # Hướng dẫn cài — bản đặt trên Vercel (có tên miền riêng)
 
+> **Lưu ý v4.7.0:** hướng dẫn bên dưới là phương án Apps Script/Google Sheets để rollback. Bản production Supabase Realtime cài theo `HUONG-DAN-SUPABASE-REALTIME.md`.
+
 Tổng cộng 4 bước, khoảng 10 phút, **không phải sửa dòng code nào**: đường dẫn máy chủ khai bằng biến môi trường trên Vercel.
 
 Sơ đồ: **tên miền của anh (Vercel) → /api/sheets → Apps Script → Google Sheets + Drive**
@@ -142,6 +144,14 @@ Xong. Gửi chính tên miền đó cho khách xem phòng và cho cư dân đăn
 5. Kiểm tra nhanh: phòng có hợp đồng hiệu lực phải hiện **Đã thuê**; nút lưu trữ căn/phòng và hồ sơ người đại diện phải bị chặn cho tới khi dùng đúng nghiệp vụ Trả phòng/Thanh lý.
 
 > Chỉ sửa trực tiếp trên Google Sheet các trường mô tả không làm thay đổi nghiệp vụ. Không sửa tay mã `id`, trạng thái, phòng của hợp đồng/người ở, liên kết người ở, hóa đơn, thanh toán hoặc sổ cọc; hãy thao tác trong ứng dụng để các bảng được cập nhật nguyên tử.
+
+### Nâng từ v4.6.6 lên v4.6.7 — đồng bộ nhanh
+
+1. Không có sheet/cột mới và không đổi công thức. Dán đè `apps-script/Code.gs`, chạy **setup()** một lần để dựng index stamp cho toàn bộ sheet hiện có.
+2. Thay toàn bộ file web và `apps-script/Index.html`, sau đó Deploy Apps Script bằng **New version**.
+3. Deploy lại Production trên Vercel; kiểm tra biến `APPS_SCRIPT_URL` vẫn trỏ đúng URL `/exec` của deployment Apps Script vừa cập nhật.
+4. Trên máy tính và điện thoại, tải lại trang một lần. iPhone đã cài PWA nên đóng hẳn ứng dụng rồi mở lại để nhận cache `v4.6.7-fast-sync`.
+5. Kiểm tra thực tế: sửa giá một phòng trên quản lý, chờ chấm báo đã lưu; trang khách đang mở phải nhận giá mới ở lượt poll kế tiếp, thông thường không quá 8 giây cộng độ trễ mạng.
 
 ## Lỗi hay gặp
 

@@ -1473,7 +1473,7 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
   <div class="modal hidden" id="loginModal">
     <div class="modal-backdrop" data-close-modal="loginModal"></div>
     <div class="modal-card small"><button class="modal-close" data-close-modal="loginModal" aria-label="Đóng">×</button>
-      <div class="modal-icon">✦</div><h3>Đăng nhập quản lý</h3><p class="muted-text" id="adminLoginHint">Chưa kết nối Google Sheets — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.</p>
+      <div class="modal-icon">✦</div><h3>Đăng nhập quản lý</h3><p class="muted-text" id="adminLoginHint">Chưa kết nối máy chủ — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.</p>
       <form id="loginForm" class="stack-form"><label>Tài khoản nhân viên <small style="color:var(--muted)">(bỏ trống nếu là chủ nhà)</small><input id="adminUser" type="text" autocomplete="username" placeholder="vd: kimchi.ketoan" /></label><label id="adminPasswordLabel">Mật khẩu<input id="adminPassword" type="password" required placeholder="Nhập mật khẩu" autocomplete="current-password" /></label><button class="btn btn-primary full" type="submit">Đăng nhập</button></form>
     </div>
   </div>
@@ -1990,28 +1990,31 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
 
   <script>
 /* ============================================================
-   Chỉ dùng khi đặt website trên hosting riêng (Vercel, Netlify…).
-   Chạy thẳng trên Apps Script thì file này không có tác dụng gì.
+   Cấu hình backend cho bản Vercel. Khi chạy thẳng trên Apps Script,
+   google.script.run vẫn được ưu tiên nên file này không đổi chế độ rollback.
 
-   - Để nguyên như dưới nếu deploy lên Vercel: web gọi /api/sheets,
-     đường dẫn Apps Script khai trong biến môi trường APPS_SCRIPT_URL.
+   - Bản v4.7 dùng Supabase làm nguồn chính qua API Vercel cùng tên miền.
+     URL và key Supabase chỉ đặt trong biến môi trường Vercel.
    - Hosting khác (không có serverless): thay bằng đường dẫn /exec đầy đủ.
    ============================================================ */
 window.HUY_CONFIG = {
-  apiUrl: location.protocol.indexOf('http') === 0 ? '/api/sheets' : ''
+  apiUrl: location.protocol.indexOf('http') === 0 ? '/api/supabase' : '',
+  backendId: 'supabase-v1',
+  forceApi: true
 };
 
 </script>
   <script>
 /* ============================================================
-   sync.js — Đồng bộ Huy Rooms với Google Sheets
+   sync.js — Đồng bộ Huy Rooms với Supabase (Apps Script là chế độ rollback)
    Tự nhận biết 2 chế độ:
    1. Nhúng trong Apps Script (google.script.run) — không cần cấu hình gì.
-   2. Đặt trên hosting riêng — gọi tới đường dẫn /exec khai trong config.js.
+   2. Đặt trên Vercel — gọi /api/supabase và nhận tín hiệu Realtime.
    ============================================================ */
 (function () {
   var CFG_KEY = 'huy_rooms_conn';
   var STATE_KEY = 'huy_rooms_sync_state';
+  var SIGNAL_KEY = 'huy_rooms_sync_signal_v467';
   // v6: đủ mọi collection của giai đoạn 3–6 (trước đây thiếu → tiền/sự cố không lên máy chủ)
   var COLS = ['properties', 'rooms', 'tenants', 'utilityReadings', 'invoices', 'appointments', 'reservations',
     'leases', 'leaseOccupants', 'accounts', 'assets', 'handoverItems',
@@ -2048,7 +2051,7 @@ window.HUY_CONFIG = {
   var Sync = {
     api: null, cfg: null, state: null, baseline: {},
     timer: null, pushTimer: null, busy: false, again: false,
-    retryCount: 0, _listenersBound: false,
+    retryCount: 0, _listenersBound: false, _peerChannel: null,
     lastError: '', listeners: [],
     embedded: embedded,
 
@@ -2056,18 +2059,21 @@ window.HUY_CONFIG = {
     loadCfg: function () {
       var base = window.HUY_CONFIG || {};
       var saved = readJSON(CFG_KEY, {});
+      var backendChanged = !!(base.backendId && saved.backendId !== base.backendId);
       this.cfg = {
-        apiUrl: saved.apiUrl || base.apiUrl || '',
-        readKey: saved.readKey || base.readKey || '',
-        writeKey: saved.writeKey || '',
-        token: saved.token || '',
-        staff: saved.staff || null   // v4.1: vai trò nhân viên SỐNG QUA reload
+        apiUrl: base.forceApi ? (base.apiUrl || '') : (saved.apiUrl || base.apiUrl || ''),
+        backendId: base.backendId || saved.backendId || '',
+        readKey: backendChanged ? '' : (saved.readKey || base.readKey || ''),
+        writeKey: backendChanged ? '' : (saved.writeKey || ''),
+        token: backendChanged ? '' : (saved.token || ''),
+        staff: backendChanged ? null : (saved.staff || null)   // token backend cũ tuyệt đối không được tái sử dụng
       };
       // token nhân viên mà thiếu hồ sơ vai trò → KHÔNG đoán là owner; xác minh với máy chủ
       this.roleVerified = !this.cfg.token || !!this.cfg.staff;
-      this.state = readJSON(STATE_KEY, { since: 0, lastOk: 0 });
-      this.baseline = readJSON('huy_rooms_baseline', {});
-      this.baseStamp = readJSON('huy_rooms_base_stamps', {});
+      this.state = backendChanged ? { since: 0, lastOk: 0 } : readJSON(STATE_KEY, { since: 0, lastOk: 0 });
+      this.baseline = backendChanged ? {} : readJSON('huy_rooms_baseline', {});
+      this.baseStamp = backendChanged ? {} : readJSON('huy_rooms_base_stamps', {});
+      if (backendChanged) { writeJSON(CFG_KEY, this.cfg); this.saveState(); }
       return this.cfg;
     },
     saveCfg: function (patch) {
@@ -2114,18 +2120,26 @@ window.HUY_CONFIG = {
             .api(body);
         });
       } else if (!this.cfg.apiUrl) {
-        return Promise.reject(new Error('Chưa cấu hình đường dẫn Apps Script'));
+        return Promise.reject(new Error('Chưa cấu hình đường dẫn máy chủ'));
       } else {
         var sameOrigin = this.cfg.apiUrl.charAt(0) === '/';
+        var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var requestTimer = controller ? setTimeout(function () { controller.abort(); }, 20000) : null;
         call = fetch(this.cfg.apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: body
+          body: body,
+          cache: 'no-store',
+          signal: controller ? controller.signal : undefined
         }).then(function (r) { return r.json(); })
           .catch(function (e) {
-            if (sameOrigin) throw e;          // qua cầu nối /api/sheets thì không cần dự phòng
+            if (sameOrigin) {
+              if (e && e.name === 'AbortError') throw new Error('Máy chủ phản hồi quá chậm (quá 20 giây)');
+              throw e;
+            }
             return self.jsonp(payload);       // gọi thẳng Apps Script, dự phòng khi trình duyệt chặn POST
           });
+        if (requestTimer) call = call.finally(function () { clearTimeout(requestTimer); });
       }
 
       return call.then(function (res) {
@@ -2272,8 +2286,13 @@ window.HUY_CONFIG = {
       if (!this.isOn()) return;
       var self = this;
       clearTimeout(this.pushTimer);
-      this.pushTimer = setTimeout(function () { self.cycle(); }, 900);
+      this.pushTimer = setTimeout(function () { self.cycle(); }, 250);
       this.emit();
+    },
+    signalPeers: function () {
+      var stamp = String(Date.now());
+      try { localStorage.setItem(SIGNAL_KEY, stamp); } catch (e) {}
+      try { if (this._peerChannel) this._peerChannel.postMessage(stamp); } catch (e2) {}
     },
     cycle: function (manual) {
       var self = this;
@@ -2287,8 +2306,11 @@ window.HUY_CONFIG = {
       }
       if (this.busy) { this.again = true; return Promise.resolve(); } // xếp hàng, không bỏ sót
       this.busy = true; this.again = false;
-      this.emit(manual ? 'Đang đồng bộ…' : '');
       var changes = this.computeChanges();
+      var pushed = Object.keys(changes).some(function (col) { return (changes[col] || []).length > 0; });
+      // Pull nền rỗng chạy im lặng để chấm trạng thái không nhấp nháy mỗi 6 giây.
+      // Chỉ hiện “Đang đồng bộ” khi người dùng bấm tay hoặc có dữ liệu cần đẩy.
+      if (manual || pushed) this.emit('Đang đồng bộ…');
       return this.request({ action: 'sync', since: this.state.since || 0, changes: changes })
         .then(function (res) {
           var blocked = {}, needsFullPull = false;
@@ -2350,6 +2372,7 @@ window.HUY_CONFIG = {
           self.state.lastOk = Date.now();
           self.lastError = ''; self.retryCount = 0;
           self.saveState();
+          if (pushed) self.signalPeers();
           if (touched) { self.api.saveLocal(); self.api.rerender(); }
           self.busy = false; self.emit(manual ? 'Đã đồng bộ' : '');
           if (needsFullPull) return self.fullPull(); // dự phòng khi ghép với Apps Script cũ chưa trả bản authoritative
@@ -2383,9 +2406,14 @@ window.HUY_CONFIG = {
       });
     },
     pollDelay: function () {
-      var base = this.isAdmin() ? 20000 : 60000;
+      // Realtime là đường chính. Poll chỉ để bù khi tab ngủ/mất một event;
+      // nếu WebSocket rớt thì tự hạ xuống 2.5–4 giây thay vì chờ 6–8 giây.
+      var realtimeLive = window.HuyRealtime && window.HuyRealtime.isLive();
+      var base = realtimeLive ? 30000 : (this.isAdmin() ? 6000 : 8000);
       if (!this.lastError) return base;
-      var delay = Math.min(300000, base * Math.pow(2, Math.min(this.retryCount, 4)));
+      // Khi server thật sự báo lỗi, giữ ngưỡng backoff P3 cũ để tránh bão retry.
+      var errorBase = this.isAdmin() ? 6000 : 8000;
+      var delay = Math.min(300000, errorBase * Math.pow(2, Math.min(this.retryCount, 4)));
       return Math.min(300000, Math.round(delay * (1 + Math.random() * 0.15)));
     },
     schedule: function (delay) {
@@ -2393,7 +2421,7 @@ window.HUY_CONFIG = {
       clearTimeout(this.timer);
       if (!this.isOn()) return;
       this.timer = setTimeout(function () {
-        if (document.hidden) { self.schedule(self.pollDelay()); return; }
+        if (document.hidden) { self.timer = null; return; }
         Promise.resolve().then(function () { return self.cycle(); }).catch(function (err) {
           self.busy = false; self.again = false;
           self.lastError = (err && err.message) || String(err);
@@ -2406,15 +2434,27 @@ window.HUY_CONFIG = {
       var self = this;
       if (!this.isOn()) { this.emit(); return; }
       this.schedule(0);
+      if (!embedded() && window.HuyRealtime && !window.HuyRealtime.sync) window.HuyRealtime.start(this);
       if (!this._listenersBound) {
         this._listenersBound = true;
         document.addEventListener('visibilitychange', function () {
           if (!document.hidden) self.schedule(0);
         });
+        window.addEventListener('focus', function () { self.schedule(0); });
+        window.addEventListener('pageshow', function () { self.schedule(0); });
         window.addEventListener('online', function () {
           self.retryCount = 0;
           self.schedule(0);
         });
+        window.addEventListener('storage', function (e) {
+          if (e && e.key === SIGNAL_KEY) self.schedule(0);
+        });
+        if (typeof BroadcastChannel !== 'undefined') {
+          try {
+            this._peerChannel = new BroadcastChannel('huy-rooms-sync');
+            this._peerChannel.onmessage = function () { self.schedule(0); };
+          } catch (e) {}
+        }
       }
     },
 
@@ -2446,6 +2486,7 @@ window.HUY_CONFIG = {
       // xảy ra giữa lần sync gần nhất và action này. Vòng sync kế tiếp sẽ nhận đủ delta.
       this.state.lastOk = Date.now(); this.lastError = '';
       this.saveState();
+      this.signalPeers();
       if (touched) { this.api.saveLocal(); this.api.rerender(); }
       return touched;
     },
@@ -2632,6 +2673,103 @@ window.HUY_CONFIG = {
   };
 
   window.Sync = Sync;
+})();
+
+</script>
+  <script>
+/* Huy Rooms v4.7.0 - Supabase Realtime invalidation client.
+ * Kênh chỉ nhận revision công khai; dữ liệu thật luôn đi qua /api/supabase
+ * để server áp phân quyền và lọc trường riêng tư. */
+(function () {
+  var api = {
+    socket: null, sync: null, cfg: null, joined: false, stopped: false,
+    ref: 0, heartbeat: null, retry: null, retryCount: 0, pendingWake: null,
+
+    isLive: function () { return !!(this.socket && this.socket.readyState === 1 && this.joined); },
+    nextRef: function () { this.ref += 1; return String(this.ref); },
+    send: function (message) {
+      if (this.socket && this.socket.readyState === 1) this.socket.send(JSON.stringify(message));
+    },
+    wake: function () {
+      var self = this;
+      clearTimeout(this.pendingWake);
+      this.pendingWake = setTimeout(function () {
+        if (!self.sync) return;
+        if (self.sync.busy) self.sync.again = true;
+        else self.sync.schedule(0);
+      }, 45);
+    },
+    start: function (sync) {
+      this.sync = sync;
+      this.stopped = false;
+      var self = this;
+      return fetch('/api/supabase?action=config', { cache: 'no-store' })
+        .then(function (response) { return response.json(); })
+        .then(function (cfg) {
+          if (!cfg || !cfg.ok || !cfg.enabled || !cfg.url || !cfg.publishableKey) return;
+          self.cfg = cfg;
+          self.connect();
+        })
+        .catch(function () { /* poll ngắn trong sync.js là đường dự phòng */ });
+    },
+    connect: function () {
+      if (this.stopped || !this.cfg || typeof WebSocket === 'undefined') return;
+      clearTimeout(this.retry);
+      if (this.socket && (this.socket.readyState === 0 || this.socket.readyState === 1)) return;
+      var self = this;
+      var wsBase = this.cfg.url.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+      var url = wsBase + '/realtime/v1/websocket?apikey=' + encodeURIComponent(this.cfg.publishableKey) + '&vsn=2.0.0';
+      var socket = new WebSocket(url);
+      this.socket = socket; this.joined = false;
+      socket.onopen = function () {
+        self.retryCount = 0;
+        var ref = self.nextRef();
+        self.send([ref, ref, 'realtime:huy-rooms-sync', 'phx_join', {
+          config: {
+            broadcast: { ack: false, self: false, replication_ready: true },
+            presence: { enabled: false, key: '' },
+            postgres_changes: [{ event: '*', schema: 'public', table: self.cfg.table || 'huy_sync_signals' }],
+            private: false
+          },
+          access_token: self.cfg.publishableKey
+        }]);
+        clearInterval(self.heartbeat);
+        self.heartbeat = setInterval(function () {
+          self.send([null, self.nextRef(), 'phoenix', 'heartbeat', {}]);
+        }, 25000);
+      };
+      socket.onmessage = function (event) {
+        var msg;
+        try { msg = JSON.parse(event.data); } catch (_) { return; }
+        if (!Array.isArray(msg) || msg.length < 5) return;
+        var type = msg[3], payload = msg[4] || {};
+        if (type === 'phx_reply' && payload.status === 'ok' && payload.response && payload.response.postgres_changes) {
+          self.joined = true; self.wake(); return;
+        }
+        if (type === 'system' && payload.status === 'ok') { self.joined = true; return; }
+        if (type === 'postgres_changes') { self.wake(); return; }
+        if (type === 'phx_error' || type === 'phx_close' || (type === 'system' && payload.status === 'error')) {
+          self.joined = false;
+        }
+      };
+      socket.onerror = function () { self.joined = false; };
+      socket.onclose = function () {
+        self.joined = false; clearInterval(self.heartbeat); self.heartbeat = null;
+        if (self.stopped) return;
+        var waits = [1000, 2000, 5000, 10000, 15000];
+        var delay = waits[Math.min(self.retryCount, waits.length - 1)];
+        self.retryCount += 1;
+        self.retry = setTimeout(function () { self.connect(); }, delay);
+      };
+    },
+    stop: function () {
+      this.stopped = true; this.joined = false;
+      clearTimeout(this.retry); clearTimeout(this.pendingWake); clearInterval(this.heartbeat);
+      if (this.socket) try { this.socket.close(1000, 'stop'); } catch (_) {}
+      this.socket = null;
+    }
+  };
+  window.HuyRealtime = api;
 })();
 
 </script>
@@ -6760,14 +6898,14 @@ function renderSettings(){
       ${isOwner?'<button class="btn btn-primary" id="changePassBtn" onclick="changeAdminPassword()">Lưu mật khẩu mới</button>':''}
       <button class="btn btn-light" onclick="Sync.cycle(true)">Đồng bộ ngay</button>${deviceBtns}
     </div>`:`
-    <h3>Kết nối Google Sheets</h3>
-    <p class="muted-text">Để nguyên <b>/api/sheets</b> nếu chạy trên Vercel (đường dẫn Apps Script khai ở biến môi trường APPS_SCRIPT_URL). Hosting khác thì dán đường dẫn /exec đầy đủ.</p>
+    <h3>Kết nối Supabase</h3>
+    <p class="muted-text">Bản Vercel dùng <b>/api/supabase</b>. URL và key Supabase được khai trong Environment Variables, không dán secret key vào đây.</p>
     <label>Đường dẫn máy chủ</label>
-    <input id="cfgApiUrl" placeholder="/api/sheets" value="${esc(cfg.apiUrl||'')}">
+    <input id="cfgApiUrl" placeholder="/api/supabase" value="${esc(cfg.apiUrl||'')}">
     <label>Mật khẩu quản lý (để trống nếu chỉ xem)</label>
     <input id="cfgWriteKey" type="password" placeholder="Mật khẩu quản lý" autocomplete="current-password">
     <div class="conn-actions">
-      <button class="btn btn-primary" id="connPullBtn" onclick="connectSheets('pull')">Kết nối & lấy dữ liệu từ Sheets</button>
+      <button class="btn btn-primary" id="connPullBtn" onclick="connectSheets('pull')">Kết nối & lấy dữ liệu máy chủ</button>
       ${!Sync.isAdmin()||ownerManagerOnly()?'<button class="btn btn-light" id="connPushBtn" onclick="connectSheets(\'push\')">Kết nối & đẩy dữ liệu máy này lên</button>':''}
       <button class="btn btn-light" onclick="Sync.cycle(true)">Đồng bộ ngay</button>
     </div>
@@ -6809,7 +6947,7 @@ function renderSettings(){
     ${editSettings?'<button class="btn btn-primary" style="margin-top:12px" onclick="saveManagerSettings()">Lưu thông tin</button>':'<p class="muted-text">Vai trò hiện tại chỉ được xem thông tin cài đặt.</p>'}
   </div>
   <div class="settings-card"><h3>Nhắc thanh toán qua Zalo</h3><p>Mỗi hóa đơn có nút "Nhắc Zalo": hệ thống soạn sẵn tiền phòng, điện, nước, cọc, số còn lại và hạn thanh toán để anh sao chép gửi khách.</p><div class="code-note">Gửi Zalo tự động cần Zalo Official Account + backend riêng. Không đặt access token Zalo trong file web công khai.</div></div>
-  <div class="settings-card"><h3>Sao lưu dữ liệu</h3><p>Tải căn trọ, phòng, người thuê, điện nước, hóa đơn và lịch hẹn về máy dạng JSON.</p><button class="btn btn-light" onclick="exportData()">Tải file sao lưu</button><p class="muted-text" style="margin:10px 0 0">Bản có máy chủ tự sao lưu Google Sheets vào Drive mỗi ngày trong khung 03:00, giữ 14 bản gần nhất sau khi chạy setup().</p></div>
+  <div class="settings-card"><h3>Sao lưu dữ liệu</h3><p>Tải căn trọ, phòng, người thuê, điện nước, hóa đơn và lịch hẹn về máy dạng JSON.</p><button class="btn btn-light" onclick="exportData()">Tải file sao lưu</button><p class="muted-text" style="margin:10px 0 0">Để có bản đầy đủ kể cả hash server-only, dùng scripts/export-supabase.mjs trước thay đổi lớn.</p></div>
   <div class="settings-card"><h3>Khôi phục dữ liệu</h3><p>Nhập lại file JSON đã sao lưu. Hệ thống kiểm tra cấu trúc, cho xem số bản ghi và tự tải một bản sao lưu dữ liệu hiện tại trước khi áp dụng.</p>${isOwner?'<input type="file" id="importFile" accept="application/json" style="margin:8px 0 12px"><button class="btn btn-light" onclick="importData()">Nhập dữ liệu</button>':'<p class="muted-text">Chỉ chủ nhà được khôi phục dữ liệu.</p>'}
   <div style="margin-top:12px"><small style="color:var(--muted)">BẢN TỰ LƯU TRÊN MÁY NÀY (mỗi ngày một bản, giữ 7 ngày)</small>
   ${autoBackups().length?autoBackups().slice().reverse().map(b=>`<div class="tk-row"><div class="tk-main"><strong>${esc(b.date)}</strong><small>Tự lưu lúc ${esc(String(b.at).slice(11,16))}</small></div>${isOwner?`<button class="icon-btn" data-evt="click" data-call="restoreAutoBackup" data-a1="${esc(b.date)}">Khôi phục</button>`:''}</div>`).join(''):'<p class="muted-text" style="margin:6px 0 0">Chưa có — bản đầu tiên tự tạo sau ~20 giây dùng ứng dụng.</p>'}
@@ -6817,7 +6955,7 @@ function renderSettings(){
   <div class="settings-card"><h3>Xuất danh sách phòng CSV</h3><p>Mở bằng Excel để kiểm tra giá, tình trạng phòng và đơn giá điện nước.</p><button class="btn btn-light" onclick="exportRoomsCSV()">Xuất CSV</button></div>
   ${DEMO_MODE?`<div class="settings-card"><h3>Khôi phục dữ liệu mẫu (chỉ chạy cục bộ)</h3><p>Tính năng này bị khóa tuyệt đối khi đã kết nối máy chủ, để dữ liệu mẫu không thể ghi đè dữ liệu vận hành.</p><button class="btn btn-danger" onclick="resetDemo()" ${Sync.isOn()?'disabled':''}>${Sync.isOn()?'Đang khóa vì đã kết nối':'Khôi phục bản demo'}</button></div>`:''}
   <div class="settings-card" style="grid-column:1/-1"><h3>${icon('shield',17)} Kiểm tra kết nối</h3>
-  <p>Bấm để biết chính xác đang hỏng ở khâu nào: đường dẫn, quyền truy cập deployment, hay bản Apps Script đã cũ.</p>
+  <p>Bấm để kiểm tra đường dẫn API, đăng nhập và các action Supabase chính.</p>
   <button class="btn btn-light" data-evt="click" data-call="runConnectionCheck">Kiểm tra ngay</button>
   <div id="connCheckResult" class="conn-check hidden"></div></div>
   ${currentRole()==='owner'?staffCardHtml():''}
@@ -6939,9 +7077,9 @@ window.connectSheets=async function(mode){
   if(mode==='push'&&Sync.isAdmin()&&!requireOwnerManager())return;
   const apiUrl=document.getElementById('cfgApiUrl').value.trim();
   const pass=document.getElementById('cfgWriteKey').value.trim();
-  if(!apiUrl){showToast('Chưa nhập đường dẫn Apps Script');return}
-  if(mode==='push'&&!confirm('Đẩy toàn bộ dữ liệu trên máy này lên Google Sheets? Dữ liệu trùng mã trên Sheets sẽ bị ghi đè.'))return;
-  if(mode==='pull'&&!confirm('Lấy dữ liệu từ Google Sheets? Dữ liệu đang lưu trên máy này sẽ được thay bằng dữ liệu trên Sheets.'))return;
+  if(!apiUrl){showToast('Chưa nhập đường dẫn API Supabase');return}
+  if(mode==='push'&&!confirm('Đẩy dữ liệu trên máy này lên Supabase? Bản ghi có revision mới hơn trên máy chủ sẽ được bảo vệ bằng conflict.'))return;
+  if(mode==='pull'&&!confirm('Lấy dữ liệu từ Supabase? Dữ liệu đang lưu trên máy này sẽ được thay bằng bản máy chủ.'))return;
   const btn=document.getElementById(mode==='pull'?'connPullBtn':'connPushBtn');
   setBtnBusy(btn,true,'Đang kết nối…');
   try{
@@ -6949,7 +7087,7 @@ window.connectSheets=async function(mode){
     if(pass)await Sync.adminLogin(pass);
     const res=await Sync.connect({apiUrl,mode});
     renderAdmin();renderPublic();
-    showToast(res.mode==='pull'?'Đã lấy dữ liệu từ Google Sheets':'Đã đẩy dữ liệu lên Google Sheets');
+    showToast(res.mode==='pull'?'Đã lấy dữ liệu từ Supabase':'Đã đẩy dữ liệu lên Supabase');
   }catch(err){showToast('Kết nối lỗi: '+(err.message||err))}
   finally{setBtnBusy(btn,false)}
 }
@@ -7089,7 +7227,7 @@ window.runConnectionCheck=async function(){
   const lines=[];
   const add=(okFlag,label,hint)=>lines.push(`<div class="cc-row ${okFlag?'cc-ok':'cc-bad'}"><strong>${okFlag?'✓':'✗'} ${esc(label)}</strong>${hint?`<small>${esc(hint)}</small>`:''}</div>`);
   if(!Sync.cfg.apiUrl){
-    add(false,'Chưa khai báo đường dẫn máy chủ','Vào Cài đặt → Kết nối, dán đường dẫn /api/sheets hoặc URL Apps Script.');
+    add(false,'Chưa khai báo đường dẫn máy chủ','Vào Cài đặt → Kết nối, dùng đường dẫn /api/supabase.');
   }else{
     add(true,'Đã khai báo đường dẫn: '+Sync.cfg.apiUrl,'');
     try{
@@ -7101,8 +7239,8 @@ window.runConnectionCheck=async function(){
         add(true,'Chức năng đặt lịch nhận yêu cầu','');
       }catch(e2){
         const m=String(e2.message||e2);
-        if(/không nhận ra yêu cầu|unknownAction/i.test(m))
-          add(false,'Bản Apps Script đang chạy là bản CŨ',m);
+        if(/không nhận ra yêu cầu|unknownAction|Action chưa được hỗ trợ/i.test(m))
+          add(false,'API Supabase chưa đúng phiên bản',m);
         else if(/Phòng này không còn|không hợp lệ/i.test(m))
           add(true,'Chức năng đặt lịch hoạt động','(Máy chủ từ chối phòng kiểm tra là đúng — đường truyền tốt.)');
         else add(false,'Đặt lịch bị từ chối',m);
@@ -7110,8 +7248,8 @@ window.runConnectionCheck=async function(){
     }catch(e){
       const m=String(e.message||e);
       if(/Who has access|đòi đăng nhập/i.test(m))add(false,'Deployment chưa mở quyền truy cập',m);
-      else if(/uỷ quyền|authorization/i.test(m))add(false,'Apps Script chưa được cấp quyền',m);
-      else if(/không nhận ra yêu cầu/i.test(m))add(false,'Bản Apps Script đang chạy là bản CŨ',m);
+      else if(/uỷ quyền|authorization/i.test(m))add(false,'Supabase chưa cấp đúng quyền/RLS',m);
+      else if(/không nhận ra yêu cầu|Action chưa được hỗ trợ/i.test(m))add(false,'API Supabase chưa đúng phiên bản',m);
       else add(false,'Không gọi được máy chủ',m);
     }
   }
@@ -7606,11 +7744,11 @@ function updateLoginHint(){
   const hint=document.getElementById('adminLoginHint'),field=document.getElementById('adminPassword'),label=document.getElementById('adminPasswordLabel');
   if(!hint)return;
   if(Sync.isOn()){
-    hint.innerHTML='Nhập <strong>mật khẩu quản lý</strong>. Lần đầu là <strong>123456</strong> — vào Cài đặt đổi ngay (tối thiểu 10 ký tự, nên có cả chữ và số).';
+    hint.innerHTML='Nhập <strong>mật khẩu quản lý</strong> đã khai bằng HUY_ADMIN_PASSWORD. Có thể đổi trong Cài đặt sau lần đăng nhập đầu.';
     field.placeholder='Nhập mật khẩu quản lý';
     label.childNodes[0].nodeValue='Mật khẩu quản lý';
   }else{
-    hint.innerHTML='Chưa kết nối Google Sheets — dùng mật khẩu <strong>123456</strong> để mở bản trên máy này.';
+    hint.innerHTML='Chưa kết nối máy chủ — dùng mật khẩu <strong>123456</strong> để mở bản chạy cục bộ.';
   }
 }
 Sync.attach({
@@ -7628,7 +7766,7 @@ Sync.attach({
 });
 Sync.onStatus(updateSyncPill);
 document.getElementById('syncPill').addEventListener('click',()=>{
-  if(!Sync.isOn()){showToast('Vào Quản lý → Cài đặt để kết nối Google Sheets');return}
+  if(!Sync.isOn()){showToast('Vào Quản lý → Cài đặt để kết nối Supabase');return}
   Sync.cycle(true);
 });
 setInterval(()=>updateSyncPill(),30000);
@@ -7640,7 +7778,7 @@ if(Sync.isOn()&&!Sync.isAdmin()&&!(Sync.state.since>0)&&looksLikeDemo()){
 saveLocal();
 updateLoginHint();
 updateSyncPill();
-renderPublic();renderAdmin();
+renderPublic();
 residentSession=loadResidentSession();
 if(residentSession)showResident();
 Sync.start();

@@ -1,4 +1,17 @@
-# Huy Rooms v4.6.6 — Hotfix đồng bộ và trạng thái phòng
+# Huy Rooms v4.7.0 — Supabase Realtime
+
+V4.7.0 giữ nguyên giao diện HTML/CSS/JavaScript và toàn bộ nghiệp vụ v4.6.7, nhưng chuyển nguồn dữ liệu chính sang Supabase/Postgres:
+
+1. Lưu cục bộ vẫn được gom sau **250 ms**, sau đó API Vercel ghi delta vào Postgres trong một transaction.
+2. Supabase Realtime chỉ phát revision công khai; máy khác được đánh thức và kéo DTO đúng quyền, thông thường dưới 1 giây sau khi transaction hoàn tất.
+3. Khi Realtime khỏe, poll chỉ kiểm tra toàn vẹn mỗi 30 giây; khi WebSocket rớt, tự quay về 6 giây quản lý / 8 giây khách.
+4. Secret key, hash mật khẩu/PIN và tệp riêng tư không xuất hiện trong HTML, config hoặc localStorage.
+5. Conflict, sổ tài chính append-only, trạng thái phòng và action giữ chỗ/nhận/chuyển/trả phòng tiếp tục được khóa ở server.
+6. Google Sheets/Apps Script được giữ làm bản đối chiếu và rollback trong giai đoạn chuyển đổi, không còn ở đường xử lý hằng ngày.
+
+Triển khai theo `HUONG-DAN-SUPABASE-REALTIME.md`; schema và RPC nằm trong `supabase/schema.sql`.
+
+## Nền v4.6.6 — bất biến vòng đời và trạng thái phòng
 
 V4.6.6 giữ nguyên schema, công thức và kiến trúc Vercel + Apps Script + Google Sheets, đồng thời khóa các lỗi biên có thể làm trạng thái phòng/hợp đồng lệch nhau:
 
@@ -68,13 +81,11 @@ Nền tảng v4.6 P2 tiếp tục gồm:
 
 ## Cài đặt
 
-Bản chính: **Vercel + tên miền riêng**. Bốn bước, không phải sửa dòng code nào — dán `apps-script/Code.gs` vào Google Apps Script, chạy hàm `setup`, Deploy lấy đường dẫn `/exec`, đưa thư mục này lên Vercel rồi khai đường dẫn đó vào biến môi trường `APPS_SCRIPT_URL`. Chi tiết trong `HUONG-DAN-CAI-DAT.md`.
+Bản chính: **Vercel + Supabase + tên miền riêng**. Chạy `supabase/schema.sql`, khai 5 biến môi trường và nhập file JSON v4.6.7. Chi tiết từng bước, đối chiếu và rollback trong `HUONG-DAN-SUPABASE-REALTIME.md`.
 
-Không muốn dùng hosting thì dán thêm `apps-script/Index.html` vào Apps Script — đường dẫn `/exec` khi đó chính là website.
+`apps-script/Code.gs`, `apps-script/Index.html` và `api/sheets.js` vẫn được đóng gói để rollback/đối chiếu, không dùng làm backend chính của v4.7.0.
 
-Khi nâng từ trước P1, chạy lại `setup()` một lần để tự thêm các cột còn thiếu; dữ liệu cũ không bị xóa. Nâng lên v4.6.6 không thêm sheet/cột/API, nhưng **cần chạy lại `setup()` một lần** để sửa dữ liệu vòng đời từng bị kẹt và bảo đảm trigger sao lưu; sau đó deploy **New version** của Apps Script và tải lại trang để nhận cache mới.
-
-- Đăng nhập quản lý lần đầu: mật khẩu **123456**, đổi ngay trong Cài đặt.
+- Đăng nhập quản lý lần đầu bằng `HUY_ADMIN_PASSWORD` đã đặt trên Vercel.
 - Cư dân đăng nhập bằng số điện thoại + PIN do quản lý cấp.
 - Mở `index.html` bằng trình duyệt cũng chạy được để xem thử (dữ liệu mẫu, mật khẩu `123456`, cư dân `0935123456` / PIN `2580`).
 
@@ -88,11 +99,11 @@ Khi nâng từ trước P1, chạy lại `setup()` một lần để tự thêm 
 
 ## Đồng bộ
 
-- Lưu là đẩy lên Sheets sau ~1 giây; các máy khác lấy về mỗi 20 giây và ngay khi mở lại màn hình.
+- Lưu là đẩy delta lên Supabase sau khoảng 250 ms; Realtime đánh thức các máy còn lại gần như tức thời.
 - Chấm trạng thái ở góc dưới: xanh (xong) · vàng (đang chạy) · đỏ (lỗi, bấm để thử lại).
 - Mất mạng vẫn xem dữ liệu đã tải và nhập các thay đổi thông thường. Nghiệp vụ có tiền hoặc đổi trạng thái nhiều bảng (giữ chỗ, nhận/chuyển/trả phòng) cần máy chủ phản hồi để tránh ghi nửa vời.
-- Ảnh tự nén rồi lưu vào Google Drive nên mọi máy đều xem được.
-- Sửa tay các trường mô tả trong Google Sheet vẫn đồng bộ ngược về app. Không sửa tay `id`, trạng thái phòng/hợp đồng, `roomId`, liên kết người ở, hóa đơn, thanh toán hoặc sổ cọc; các nghiệp vụ này phải thực hiện trong app để giữ giao dịch nguyên tử.
+- Ảnh công khai và hồ sơ riêng tư nằm ở hai bucket Supabase Storage tách biệt.
+- Không sửa dữ liệu trực tiếp trong Postgres. Dùng app hoặc API đã phân quyền để giữ transaction, audit và trạng thái phòng nhất quán.
 
 ## Phân quyền
 
@@ -353,8 +364,7 @@ Hóa đơn / sổ thu / sổ cọc / hợp đồng / chỉ số: nếu máy này
 | Người dùng quản trị đồng thời | ≤ 5 | 10+ | Supabase |
 | Cư dân đăng nhập/ngày | ≤ 200 | 500+ | Supabase |
 | Nhật ký NhatKy | dọn 6 tháng/lần (copy sang file lưu trữ rồi xóa dòng cũ) | — | — |
-Bản này đã thêm **đóng dấu LASTSTAMP theo từng sheet**: poll đồng bộ lúc rảnh bỏ qua hẳn các sheet không đổi (test xác nhận), giảm mạnh số lần đọc Sheets ở chế độ nhiều thiết bị mở app cả ngày.
-Khi vượt ngưỡng: xem `MIGRATION-SUPABASE.md` (schema + RLS + migration + rollback đầy đủ; KHÔNG tự chuyển khi chưa tạo project).
+V4.7.0 không còn bị các ngưỡng đọc/ghi của Sheets trên đường nóng. Ngưỡng cũ vẫn hữu ích để quyết định thời gian giữ bản rollback; xem `MIGRATION-SUPABASE.md`.
 
 ### Xử lý lỗi thường gặp
 | Hiện tượng | Nguyên nhân | Cách xử lý |
@@ -366,10 +376,10 @@ Khi vượt ngưỡng: xem `MIGRATION-SUPABASE.md` (schema + RLS + migration + r
 | Ảnh tải lên bị từ chối | file không phải ảnh thật | chụp/chọn lại ảnh JPEG/PNG từ máy |
 | Mất dữ liệu trên một máy | — | Cài đặt → Khôi phục: bản tự lưu 7 ngày, hoặc file JSON, hoặc bản copy spreadsheet hằng ngày |
 
-### Cài đặt (tóm tắt đầy đủ trong HUONG-DAN-CAI-DAT.md)
-1. **Apps Script**: dán `Code.gs` + `Index.html` → Run `setup` → Deploy Web App (Execute as me / Anyone). Script Properties: `ADMIN_PASSWORD` (bắt buộc đổi), `ZALO_OA_TOKEN` + `ZALO_OA_MOCK` (tùy chọn), `IMAGE_FOLDER_ID`/`BACKUP_FOLDER_ID` tự tạo. Thêm trigger hằng ngày cho `backupSpreadsheet`.
-2. **Vercel**: import repo, không cần build step; biến môi trường `APPS_SCRIPT_URL` = URL Web App (dùng trong `api/sheets.js`), còn `config.js` giữ `apiUrl:'/api/sheets'`.
-3. **Migration**: chạy lại `setup` sau mỗi lần nâng cấp — idempotent, tự thêm sheet/cột mới, không đụng dữ liệu cũ.
+### Cài đặt v4.7.0
+1. **Supabase**: chạy `supabase/schema.sql`.
+2. **Vercel**: khai `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `HUY_ADMIN_PASSWORD`, `HUY_MIGRATION_KEY`.
+3. **Migration**: xuất JSON v4.6.7 → chạy `scripts/import-supabase.mjs` → `scripts/verify-supabase.mjs` → kiểm thử hai thiết bị rồi mới promote Production. Chi tiết trong `HUONG-DAN-SUPABASE-REALTIME.md`.
 
 
 ## v4.1 Production Fixed — tóm tắt
