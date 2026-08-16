@@ -13,6 +13,10 @@
     'leases', 'leaseOccupants', 'accounts', 'assets', 'handoverItems',
     'serviceDefinitions', 'leaseServices', 'payments', 'depositLedger', 'reminders',
     'maintenanceTickets', 'notifications', 'staffUsers'];
+  /** Bảng được BẢO VỆ khỏi "bản ghi xóa giả" khi máy chủ từ chối (xem isPhantomTombstone). */
+  var PROTECT_ON_REJECT = { properties: 1, rooms: 1, tenants: 1, leases: 1, leaseOccupants: 1,
+    accounts: 1, assets: 1, handoverItems: 1, serviceDefinitions: 1, leaseServices: 1,
+    staffUsers: 1, maintenanceTickets: 1, notifications: 1, appointments: 1, utilityReadings: 1 };
   var PULL_ONLY = ['auditLog'];  // máy chủ tự ghi, client chỉ đọc
   // Khách không đẩy gì qua sync — đặt lịch dùng action 'book' có kiểm tra riêng
   var GUEST_PUSH = [];
@@ -191,6 +195,7 @@
           if (!item.id) return;
           seen[item.id] = 1;
           if (item._temp) return; // bản ghi tạm của cổng cư dân, không đẩy lên
+          if (self.isBlocked(c, item)) return;   // v4.7.1: đã bị từ chối, chưa sửa gì → đừng đẩy lại (tránh lặp)
           var h = hash(item);
           if (base[item.id] !== h) {
             item.updatedAt = now;
@@ -216,6 +221,37 @@
     },
     hasPending: function () { return Object.keys(this.computeChanges()).length > 0; },
 
+    /** v4.7.1 — Máy chủ từ chối một bản ghi CHƯA TỪNG có trên đó thì trả về
+     * một "bản ghi rỗng đã xóa" ({deleted:true}). Nếu áp thẳng xuống máy thì
+     * bản ghi người dùng vừa nhập/vừa tạo sẽ BỊ XÓA MẤT — dữ liệu bay sạch mà
+     * người dùng không hiểu vì sao. Nay: giữ nguyên bản trên máy, chỉ ngừng
+     * đẩy lên cho tới khi người dùng sửa nội dung. */
+    isPhantomTombstone: function (col, rec) {
+      if (!rec || rec.deleted !== true) return false;
+      // CHỈ bảo vệ dữ liệu gốc (hợp đồng, người ở, phòng…). KHÔNG áp dụng cho
+      // phiếu giữ chỗ và các sổ tiền: ở đó bản trên máy BẮT BUỘC phải khớp máy chủ,
+      // vì khi hai thiết bị tranh nhau giữ một phòng, bên thua phải bị gỡ ngay —
+      // giữ lại sẽ hiện phòng đã giữ trong khi máy chủ đã trao cho người khác.
+      if (!PROTECT_ON_REJECT[col]) return false;
+      var arr = (this.api.getData()[col] || []);
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i].id === rec.id) return !arr[i].deleted;   // máy đang có bản sống → đây là tombstone giả
+      }
+      return false;
+    },
+    /** Ngừng đẩy bản ghi bị từ chối cho tới khi nội dung thay đổi (tránh lặp vô hạn). */
+    blockPush: function (col, id) {
+      this.blocked = this.blocked || {};
+      this.blocked[col] = this.blocked[col] || {};
+      var arr = (this.api.getData()[col] || []);
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i].id === id) { this.blocked[col][id] = hash(arr[i]); return; }
+      }
+    },
+    isBlocked: function (col, item) {
+      var b = this.blocked && this.blocked[col] && this.blocked[col][item.id];
+      return !!b && b === hash(item);      // vẫn y nguyên nội dung đã bị từ chối
+    },
     applyRemote: function (changes) {
       var data = this.api.getData(), self = this, touched = false;
       var cols = this.isAdmin() ? COLS.concat(PULL_ONLY) : GUEST_PULL;
@@ -345,6 +381,11 @@
           if (res.rejected && res.rejected.length) {
             try { window.dispatchEvent(new CustomEvent('sync-rejected', { detail: res.rejected })); } catch (e) {}
             res.rejected.forEach(function (x) {
+              if (x.serverRecord && self.isPhantomTombstone(x.collection, x.serverRecord)) {
+                // KHÔNG xóa bản trên máy — chỉ ngừng đẩy cho tới khi người dùng sửa
+                self.blockPush(x.collection, x.serverRecord.id);
+                return;
+              }
               if (x.serverRecord) touched = self.applyRemote((function () { var o = {}; o[x.collection] = [x.serverRecord]; return o; })()) || touched;
               else needsFullPull = true;
             });
@@ -352,6 +393,7 @@
           if (res.scopeSkipped && res.scopeSkipped.length) {
             try { window.dispatchEvent(new CustomEvent('sync-scope-skipped', { detail: res.scopeSkipped })); } catch (e) {}
             res.scopeSkipped.forEach(function (x) {
+              if (x.serverRecord && self.isPhantomTombstone(x.collection, x.serverRecord)) { self.blockPush(x.collection, x.serverRecord.id); return; }
               if (x.serverRecord) touched = self.applyRemote((function () { var o = {}; o[x.collection] = [x.serverRecord]; return o; })()) || touched;
               else needsFullPull = true;
             });

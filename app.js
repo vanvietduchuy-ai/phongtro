@@ -4794,9 +4794,20 @@ window.addEventListener('server-conflict',e=>{
   (e.detail||[]).forEach(x=>auditLocalConflict({col:x.collection,colName:x.collection,id:x.id,local:{expectedUpdatedAt:x.expectedUpdatedAt},remote:x.serverRecord||{}}));
   renderAdmin();
 });
+const COL_VI_SYNC={leases:'hợp đồng',depositLedger:'sổ cọc',payments:'sổ thu',invoices:'hóa đơn',
+  rooms:'phòng',tenants:'người ở',reservations:'phiếu giữ chỗ',utilityReadings:'chỉ số điện nước',
+  leaseOccupants:'người ở cùng',accounts:'tài khoản cư dân'};
 window.addEventListener('sync-rejected',e=>{
-  const list=(e.detail||[]).slice(0,3).map(x=>`${x.collection} ${x.id}: ${x.reason}`).join(' · ');
-  showToast(`Máy chủ từ chối lưu: ${list}${(e.detail||[]).length>3?'…':''}. Dữ liệu được đồng bộ lại theo bản máy chủ.`);
+  const items=e.detail||[];
+  // Gom theo bảng + lý do cho dễ đọc, và nói rõ dữ liệu trên máy VẪN CÒN
+  const groups={};
+  items.forEach(x=>{
+    const k=(COL_VI_SYNC[x.collection]||x.collection)+' — '+(x.reason||'không hợp lệ');
+    groups[k]=(groups[k]||0)+1;
+  });
+  const lines=Object.entries(groups).slice(0,3).map(([k,n])=>`${n} ${k}`).join('; ');
+  showToast(`Máy chủ chưa nhận ${items.length} bản ghi: ${lines}${Object.keys(groups).length>3?'…':''}. `
+    +`Dữ liệu trên máy vẫn còn nguyên — sửa lại rồi lưu để đẩy lên.`);
 });
 window.addEventListener('sync-scope-skipped',e=>{
   showToast(`${(e.detail||[]).length} thay đổi bị bỏ qua vì thuộc căn bạn không được giao. Nhờ chủ nhà/quản lý căn đó xử lý.`);
